@@ -1,0 +1,13 @@
+core_sets:
+  bcb_compact:
+    label: "BCB/RPM compacto"
+    members: [EX0, EX3, MS, DP, P55]
+  six_cores:
+    label: "Seis núcleos"
+    members: [EX0, EX1, EX2, EX3, DP, MS]
+  broad_sgs:
+    label: "Conjunto amplo SGS"
+    members: [EX_FE, EX0, EX1, EX2, EX3, MA, MS, DP, P55]
+  user:
+    label: "Usuário"
+    members: [EX0, EX3, DP, P55]

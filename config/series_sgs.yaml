@@ -1,0 +1,102 @@
+series:
+  headline:
+    IPCA:
+      code: 433
+      unit: pct_mom
+      label: "IPCA"
+
+  aggregates:
+    Administrados:
+      code: 4449
+      unit: pct_mom
+      label: "Administrados"
+    Livres:
+      code: 11428
+      unit: pct_mom
+      label: "Livres"
+    Alimentacao_no_domicilio:
+      code: 27864
+      unit: pct_mom
+      label: "Alimentação no domicílio"
+    Servicos:
+      code: 10844
+      unit: pct_mom
+      label: "Serviços"
+    Bens_industriais:
+      code: 27863
+      unit: pct_mom
+      label: "Bens industriais"
+    Comercializaveis:
+      code: 4447
+      unit: pct_mom
+      label: "Comercializáveis"
+    Nao_comercializaveis:
+      code: 4448
+      unit: pct_mom
+      label: "Não comercializáveis"
+    Bens_nao_duraveis:
+      code: 10841
+      unit: pct_mom
+      label: "Bens não duráveis"
+    Bens_semiduraveis:
+      code: 10842
+      unit: pct_mom
+      label: "Bens semiduráveis"
+    Bens_duraveis:
+      code: 10843
+      unit: pct_mom
+      label: "Bens duráveis"
+
+  cores:
+    EX_FE:
+      code: 28751
+      unit: pct_mom
+      label: "EX-FE"
+    EX0:
+      code: 11427
+      unit: pct_mom
+      label: "EX0"
+    EX1:
+      code: 16121
+      unit: pct_mom
+      label: "EX1"
+    EX2:
+      code: 27838
+      unit: pct_mom
+      label: "EX2"
+    EX3:
+      code: 27839
+      unit: pct_mom
+      label: "EX3"
+    DP:
+      code: 16122
+      unit: pct_mom
+      label: "DP"
+    MA:
+      code: 11426
+      unit: pct_mom
+      label: "MA"
+    MS:
+      code: 4466
+      unit: pct_mom
+      label: "MS"
+    P55:
+      code: 28750
+      unit: pct_mom
+      label: "P55"
+
+  diffusion:
+    Difusao:
+      code: 21379
+      unit: pct_share
+      label: "Difusão"
+
+  underlying:
+    EX3_Servicos:
+      code: 29683
+      unit: pct_mom
+      label: "EX3 Serviços"
+    EX3_Industriais:
+      code: 29684
+      unit: pct_mom
+      label: "EX3 Industriais"

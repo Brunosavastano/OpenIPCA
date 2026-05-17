@@ -1,0 +1,54 @@
+rules:
+  - id: core_mean_3m_saar_high
+    metric: core_mean_3m_saar
+    condition: ">"
+    threshold: 5.0
+    severity: high
+    window: latest
+    cooldown_days: 30
+    message: "Média dos núcleos em 3m saar acima de 5,0%. Pressão subjacente desconfortável."
+
+  - id: core_any_3m_saar_critical
+    metric: core_any_3m_saar
+    condition: ">"
+    threshold: 6.5
+    severity: critical
+    window: latest
+    cooldown_days: 30
+    message: "Ao menos um núcleo roda acima de 6,5% em 3m saar. Risco de persistência elevado."
+
+  - id: diffusion_mm3_p80
+    metric: diffusion_mm3_percentile
+    condition: ">"
+    threshold: 80
+    severity: high
+    window: latest
+    cooldown_days: 30
+    message: "Difusão MM3M acima do p80 histórico. Inflação disseminada."
+
+  - id: diffusion_mm3_p90
+    metric: diffusion_mm3_percentile
+    condition: ">"
+    threshold: 90
+    severity: critical
+    window: latest
+    cooldown_days: 30
+    message: "Difusão MM3M acima do p90 histórico. Deterioração ampla."
+
+  - id: services_accelerating
+    metric: services_3m_saar_minus_services_12m
+    condition: ">"
+    threshold: 0
+    severity: high
+    window: latest
+    cooldown_days: 30
+    message: "Serviços em 3m saar acima do ritmo de 12 meses. Sinal de aceleração."
+
+  - id: localized_shock
+    metric: localized_shock_score
+    condition: ">"
+    threshold: 0
+    severity: medium
+    window: latest
+    cooldown_days: 30
+    message: "Headline pressionado com difusão baixa. Alta possivelmente concentrada."

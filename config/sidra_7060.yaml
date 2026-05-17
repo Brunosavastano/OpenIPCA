@@ -1,0 +1,24 @@
+table: 7060
+territory:
+  level: 1
+  code: 1
+classification:
+  code: 315
+  label: "Geral, grupo, subgrupo, item e subitem"
+variables:
+  mom:
+    code: 63
+    label: "IPCA - Variação mensal"
+    unit: pct
+  ytd:
+    code: 69
+    label: "IPCA - Variação acumulada no ano"
+    unit: pct
+  yoy:
+    code: 2265
+    label: "IPCA - Variação acumulada em 12 meses"
+    unit: pct
+  weight:
+    code: 66
+    label: "IPCA - Peso mensal"
+    unit: pct

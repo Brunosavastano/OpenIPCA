@@ -1,0 +1,20 @@
+palette:
+  headline: "#1F2937"
+  food: "#B45309"
+  services: "#B91C1C"
+  industrials: "#2563EB"
+  administered: "#7C3AED"
+  diffusion: "#047857"
+  positive: "#B91C1C"
+  negative: "#2563EB"
+  neutral: "#6B7280"
+  info: "#2563EB"
+  medium: "#D97706"
+  high: "#DC2626"
+  critical: "#7F1D1D"
+plotly_template:
+  paper_bgcolor: "white"
+  plot_bgcolor: "white"
+  font_family: "Arial"
+  gridcolor: "#E5E7EB"
+
