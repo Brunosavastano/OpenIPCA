@@ -18,7 +18,9 @@ from ipca_dashboard.io import write_csv
 from ipca_dashboard.transforms import (
     build_core_metrics,
     calc_rolling_12m,
+    calculate_diffusion_from_items,
     expanding_percentile,
+    percentile_midrank,
     transform_bcb_series,
     transform_ipca_items,
 )
@@ -260,12 +262,9 @@ def build_reconciliation_report(bcb: pd.DataFrame, ipca_items: pd.DataFrame) -> 
         )
 
     diffusion = bcb[bcb["series_short_name"] == "Difusao"][["date", "mom"]].rename(columns={"mom": "official_diffusion"})
-    subitems = ipca_items[ipca_items["level"] == "subitem"].copy()
-    subitems["positive"] = subitems["mom"] > 0
-    calculated_diffusion = (
-        subitems.groupby("date", as_index=False)["positive"].mean().assign(calculated_diffusion=lambda d: d["positive"] * 100)
-        [["date", "calculated_diffusion"]]
-    )
+    calculated_diffusion = calculate_diffusion_from_items(ipca_items, level="subitem").rename(
+        columns={"diffusion": "calculated_diffusion"}
+    )[["date", "calculated_diffusion"]]
     diff_join = diffusion.merge(calculated_diffusion, on="date", how="inner").dropna()
     if diff_join.empty:
         rows.append(_summary_row("official_vs_calculated_diffusion", "SGS 21379", "Difusão calculada por subitem", 0, None, None, None, "insuficiente", "Sem interseção de difusão."))
@@ -340,7 +339,7 @@ def _percentile_latest(series: pd.Series, min_periods: int = 24) -> float:
     values = pd.to_numeric(series, errors="coerce").dropna()
     if len(values) < min_periods:
         return float("nan")
-    return float(100 * (values <= values.iloc[-1]).mean())
+    return percentile_midrank(values, float(values.iloc[-1]))
 
 
 def _snapshot_for_window(bcb: pd.DataFrame, core_metrics: pd.DataFrame, start: pd.Timestamp | None) -> tuple[dict[str, float], int]:
