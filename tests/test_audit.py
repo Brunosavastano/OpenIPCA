@@ -137,7 +137,9 @@ def test_zscore_and_percentile_respect_minimum_sample():
     assert expanding_percentile(series).isna().all()
 
     longer = pd.Series(range(24), dtype=float)
-    assert math.isclose(expanding_percentile(longer).iloc[-1], 100.0)
+    # Mid-rank percentile (spec_V3 §4.6 / B4): even a no-tie all-time high scores
+    # (n - 0.5) / n, i.e. ~97.9 for n=24 — never an artificial p100.
+    assert math.isclose(expanding_percentile(longer).iloc[-1], 100 * (24 - 0.5) / 24)
 
 
 def test_alerts_do_not_fire_with_insufficient_history():
