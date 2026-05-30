@@ -404,9 +404,10 @@ Corte de escopo para não re-inflar o projeto. **Só "Must" bloqueia o lançamen
 - B1–B6 (seção 5.1) com testes.
 - Não anualizar NSA + caveat visível (4.4).
 - OSS: MIT, README (EN) + `README.pt-BR.md` curto, SECURITY, `.env.example`, `.gitignore`, CI (`test` + `check-no-secrets`), disclaimer de não-afiliação.
-- Brief determinístico (piso) + **1** brief de IA com tool-use, **trace persistido**, grounding `evidence_ids[]`, guardrail de política monetária.
+- Camada de IA (CP6, todos Must): **Tool API determinística** + **evidence table** (§3.2) + **o conjunto mínimo de guardrails da §3.3** — aterramento por `evidence_ids[]`, recusa fora de escopo, bloqueio de número fora da evidência, e guardrail de política monetária. Nenhum desses é "ambição não-bloqueante".
+- Brief determinístico (piso) + **1** brief de IA (CP7) com tool-use sobre a Tool API acima, **trace persistido**, validado pelos guardrails; em qualquer falha (sem chave/erro/guardrail) degrada para o determinístico.
 - Regime classifier determinístico mínimo (~4–5 regimes; alimenta badge + aterra a IA).
-- 1 screenshot/GIF hero + `report.md` + PNG via `make release-report` **manual**.
+- 1 screenshot/GIF hero + `report.md` + PNG via `python -m ipca_dashboard.reporting.build_report --latest` **manual** (comando canônico portável; sem Makefile como interface oficial).
 
 **SHOULD (logo após, se for rápido):**
 - Evidência clicável (chips); estrutura `reports/latest/`; `test-ai-contract` separado de `eval-model`; tema/components.
