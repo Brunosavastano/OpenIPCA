@@ -41,13 +41,23 @@ Para séries mensais do SGS, o acumulado em 12 meses é calculado por encadeamen
 100 * (prod(1 + x_t/100, 12 meses) - 1)
 ```
 
-### 3m saar
+### Momentum de curto prazo (MM3M, sem ajuste sazonal)
+
+As variações mensais do IPCA são **brutas (NSA)**, sem ajuste sazonal. Por isso, o
+dashboard apresenta o momentum de curto prazo como **MM3M** — média móvel de 3 meses da
+variação m/m — e **não** como taxa anualizada (SAAR). Anualizar uma série NSA elevaria o
+padrão sazonal à quarta potência e o rótulo "SAAR" (*Seasonally Adjusted Annual Rate*)
+seria incorreto sobre dado sem ajuste.
+
+A coluna `three_month_saar` permanece calculada internamente para auditoria e exploração
+(rotulada como "3m anualizado (NSA, experimental)"), mas não é a métrica de destaque.
 
 ```text
-100 * [((1 + x_t/100) * (1 + x_t-1/100) * (1 + x_t-2/100))^4 - 1]
+MM3M_t = média(x_t, x_{t-1}, x_{t-2})            # m/m, sem ajuste sazonal
+3m anualizado (NSA) = 100 * [((1 + x_t/100)(1 + x_{t-1}/100)(1 + x_{t-2}/100))^4 - 1]
 ```
 
-Essa métrica é aplicada a headline, agregados, núcleos e séries subjacentes mensais.
+Uma versão **anualizada com ajuste sazonal (SA)**, via STL, está planejada para o v0.2.
 
 ### Média dos núcleos
 
@@ -89,7 +99,7 @@ Ela refaz uma amostra longa para checar:
 - IPCA 12m calculado contra a variável oficial SIDRA de 12 meses;
 - soma das contribuições mensais por grupo;
 - recomposição 12m pela contribuição encadeada;
-- janela efetiva de percentis, z-score, MM3M, 12m e 3m saar;
+- janela efetiva de percentis, z-score, MM3M, 12m e 3m anualizado (NSA);
 - sensibilidade dos alertas em amostras `full_sample`, `since_2020` e `rolling_60m`.
 
 Os relatórios ficam em `outputs/audit/` e não substituem os Parquets usados pela interface.

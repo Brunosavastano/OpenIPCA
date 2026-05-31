@@ -149,8 +149,29 @@ def build_core_metrics(bcb: pd.DataFrame, core_sets_config: dict) -> pd.DataFram
         )
 
         pivot = member_rows.pivot_table(index="date", columns="series_short_name", values="mom")
-        mean_mom = pivot[members].mean(axis=1, skipna=True)
-        mean = pd.DataFrame({"date": mean_mom.index, "mom": mean_mom.values}).sort_values("date")
+        # Reindex to the full member list so a missing core becomes an all-NaN
+        # column (no KeyError) and is visibly counted as missing.
+        pivot = pivot.reindex(columns=members)
+        expected_count = len(members)
+        available_count = pivot.notna().sum(axis=1)
+        is_complete = available_count == expected_count
+        missing_members = pivot.apply(
+            lambda row: ",".join(m for m in members if pd.isna(row[m])), axis=1
+        )
+        # skipna=False: the mean is only valid when every member is present;
+        # otherwise it is NaN (default require_complete behaviour, spec §4.5).
+        mean_mom = pivot.mean(axis=1, skipna=False)
+        mean = pd.DataFrame(
+            {
+                "date": mean_mom.index,
+                "mom": mean_mom.values,
+                "n_members_expected": expected_count,
+                "n_members_available": available_count.values,
+                "is_complete": is_complete.values,
+                "is_complete_core_set": is_complete.values,
+                "missing_members": missing_members.values,
+            }
+        ).sort_values("date")
         mean["core_set_name"] = set_name
         mean["core_set_label"] = metadata.get("label", set_name)
         mean["core_name"] = "Média"
@@ -172,6 +193,11 @@ def build_core_metrics(bcb: pd.DataFrame, core_sets_config: dict) -> pd.DataFram
                     "moving_average_3m",
                     "zscore_60m",
                     "percentile_since_2012",
+                    "n_members_expected",
+                    "n_members_available",
+                    "is_complete",
+                    "is_complete_core_set",
+                    "missing_members",
                 ]
             ]
         )

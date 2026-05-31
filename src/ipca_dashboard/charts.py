@@ -74,9 +74,20 @@ def waterfall_latest(ipca_items: pd.DataFrame, date: pd.Timestamp) -> go.Figure:
 def contribution_ranking(ipca_items: pd.DataFrame, date: pd.Timestamp, level: str, top_n: int = 10) -> go.Figure:
     data = ipca_items[(ipca_items["date"] == date) & (ipca_items["level"] == level)].copy()
     data = data.dropna(subset=["contribution_mom"])
-    top = data.nlargest(top_n, "contribution_mom")
-    bottom = data.nsmallest(top_n, "contribution_mom")
-    ranking = pd.concat([bottom, top]).sort_values("contribution_mom")
+    if len(data) <= 2 * top_n:
+        # Few categories: show them all once, never duplicated.
+        ranking = data.sort_values("contribution_mom")
+    else:
+        ranking = (
+            pd.concat(
+                [
+                    data.nsmallest(top_n, "contribution_mom"),
+                    data.nlargest(top_n, "contribution_mom"),
+                ]
+            )
+            .drop_duplicates(subset=["date", "classification_code"])
+            .sort_values("contribution_mom")
+        )
     colors = ranking["contribution_mom"].map(lambda value: "#B91C1C" if value > 0 else "#2563EB")
     fig = go.Figure(go.Bar(x=ranking["contribution_mom"], y=ranking["item_name"], orientation="h", marker_color=colors))
     return apply_layout(fig, f"Top pressões altistas e baixistas - {level}", "p.p.")

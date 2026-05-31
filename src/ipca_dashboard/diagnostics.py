@@ -61,17 +61,14 @@ def build_diagnostic_text(
     )
 
     if core_mean.empty:
-        core_mom = core_3m = float("nan")
+        core_mom = core_mm3 = float("nan")
         core_assessment = "sem leitura de núcleos suficiente"
     else:
         row = core_mean.iloc[0]
         core_mom = float(row["mom"])
-        core_3m = float(row["three_month_saar"])
-        core_12m = float(row["rolling_12m"])
-        if pd.notna(core_3m) and pd.notna(core_12m) and core_3m > core_12m:
-            core_assessment = "núcleos acelerando na margem"
-        elif pd.notna(core_3m) and pd.notna(core_12m):
-            core_assessment = "núcleos desacelerando na margem"
+        core_mm3 = float(row["moving_average_3m"])
+        if pd.notna(core_mm3):
+            core_assessment = "leitura de curto prazo em MM3M (NSA)"
         else:
             core_assessment = "núcleos ainda sem janela completa"
 
@@ -92,8 +89,8 @@ def build_diagnostic_text(
         f"O IPCA de {reference_month} veio em {ipca_mom:.2f}%, acumulando "
         f"{ipca_12m:.2f}% em 12 meses. A composição foi {composition}, "
         f"com destaque altista para {top_positive} e {negative_label} de {top_negative}. "
-        f"A média dos núcleos avançou {core_mom:.2f}% no mês e roda a {core_3m:.2f}% "
-        f"em 3m anualizado, sinalizando {core_assessment}. A difusão ficou em "
+        f"A média dos núcleos avançou {core_mom:.2f}% no mês e roda a {core_mm3:.2f}% "
+        f"em MM3M (NSA), sinalizando {core_assessment}. A difusão ficou em "
         f"{diffusion_value:.1f}% ({diffusion_mm3:.1f}% em MM3M), {alert_phrase}."
     )
     return {"reference_month": reference_month, "diagnostic": text}

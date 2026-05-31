@@ -55,18 +55,29 @@ CSS = """
 st.markdown(CSS, unsafe_allow_html=True)
 
 
+PROCESSED_PATHS = {
+    "bcb": PROCESSED_DIR / "bcb_series_monthly.parquet",
+    "items": PROCESSED_DIR / "ipca_items_monthly.parquet",
+    "cores": PROCESSED_DIR / "core_metrics_monthly.parquet",
+    "alerts": PROCESSED_DIR / "alerts.parquet",
+}
+
+
+def processed_signature() -> tuple:
+    """File signature (path + mtime) so the cache invalidates after a rebuild."""
+    return tuple(
+        (name, str(path), path.stat().st_mtime_ns)
+        for name, path in PROCESSED_PATHS.items()
+        if path.exists()
+    )
+
+
 @st.cache_data(show_spinner=False)
-def load_data() -> dict[str, pd.DataFrame]:
-    paths = {
-        "bcb": PROCESSED_DIR / "bcb_series_monthly.parquet",
-        "items": PROCESSED_DIR / "ipca_items_monthly.parquet",
-        "cores": PROCESSED_DIR / "core_metrics_monthly.parquet",
-        "alerts": PROCESSED_DIR / "alerts.parquet",
-    }
-    missing = [str(path) for path in paths.values() if not path.exists()]
+def load_data(signature: tuple) -> dict[str, pd.DataFrame]:
+    missing = [str(path) for path in PROCESSED_PATHS.values() if not path.exists()]
     if missing:
         raise FileNotFoundError("\n".join(missing))
-    return {name: pd.read_parquet(path) for name, path in paths.items()}
+    return {name: pd.read_parquet(path) for name, path in PROCESSED_PATHS.items()}
 
 
 def load_diagnostic() -> str:
@@ -106,10 +117,14 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     cols = st.columns(6)
     cols[0].metric("IPCA m/m", fmt(ipca["mom"] if ipca is not None else None))
     cols[1].metric("IPCA 12m", fmt(ipca["rolling_12m"] if ipca is not None else None))
-    cols[2].metric("IPCA 3m saar", fmt(ipca["three_month_saar"] if ipca is not None else None))
-    cols[3].metric("Média núcleos 3m", fmt(core_row["three_month_saar"] if core_row is not None else None))
+    cols[2].metric("IPCA MM3M", fmt(ipca["moving_average_3m"] if ipca is not None else None))
+    cols[3].metric("Média núcleos MM3M", fmt(core_row["moving_average_3m"] if core_row is not None else None))
     cols[4].metric("Difusão MM3M", fmt(diffusion["moving_average_3m"] if diffusion is not None else None))
     cols[5].metric("Alertas ativos", len(alerts), "")
+    st.caption(
+        "Momentum em MM3M (média móvel de 3 meses, sem ajuste sazonal/NSA). "
+        "A versão anualizada com ajuste sazonal (SA) chega no v0.2."
+    )
 
     st.markdown(f"<div class='diagnostic'>{load_diagnostic()}</div>", unsafe_allow_html=True)
 
@@ -118,7 +133,7 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
         st.plotly_chart(stacked_contribution(items), use_container_width=True)
     with right:
         st.plotly_chart(diffusion_line(bcb), use_container_width=True)
-    st.plotly_chart(core_lines(cores, "bcb_compact", "three_month_saar"), use_container_width=True)
+    st.plotly_chart(core_lines(cores, "bcb_compact", "moving_average_3m"), use_container_width=True)
 
     if not alerts.empty:
         st.subheader("Alertas ativos")
@@ -155,12 +170,39 @@ def page_cores(data: dict[str, pd.DataFrame]) -> None:
     core_sets = load_yaml("core_sets.yaml").get("core_sets", {})
     labels = {key: value.get("label", key) for key, value in core_sets.items()}
     selected = st.selectbox("Preset de núcleos", list(labels), format_func=lambda key: labels[key])
-    metric = st.selectbox("Métrica", ["rolling_12m", "three_month_saar", "mom", "moving_average_3m"], index=1)
+
+    # Completeness warning (only if the column exists in the processed data).
+    complete_col = "is_complete" if "is_complete" in cores.columns else "is_complete_core_set"
+    if complete_col in cores.columns:
+        mean_rows = cores[
+            (cores["core_set_name"] == selected) & (cores["core_name"].isin(["Media", "Média"]))
+        ].sort_values("date")
+        if not mean_rows.empty:
+            latest_mean = mean_rows.iloc[-1]
+            if not bool(latest_mean.get(complete_col, True)):
+                avail = int(latest_mean.get("n_members_available", 0))
+                exp = int(latest_mean.get("n_members_expected", 0))
+                missing = latest_mean.get("missing_members", "")
+                st.warning(
+                    f"Preset incompleto no mês mais recente: {avail}/{exp} séries disponíveis. "
+                    f"Faltando: {missing}. A média é omitida quando o preset está incompleto."
+                )
+
+    metric_labels = {
+        "moving_average_3m": "MM3M (m/m, NSA)",
+        "rolling_12m": "12m",
+        "mom": "m/m",
+        "three_month_saar": "3m anualizado (NSA, experimental)",
+    }
+    metric = st.selectbox(
+        "Métrica", list(metric_labels), index=0, format_func=lambda key: metric_labels[key]
+    )
     st.header("Monitor de núcleos")
+    st.caption("Momentum sem ajuste sazonal (NSA). Versão com ajuste sazonal (SA) chega no v0.2.")
     st.plotly_chart(core_lines(cores, selected, metric), use_container_width=True)
     st.plotly_chart(core_fan(cores, selected, metric), use_container_width=True)
     latest = cores[cores["core_set_name"] == selected].sort_values("date").groupby("core_name").tail(1)
-    st.dataframe(latest.sort_values("three_month_saar", ascending=False), use_container_width=True)
+    st.dataframe(latest.sort_values("moving_average_3m", ascending=False), use_container_width=True)
 
 
 def page_diffusion(data: dict[str, pd.DataFrame]) -> None:
@@ -201,7 +243,10 @@ def page_methodology(data: dict[str, pd.DataFrame]) -> None:
 
         **Contribuição mensal.** `peso_mensal * variacao_mensal / 100`, em pontos percentuais.
 
-        **3m saar.** Produto dos fatores dos três últimos meses elevado à quarta potência, menos um.
+        **Momentum de curto prazo.** A interface usa MM3M (média móvel de 3 meses da
+        variação m/m) porque as séries mensais são brutas, sem ajuste sazonal (NSA).
+        A coluna `three_month_saar` segue disponível para auditoria/exploração, mas deve
+        ser lida como 3m anualizado NSA experimental, não como SAAR.
 
         **Núcleos.** A média dos núcleos é calculada a partir do preset selecionado em `config/core_sets.yaml`.
 
@@ -229,7 +274,7 @@ def page_methodology(data: dict[str, pd.DataFrame]) -> None:
 
 def main() -> None:
     try:
-        data = load_data()
+        data = load_data(processed_signature())
     except FileNotFoundError as exc:
         st.title("IPCA Macro Dashboard")
         st.error("Dados processados não encontrados.")
