@@ -2,12 +2,43 @@ from __future__ import annotations
 
 import pandas as pd
 
+from ipca_dashboard.regime import RegimeResult, classify_inflation_regime
+
 
 def latest_row(df: pd.DataFrame, series_short_name: str) -> pd.Series | None:
     subset = df[df["series_short_name"] == series_short_name].sort_values("date")
     if subset.empty:
         return None
     return subset.iloc[-1]
+
+
+def build_regime_context(bcb: pd.DataFrame) -> dict:
+    """Assemble the deterministic signals the regime classifier needs.
+
+    Reuses existing pipeline columns (no recompute): the headline IPCA m/m
+    expanding percentile and the diffusion MM3M percentile.
+    """
+    ipca = latest_row(bcb, "IPCA")
+    diffusion = latest_row(bcb, "Difusao")
+    context: dict[str, object] = {}
+    if ipca is not None and "percentile_since_2012" in ipca:
+        context["headline_percentile"] = (
+            float(ipca["percentile_since_2012"])
+            if pd.notna(ipca["percentile_since_2012"])
+            else None
+        )
+    if diffusion is not None and "moving_average_3m_percentile" in diffusion:
+        context["diffusion_mm3_percentile"] = (
+            float(diffusion["moving_average_3m_percentile"])
+            if pd.notna(diffusion["moving_average_3m_percentile"])
+            else None
+        )
+    return context
+
+
+def classify_latest_regime(bcb: pd.DataFrame) -> RegimeResult:
+    """Classify the inflation regime for the latest month from `bcb`."""
+    return classify_inflation_regime(build_regime_context(bcb))
 
 
 def build_diagnostic_text(
@@ -84,6 +115,8 @@ def build_diagnostic_text(
     elif pd.notna(diffusion_mm3) and diffusion_mm3 < 50:
         composition = "mais benigna"
 
+    regime = classify_inflation_regime(build_regime_context(bcb))
+
     reference_month = latest_date.strftime("%Y-%m")
     text = (
         f"O IPCA de {reference_month} veio em {ipca_mom:.2f}%, acumulando "
@@ -91,6 +124,13 @@ def build_diagnostic_text(
         f"com destaque altista para {top_positive} e {negative_label} de {top_negative}. "
         f"A média dos núcleos avançou {core_mom:.2f}% no mês e roda a {core_mm3:.2f}% "
         f"em MM3M (NSA), sinalizando {core_assessment}. A difusão ficou em "
-        f"{diffusion_value:.1f}% ({diffusion_mm3:.1f}% em MM3M), {alert_phrase}."
+        f"{diffusion_value:.1f}% ({diffusion_mm3:.1f}% em MM3M), {alert_phrase}. "
+        f"Regime: {regime.label_pt}."
     )
-    return {"reference_month": reference_month, "diagnostic": text}
+    return {
+        "reference_month": reference_month,
+        "diagnostic": text,
+        "regime": regime.regime,
+        "regime_label": regime.label_pt,
+        "regime_rule_id": regime.rule_id,
+    }

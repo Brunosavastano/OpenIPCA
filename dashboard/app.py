@@ -23,6 +23,7 @@ from ipca_dashboard.charts import (  # noqa: E402
     waterfall_latest,
 )
 from ipca_dashboard.config import OUTPUTS_DIR, PROCESSED_DIR, load_yaml  # noqa: E402
+from ipca_dashboard.diagnostics import classify_latest_regime  # noqa: E402
 from ipca_dashboard.transforms import calculate_diffusion_from_items  # noqa: E402
 
 
@@ -142,9 +143,13 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     cols[3].metric("Média núcleos MM3M", fmt(core_row["moving_average_3m"] if core_row is not None else None))
     cols[4].metric("Difusão MM3M", fmt(diffusion["moving_average_3m"] if diffusion is not None else None))
     cols[5].metric("Alertas ativos", len(alerts), "")
+
+    regime = classify_latest_regime(bcb)
+    st.markdown(f"**Regime inflacionário:** {regime.label_pt}")
     st.caption(
         "Momentum em MM3M (média móvel de 3 meses, sem ajuste sazonal/NSA). "
-        "A versão anualizada com ajuste sazonal (SA) chega no v0.2."
+        "A versão anualizada com ajuste sazonal (SA) chega no v0.2. "
+        "Regime classificado por regra determinística (headline × difusão)."
     )
 
     st.markdown(f"<div class='diagnostic'>{load_diagnostic()}</div>", unsafe_allow_html=True)
