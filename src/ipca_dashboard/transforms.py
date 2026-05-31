@@ -167,6 +167,7 @@ def build_core_metrics(bcb: pd.DataFrame, core_sets_config: dict) -> pd.DataFram
                 "mom": mean_mom.values,
                 "n_members_expected": expected_count,
                 "n_members_available": available_count.values,
+                "is_complete": is_complete.values,
                 "is_complete_core_set": is_complete.values,
                 "missing_members": missing_members.values,
             }
@@ -194,6 +195,7 @@ def build_core_metrics(bcb: pd.DataFrame, core_sets_config: dict) -> pd.DataFram
                     "percentile_since_2012",
                     "n_members_expected",
                     "n_members_available",
+                    "is_complete",
                     "is_complete_core_set",
                     "missing_members",
                 ]

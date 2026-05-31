@@ -40,6 +40,7 @@ def test_core_mean_complete_set_is_marked_complete():
     mean = out[out["core_name"] == "Média"]
 
     assert (mean["is_complete_core_set"]).all()
+    assert (mean["is_complete"]).all()
     assert (mean["n_members_available"] == 2).all()
     assert (mean["n_members_expected"] == 2).all()
     # Both members present and equal -> mean equals the member value.
@@ -56,6 +57,7 @@ def test_core_mean_missing_member_no_keyerror_and_flagged_incomplete():
     mean = out[out["core_name"] == "Média"].sort_values("date")
 
     assert not mean["is_complete_core_set"].any()
+    assert not mean["is_complete"].any()
     assert (mean["n_members_available"] == 1).all()
     assert (mean["missing_members"] == "EX3").all()
     # Incomplete -> mean omitted (NaN), not a silent partial average.
@@ -72,5 +74,7 @@ def test_core_mean_partial_month_is_incomplete_only_that_month():
 
     assert bool(mean.loc[0, "is_complete_core_set"]) is True
     assert bool(mean.loc[1, "is_complete_core_set"]) is False
+    assert bool(mean.loc[0, "is_complete"]) is True
+    assert bool(mean.loc[1, "is_complete"]) is False
     assert math.isclose(mean.loc[0, "mom"], 0.40, rel_tol=1e-9)
     assert np.isnan(mean.loc[1, "mom"])

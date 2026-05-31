@@ -99,7 +99,7 @@ Ela refaz uma amostra longa para checar:
 - IPCA 12m calculado contra a variável oficial SIDRA de 12 meses;
 - soma das contribuições mensais por grupo;
 - recomposição 12m pela contribuição encadeada;
-- janela efetiva de percentis, z-score, MM3M, 12m e 3m saar;
+- janela efetiva de percentis, z-score, MM3M, 12m e 3m anualizado (NSA);
 - sensibilidade dos alertas em amostras `full_sample`, `since_2020` e `rolling_60m`.
 
 Os relatórios ficam em `outputs/audit/` e não substituem os Parquets usados pela interface.

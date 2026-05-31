@@ -172,13 +172,14 @@ def page_cores(data: dict[str, pd.DataFrame]) -> None:
     selected = st.selectbox("Preset de núcleos", list(labels), format_func=lambda key: labels[key])
 
     # Completeness warning (only if the column exists in the processed data).
-    if "is_complete_core_set" in cores.columns:
+    complete_col = "is_complete" if "is_complete" in cores.columns else "is_complete_core_set"
+    if complete_col in cores.columns:
         mean_rows = cores[
             (cores["core_set_name"] == selected) & (cores["core_name"].isin(["Media", "Média"]))
         ].sort_values("date")
         if not mean_rows.empty:
             latest_mean = mean_rows.iloc[-1]
-            if not bool(latest_mean.get("is_complete_core_set", True)):
+            if not bool(latest_mean.get(complete_col, True)):
                 avail = int(latest_mean.get("n_members_available", 0))
                 exp = int(latest_mean.get("n_members_expected", 0))
                 missing = latest_mean.get("missing_members", "")
@@ -242,7 +243,10 @@ def page_methodology(data: dict[str, pd.DataFrame]) -> None:
 
         **Contribuição mensal.** `peso_mensal * variacao_mensal / 100`, em pontos percentuais.
 
-        **3m saar.** Produto dos fatores dos três últimos meses elevado à quarta potência, menos um.
+        **Momentum de curto prazo.** A interface usa MM3M (média móvel de 3 meses da
+        variação m/m) porque as séries mensais são brutas, sem ajuste sazonal (NSA).
+        A coluna `three_month_saar` segue disponível para auditoria/exploração, mas deve
+        ser lida como 3m anualizado NSA experimental, não como SAAR.
 
         **Núcleos.** A média dos núcleos é calculada a partir do preset selecionado em `config/core_sets.yaml`.
 
