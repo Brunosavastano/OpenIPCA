@@ -20,14 +20,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Real secret files that must never be tracked (examples are allowed).
-FORBIDDEN_TRACKED = {".env", ".streamlit/secrets.toml"}
-
 # Key *value* shapes. Deliberately specific to avoid flagging prose like
 # "set OPENAI_API_KEY" — we require an actual key-looking token.
 KEY_PATTERNS = [
     re.compile(r"sk-ant-[A-Za-z0-9_\-]{20,}"),   # Anthropic
-    re.compile(r"sk-[A-Za-z0-9]{20,}"),          # OpenAI-style
+    re.compile(r"sk-(?!ant-)[A-Za-z0-9_\-]{20,}"),  # OpenAI-style, incl. sk-proj-...
 ]
 
 # Files exempt from the value scan: example templates and Markdown docs
@@ -45,13 +42,26 @@ def tracked_files() -> list[str]:
     return [line.strip() for line in out.splitlines() if line.strip()]
 
 
+def is_forbidden_tracked_file(norm: str) -> bool:
+    """Return True for real secret files; examples are allowed."""
+    return (
+        norm == ".env"
+        or (norm.startswith(".env.") and norm != ".env.example")
+        or norm == ".streamlit/secrets.toml"
+        or (
+            norm.startswith(".streamlit/secrets.toml.")
+            and norm != ".streamlit/secrets.toml.example"
+        )
+    )
+
+
 def main() -> int:
     problems: list[str] = []
     files = tracked_files()
 
     for rel in files:
         norm = rel.replace("\\", "/")
-        if norm in FORBIDDEN_TRACKED:
+        if is_forbidden_tracked_file(norm):
             problems.append(f"Real secret file is tracked: {norm}")
 
     for rel in files:
