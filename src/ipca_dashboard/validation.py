@@ -7,6 +7,66 @@ def validation_row(check: str, status: str, value: float | str, details: str) ->
     return {"check": check, "status": status, "value": value, "details": details}
 
 
+# Minimum set of series whose latest month must match the global latest month.
+# Kept small and explicit (spec_V3 §16 keeps v0.1 lean).
+CRITICAL_SERIES = [
+    "IPCA",
+    "Difusao",
+    "EX0",
+    "EX3",
+    "MS",
+    "DP",
+    "P55",
+    "Servicos",
+    "Bens_industriais",
+    "Administrados",
+    "Alimentacao_no_domicilio",
+]
+
+
+def validate_critical_series_freshness(bcb: pd.DataFrame) -> pd.DataFrame:
+    """Flag critical series that are stale relative to the global latest month.
+
+    `warn` if any present critical series lags the global max date; `block` if a
+    critical series is entirely absent (cannot be evaluated at the latest month).
+    """
+    if bcb.empty:
+        return pd.DataFrame(
+            [validation_row("critical_series_freshness", "block", 0, "BCB dataset is empty.")]
+        )
+
+    latest = pd.to_datetime(bcb["date"]).max()
+    latest_by_series = bcb.groupby("series_short_name")["date"].max()
+    present = set(latest_by_series.index)
+
+    missing = [s for s in CRITICAL_SERIES if s not in present]
+    stale = [
+        s
+        for s in CRITICAL_SERIES
+        if s in present and pd.to_datetime(latest_by_series[s]) < latest
+    ]
+
+    if missing:
+        status, value, details = (
+            "block",
+            ",".join(missing),
+            f"Séries críticas ausentes no dataset (latest global {latest:%Y-%m}).",
+        )
+    elif stale:
+        status, value, details = (
+            "warn",
+            ",".join(stale),
+            f"Séries críticas defasadas em relação ao mês mais recente ({latest:%Y-%m}).",
+        )
+    else:
+        status, value, details = (
+            "pass",
+            0,
+            f"Todas as séries críticas estão no mês mais recente ({latest:%Y-%m}).",
+        )
+    return pd.DataFrame([validation_row("critical_series_freshness", status, value, details)])
+
+
 def validate_bcb_series(bcb: pd.DataFrame, core_sets_config: dict) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
     if bcb.empty:
@@ -118,7 +178,11 @@ def validate_ipca_items(items: pd.DataFrame) -> pd.DataFrame:
 
 def validate_all(bcb: pd.DataFrame, items: pd.DataFrame, core_sets_config: dict) -> pd.DataFrame:
     return pd.concat(
-        [validate_bcb_series(bcb, core_sets_config), validate_ipca_items(items)],
+        [
+            validate_bcb_series(bcb, core_sets_config),
+            validate_critical_series_freshness(bcb),
+            validate_ipca_items(items),
+        ],
         ignore_index=True,
     )
 

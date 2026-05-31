@@ -12,6 +12,7 @@ CONFIG_DIR = PROJECT_ROOT / "config"
 DATA_DIR = PROJECT_ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
+PROCESSED_STAGING_DIR = DATA_DIR / "processed_staging"
 OUTPUTS_DIR = PROJECT_ROOT / "outputs"
 
 
