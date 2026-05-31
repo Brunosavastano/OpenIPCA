@@ -24,15 +24,51 @@ def rolling_zscore(series: pd.Series, window: int = 60, min_periods: int = 24) -
     return (values - mean) / std.replace(0, np.nan)
 
 
+def percentile_midrank(window: pd.Series, current: float) -> float:
+    """Mid-rank percentile of ``current`` within ``window`` (handles ties).
+
+    Uses ``(less + 0.5 * equal) / n`` so a constant or tie-heavy series scores
+    ~50 instead of an artificial p100. NaNs are dropped from the window; returns
+    NaN if the window is empty or ``current`` is NaN.
+    """
+    valid = pd.to_numeric(window, errors="coerce").dropna()
+    if len(valid) == 0 or pd.isna(current):
+        return float("nan")
+    less = int((valid < current).sum())
+    equal = int((valid == current).sum())
+    return 100.0 * (less + 0.5 * equal) / len(valid)
+
+
 def expanding_percentile(series: pd.Series, min_periods: int = 24) -> pd.Series:
     values = pd.to_numeric(series, errors="coerce")
     out = pd.Series(np.nan, index=values.index, dtype=float)
     for idx in range(len(values)):
+        current = values.iloc[idx]
         window = values.iloc[: idx + 1].dropna()
-        if len(window) < min_periods or pd.isna(values.iloc[idx]):
+        if len(window) < min_periods or pd.isna(current):
             continue
-        out.iloc[idx] = 100 * (window <= values.iloc[idx]).mean()
+        out.iloc[idx] = percentile_midrank(window, current)
     return out
+
+
+def calculate_diffusion_from_items(
+    items: pd.DataFrame,
+    level: str = "subitem",
+    group_col: str | None = None,
+) -> pd.DataFrame:
+    """Share of items with positive m/m, excluding missing m/m from the denominator.
+
+    Groups by ``date`` (and optionally ``group_col``). Returns a frame with
+    columns ``date``, optionally ``group_col``, and ``diffusion`` (0-100).
+    Dropping NaN m/m is the fix: a missing reading must not count as
+    "not positive" and deflate diffusion.
+    """
+    valid = items[items["level"] == level].dropna(subset=["mom"]).copy()
+    valid["positive"] = valid["mom"] > 0
+    keys = ["date"] if group_col is None else ["date", group_col]
+    out = valid.groupby(keys, as_index=False)["positive"].mean()
+    out["diffusion"] = out["positive"] * 100.0
+    return out.drop(columns="positive")
 
 
 def transform_bcb_series(raw: pd.DataFrame) -> pd.DataFrame:

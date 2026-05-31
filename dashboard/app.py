@@ -23,6 +23,7 @@ from ipca_dashboard.charts import (  # noqa: E402
     waterfall_latest,
 )
 from ipca_dashboard.config import OUTPUTS_DIR, PROCESSED_DIR, load_yaml  # noqa: E402
+from ipca_dashboard.transforms import calculate_diffusion_from_items  # noqa: E402
 
 
 st.set_page_config(page_title="IPCA Macro Dashboard", layout="wide")
@@ -168,14 +169,12 @@ def page_diffusion(data: dict[str, pd.DataFrame]) -> None:
     st.plotly_chart(diffusion_line(bcb), use_container_width=True)
     st.plotly_chart(ipca_diffusion_scatter(bcb), use_container_width=True)
 
-    subitems = items[items["level"] == "subitem"].copy()
-    subitems["positive"] = subitems["mom"] > 0
-    diffusion_by_group = (
-        subitems.groupby(["date", "group_classification_code"])["positive"].mean().mul(100).reset_index()
+    diffusion_by_group = calculate_diffusion_from_items(
+        items, level="subitem", group_col="group_classification_code"
     )
     latest = diffusion_by_group[diffusion_by_group["date"] == diffusion_by_group["date"].max()]
     st.subheader("Difusão calculada por grupo - último mês")
-    st.dataframe(latest.rename(columns={"positive": "diffusion_pct"}), use_container_width=True)
+    st.dataframe(latest.rename(columns={"diffusion": "diffusion_pct"}), use_container_width=True)
 
 
 def page_alerts(data: dict[str, pd.DataFrame]) -> None:
