@@ -1,104 +1,88 @@
-# IPCA Macro Dashboard
+# OpenIPCA
 
-Aplicação analítica para acompanhar IPCA, decomposição, núcleos, difusão e alertas automáticos com linguagem de research macro. O projeto usa fontes públicas oficiais: BCB/SGS e IBGE/SIDRA.
+**Brazilian inflation beyond the headline.**
 
-## Objetivo
+[![tests](https://github.com/Brunosavastano/Decomp_IPCA/actions/workflows/tests.yml/badge.svg)](https://github.com/Brunosavastano/Decomp_IPCA/actions/workflows/tests.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 
-Entregar um monitor reprodutivel para responder, no dia da divulgacao do IPCA:
+OpenIPCA is an open-source macro research dashboard for Brazilian inflation. It turns
+official data from **IBGE/SIDRA** and **BCB/SGS** into IPCA decomposition, core inflation,
+diffusion and auditable alerts. The numbers are deterministic; the interpretation can be
+AI-orchestrated, and every AI claim is traceable to an evidence item.
 
-- de onde veio o headline;
-- se a inflação está localizada ou disseminada;
-- se os núcleos estão benignos ou pressionados;
-- quais alertas macro devem ser observados.
+> 🇧🇷 Leia em português: [README.pt-BR.md](README.pt-BR.md)
 
-## Estrutura
+---
 
-```text
-config/                 parâmetros de séries, SIDRA, núcleos e alertas
-src/ipca_dashboard/     pacote Python do pipeline analitico
-dashboard/app.py        dashboard Streamlit
-data/raw/               dados brutos baixados das APIs
-data/processed/         dados tratados em Parquet
-outputs/                diagnóstico e relatório de validação
-tests/                  testes automatizados
-```
+## ⚠️ Disclaimer
 
-## Instalacao
+OpenIPCA is a research and education tool. It uses public data sources and deterministic
+calculations to support inflation analysis. It is **not investment advice**, does **not**
+provide monetary-policy forecasts, and **may contain errors**. It is **not affiliated with,
+endorsed by, or connected to the IBGE or the Banco Central do Brasil** — it only consumes
+their public data. Always verify critical analysis against the official sources.
+
+---
+
+## Why this exists
+
+The headline IPCA number doesn't tell the whole story. A single month can hide whether
+inflation is *broad or concentrated*, whether *cores* are benign or pressured, and whether
+*momentum* is accelerating. OpenIPCA reconstructs the release the way a macro research desk
+would read it — decomposition, cores, diffusion and momentum — from official data, with the
+methodology fully in the open.
+
+## Features
+
+- **Decomposition** of IPCA by group, subgroup, item and subitem (contributions in p.p.).
+- **Core inflation** monitor with configurable presets (`config/core_sets.yaml`).
+- **Diffusion** (official BCB series + a calculated breakdown by group).
+- **Auditable alerts** from declarative rules (`config/alert_rules.yaml`).
+- **Deterministic macro brief** + inflation-regime classification.
+- **Optional AI layer** (off by default, BYOK): a grounded, auditable brief — every claim
+  cites an evidence id; no AI-generated numbers.
+- **Validation & audit** reports so you can tell what's official, calculated or approximate.
+
+## Quickstart
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate
+# Windows (PowerShell):  .venv\Scripts\Activate.ps1
+# macOS / Linux:         source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
-```
 
-## Execução
-
-Baixar dados e processar:
-
-```bash
+# Fetch official data and build the processed datasets:
 python -m ipca_dashboard.pipeline run --start 2020-01
-```
 
-Rodar apenas a coleta:
-
-```bash
-python -m ipca_dashboard.pipeline fetch --start 2020-01
-```
-
-Rodar apenas o processamento de dados brutos ja baixados:
-
-```bash
-python -m ipca_dashboard.pipeline build
-```
-
-Abrir o dashboard:
-
-```bash
+# Launch the dashboard:
 streamlit run dashboard/app.py
 ```
 
-Rodar a auditoria de acurácia econométrica sem alterar os Parquets do dashboard:
+Run the test suite with `python -m pytest`.
 
-```bash
-python -m ipca_dashboard.audit --start-sgs 2012-01 --start-sidra 2020-01
-```
+## Data sources
 
-## Outputs
+- **BCB/SGS** — IPCA headline, macro aggregates, cores and official diffusion.
+- **IBGE/SIDRA table 7060** — weights, variations and the group → subitem hierarchy.
 
-- `data/processed/bcb_series_monthly.parquet`: séries SGS tratadas.
-- `data/processed/ipca_items_monthly.parquet`: hierarquia SIDRA com contribuicoes.
-- `data/processed/core_metrics_monthly.parquet`: métricas dos núcleos por preset.
-- `data/processed/alerts.parquet`: alertas ativos.
-- `outputs/validation_report.csv`: checagens de integridade.
-- `outputs/diagnostic_latest.json`: narrativa automática do último mês.
+No fictitious data is ever used as a fallback: if an API is unavailable, the app fails
+explicitly. See [methodology.md](methodology.md) for formulas and limitations.
 
-## Auditoria econométrica
+## AI layer (optional)
 
-A auditoria salva relatórios em `outputs/audit/`:
+The app works **fully without AI**. The AI layer is **disabled by default** and uses
+**BYOK** (bring your own key) — no keys are stored in the repo. When enabled, the model
+*orchestrates* deterministic tools and an evidence table; it never invents numbers, and
+every claim is validated against an existing evidence id. See [SECURITY.md](SECURITY.md)
+for key handling.
 
-- `coverage_report.csv`: cobertura temporal, duplicidades e meses faltantes.
-- `reconciliation_report.csv`: reconciliação SGS/SIDRA, contribuições e difusão.
-- `metric_window_report.csv`: janela efetiva de 12m, 3m saar, percentis e z-score.
-- `alert_sensitivity_report.csv`: sensibilidade dos alertas a janelas históricas.
-- `econometric_accuracy_report.md`: síntese metodológica da auditoria.
+## Contributing
 
-## Testes
+Issues and PRs are welcome. Please don't commit API keys — CI enforces this via
+`scripts/check_no_secrets.py`. See [SECURITY.md](SECURITY.md).
 
-```bash
-python -m pytest
-```
+## License
 
-## Limitacoes
-
-- O MVP usa Brasil nacional e frequência mensal.
-- A tabela SIDRA 7060 reflete a estrutura atual do IPCA a partir de 2020; historicos anteriores exigem tabelas legadas.
-- Alertas push por Slack, Telegram ou e-mail ainda não foram implementados; os alertas ficam no dashboard e em Parquet.
-- O dashboard falha explicitamente se as APIs públicas estiverem indisponíveis; nenhum dado fictício é usado como fallback.
-
-## Próximos passos
-
-- Integrar agenda de divulgacao.
-- Adicionar comparação com Focus/consenso.
-- Implementar exportação PDF pós-divulgação.
-- Adicionar dessazonalização opcional para métricas de momentum.
+[MIT](LICENSE) © 2026 Bruno Savastano

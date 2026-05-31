@@ -1,15 +1,29 @@
+# python
 __pycache__/
 *.py[cod]
-.pytest_cache/
-.ruff_cache/
 .venv/
 venv/
+.pytest_cache/
+.ruff_cache/
+
+# secrets — never commit real keys; only *.example files are tracked
 .env
+.env.*
+!.env.example
 .streamlit/secrets.toml
+
+# local data outputs (built locally; not versioned)
 data/raw/*
 data/processed/*
+data/processed_staging/*
 outputs/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !outputs/.gitkeep
 
+# editor / OS noise
+.DS_Store
+.ipynb_checkpoints/
+.idea/
+.vscode/
+*.log
