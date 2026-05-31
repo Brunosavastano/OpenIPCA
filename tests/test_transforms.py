@@ -79,6 +79,10 @@ def test_percentile_midrank_ignores_nan_in_window():
     assert math.isclose(percentile_midrank(window, 2.0), 50.0, rel_tol=1e-10)
 
 
+def test_percentile_midrank_empty_window_returns_nan():
+    assert math.isnan(percentile_midrank(pd.Series([], dtype=float), 1.0))
+
+
 def test_expanding_percentile_constant_series_not_p100():
     series = pd.Series([5.0] * 30)
     out = expanding_percentile(series, min_periods=24)
