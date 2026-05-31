@@ -87,6 +87,21 @@ def load_diagnostic() -> str:
     return json.loads(path.read_text(encoding="utf-8")).get("diagnostic", "Diagnóstico indisponível.")
 
 
+def freshness_notice() -> tuple[str, str] | None:
+    """Return (severity, details) for the freshness check, if not 'pass'."""
+    path = OUTPUTS_DIR / "validation_report.csv"
+    if not path.exists():
+        return None
+    report = pd.read_csv(path)
+    row = report[report["check"] == "critical_series_freshness"]
+    if row.empty:
+        return None
+    status = str(row.iloc[0]["status"])
+    if status == "pass":
+        return None
+    return status, str(row.iloc[0]["details"])
+
+
 def fmt(value: float | int | None, suffix: str = "%") -> str:
     if value is None or pd.isna(value):
         return "n.d."
@@ -114,6 +129,12 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
 
     st.title("IPCA Macro Dashboard")
     st.caption(f"Último dado processado: {latest_date:%Y-%m} | Fontes: BCB/SGS e IBGE/SIDRA")
+
+    notice = freshness_notice()
+    if notice is not None:
+        severity, details = notice
+        (st.error if severity == "block" else st.warning)(f"Freshness: {details}")
+
     cols = st.columns(6)
     cols[0].metric("IPCA m/m", fmt(ipca["mom"] if ipca is not None else None))
     cols[1].metric("IPCA 12m", fmt(ipca["rolling_12m"] if ipca is not None else None))
