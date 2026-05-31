@@ -53,6 +53,30 @@ def test_pipeline_does_not_overwrite_processed_on_blocking_validation(tmp_path, 
     assert (tmp_path / "validation_report.csv").exists()
 
 
+def test_strict_freshness_warn_does_not_overwrite_processed(tmp_path, monkeypatch):
+    processed, _ = _redirect_paths(monkeypatch, tmp_path)
+    _seed_processed(processed, [1, 2, 3])
+    _stub_data_seams(monkeypatch, blocking=False)
+    report = pd.DataFrame(
+        [
+            {
+                "check": "critical_series_freshness",
+                "status": "warn",
+                "value": "Servicos",
+                "details": "Serie critica defasada.",
+            }
+        ]
+    )
+    monkeypatch.setattr(pipeline, "validate_all", lambda bcb, items, cfg: report)
+
+    with pytest.raises(pipeline.BlockingValidationError):
+        pipeline.build_command(strict=True)
+
+    for name in pipeline.PROCESSED_FILENAMES.values():
+        df = pd.read_parquet(processed / name)
+        assert list(df["v"]) == [1, 2, 3]
+
+
 def test_pipeline_promotes_when_validation_passes(tmp_path, monkeypatch):
     processed, _ = _redirect_paths(monkeypatch, tmp_path)
     _seed_processed(processed, [1, 2, 3])

@@ -46,6 +46,7 @@ PROCESSED_FILENAMES = {
     "cores": "core_metrics_monthly.parquet",
     "alerts": "alerts.parquet",
 }
+STRICT_REQUIRED_PASS_CHECKS = {"critical_series_freshness"}
 
 
 def _promote_staging_to_processed(filenames: dict[str, str]) -> None:
@@ -59,6 +60,13 @@ def _promote_staging_to_processed(filenames: dict[str, str]) -> None:
         staged = PROCESSED_STAGING_DIR / name
         final = PROCESSED_DIR / name
         os.replace(staged, final)
+
+
+def _has_strict_rejection(validation_report) -> bool:
+    if has_blocking_errors(validation_report):
+        return True
+    strict_checks = validation_report[validation_report["check"].isin(STRICT_REQUIRED_PASS_CHECKS)]
+    return bool((strict_checks["status"] != "pass").any())
 
 
 def fetch_command(start: str | None, end: str | None) -> None:
@@ -93,11 +101,12 @@ def build_command(strict: bool = False) -> None:
     validation_report = validate_all(bcb, ipca_items, core_sets_config)
     write_csv(validation_report, VALIDATION_REPORT)
     blocking = has_blocking_errors(validation_report)
+    strict_rejection = _has_strict_rejection(validation_report)
 
     # 3. In strict mode, abort BEFORE touching data/processed/ so good data stays.
-    if blocking and strict:
+    if strict_rejection and strict:
         LOGGER.error(
-            "Strict build rejected: blocking validation findings. "
+            "Strict build rejected: validation findings. "
             "data/processed/ left unchanged. See %s",
             VALIDATION_REPORT,
         )
@@ -175,4 +184,3 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
-
