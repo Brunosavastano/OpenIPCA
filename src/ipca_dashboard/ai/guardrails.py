@@ -72,10 +72,11 @@ _IN_SCOPE_HINTS = [
 # dates like "2024-03" / "03-2024".
 _NUMBER_RE = re.compile(r"(?<![A-Za-z\d-])-?\d+(?:[.,]\d+)?(?![A-Za-z]|[\d-])")
 
-# Time-window words that follow a count ("12 meses", "3 meses", "12 mês"): the
-# number is a window label, not a data figure, so it is not a grounded value.
-_WINDOW_AFTER_NUMBER = re.compile(
-    r"(?<![A-Za-z\d-])\d+\s+(?:meses|mes|m[eê]s|anos?|trimestres?)\b",
+# Known window phrases used as metric labels, not data figures. Keep this narrow:
+# arbitrary counts like "9 meses" or "2 anos" must still be grounded.
+_KNOWN_WINDOW_PHRASE = re.compile(
+    r"\bem\s+12\s+(?:meses|mes|m[eê]s)\b|"
+    r"\bm[eé]dia(?:\s+m[oó]vel)?\s+de\s+3\s+(?:meses|mes|m[eê]s)\b",
     re.IGNORECASE,
 )
 
@@ -89,26 +90,36 @@ def _normalize_text(text: str) -> str:
     return "".join(ch for ch in decomposed if not unicodedata.combining(ch)).lower()
 
 
-def _is_year_token(raw: str, value: float) -> bool:
+def _has_numeric_unit_after(text: str, end: int) -> bool:
+    suffix = text[end : end + 12].lstrip().lower()
+    return suffix.startswith(("%", "p.p", "pp", "ponto", "pontos"))
+
+
+def _is_year_token(raw: str, value: float, text: str, end: int) -> bool:
     # A bare 4-digit integer in the plausible-year range is a date token
-    # ("em abril de 2026"), not a data figure. IPCA figures are rates /
-    # percentiles / contributions — never 4-digit integer magnitudes.
-    return raw.isdigit() and len(raw) == 4 and 1900 <= value <= 2100
+    # ("em abril de 2026"), not a data figure. If it carries a numeric unit
+    # ("2026%" / "2026 p.p."), treat it as a claimed figure and ground it.
+    return (
+        raw.isdigit()
+        and len(raw) == 4
+        and 1900 <= value <= 2100
+        and not _has_numeric_unit_after(text, end)
+    )
 
 
 def _numbers_in(text: str) -> list[float]:
     text = text or ""
-    # Remove "<count> meses/anos/..." window phrases first, so the count is not
-    # mistaken for a data figure. (A real data figure carries a unit like % or
-    # p.p., or stands alone — never an integer glued to a window word.)
-    cleaned = _WINDOW_AFTER_NUMBER.sub(" ", text)
+    # Remove only known metric-window phrases first. Do not blanket-ignore
+    # "<count> meses/anos", which can smuggle unsupported factual claims.
+    cleaned = _KNOWN_WINDOW_PHRASE.sub(" ", text)
     out: list[float] = []
-    for m in _NUMBER_RE.findall(cleaned):
+    for match in _NUMBER_RE.finditer(cleaned):
+        m = match.group(0)
         try:
             value = float(m.replace(",", "."))
         except ValueError:
             continue
-        if _is_year_token(m, value):
+        if _is_year_token(m, value, cleaned, match.end()):
             continue
         out.append(value)
     return out

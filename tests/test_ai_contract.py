@@ -214,6 +214,32 @@ def test_short_brief_cannot_hide_ungrounded_number():
         validate_ai_output(bad, evidence)
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "O IPCA foi 2026%.",
+        "O IPCA acelerou por 9 meses.",
+        "O IPCA ficou em 2 anos.",
+    ],
+)
+def test_hidden_numeric_bypasses_are_rejected(text):
+    evidence = evidence_table_to_dicts(get_headline(_bcb()))
+    bad = {
+        "claims": [
+            {
+                "text": text,
+                "type": "number",
+                "evidence_ids": ["ev_headline_mom"],
+            }
+        ],
+        "short_brief": "x",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+    with pytest.raises(GuardrailError):
+        validate_ai_output(bad, evidence)
+
+
 def test_regime_claim_rule_id_must_match_regime_evidence():
     evidence = [
         {
@@ -233,6 +259,35 @@ def test_regime_claim_rule_id_must_match_regime_evidence():
                 "type": "regime",
                 "evidence_ids": ["ev_regime"],
                 "rule_id": "regime_v1_mixed",
+            }
+        ],
+        "short_brief": "x",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+    with pytest.raises(GuardrailError):
+        validate_ai_output(bad, evidence)
+
+
+def test_regime_claim_cannot_hide_ungrounded_number():
+    evidence = [
+        {
+            "evidence_id": "ev_regime",
+            "metric": "Regime inflacionario",
+            "value": "Pressao disseminada",
+            "unit": "label",
+            "date": "2024-03",
+            "source": "OpenIPCA",
+            "interpretation": "regime_v1_headline_high_diffusion_high",
+        }
+    ]
+    bad = {
+        "claims": [
+            {
+                "text": "Regime aponta pressao de 9.99%.",
+                "type": "regime",
+                "evidence_ids": ["ev_regime"],
+                "rule_id": "regime_v1_headline_high_diffusion_high",
             }
         ],
         "short_brief": "x",
@@ -340,4 +395,8 @@ def test_window_words_and_dates_are_not_treated_as_figures():
     assert _numbers_in("acumulou 4.50% em 12 meses") == [4.5]
     assert _numbers_in("média de 3 meses foi 0.40%") == [0.4]
     assert _numbers_in("em 2024-03 o índice subiu 0.30%") == [0.3]
+    assert _numbers_in("em abril de 2026 o índice subiu 0.30%") == [0.3]
+    assert _numbers_in("o IPCA foi 2026%") == [2026.0]
+    assert _numbers_in("o IPCA acelerou por 9 meses") == [9.0]
+    assert _numbers_in("o IPCA ficou em 2 anos") == [2.0]
     assert 9.99 in _numbers_in("o IPCA foi 9.99%")  # fake still caught
