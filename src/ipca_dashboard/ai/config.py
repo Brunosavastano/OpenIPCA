@@ -13,7 +13,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class AIConfig:
     enabled: bool
-    provider: str  # "none" | "anthropic" | "openai"
+    provider: str  # "none" or any provider name registered in the registry
 
     @property
     def is_active(self) -> bool:
