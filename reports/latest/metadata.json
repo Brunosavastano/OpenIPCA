@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-06-01T19:05:15+00:00",
+  "provider": "openai",
+  "mode": "ai",
+  "prompt_version": "release_brief_v1",
+  "prompt_hash": "sha256:c74d958f8534b0cd0a04e2387990e32f71aa64ad44d84e274646dbeadcdbd0b1",
+  "evidence_hash": "sha256:33d4112d7e55b00dbdb5dc6b230673d78e1c10b9b6eb834ecf2954d6a9269b50",
+  "schema_version": "brief_v1",
+  "data_sources": [
+    "IBGE/SIDRA",
+    "BCB/SGS"
+  ],
+  "used_fallback": false
+}
