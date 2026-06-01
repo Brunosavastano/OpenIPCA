@@ -262,9 +262,7 @@ def test_retries_without_temperature_when_model_rejects_it(monkeypatch):
 
     class _Client:
         def __init__(self, *a, **k):
-            self.chat = types.SimpleNamespace(
-                completions=types.SimpleNamespace(create=_create)
-            )
+            self.chat = types.SimpleNamespace(completions=types.SimpleNamespace(create=_create))
 
     fake.OpenAI = _Client
     monkeypatch.setitem(sys.modules, "openai", fake)
@@ -292,9 +290,7 @@ def test_non_temperature_error_is_not_swallowed(monkeypatch):
 
     class _Client:
         def __init__(self, *a, **k):
-            self.chat = types.SimpleNamespace(
-                completions=types.SimpleNamespace(create=_create)
-            )
+            self.chat = types.SimpleNamespace(completions=types.SimpleNamespace(create=_create))
 
     fake.OpenAI = _Client
     monkeypatch.setitem(sys.modules, "openai", fake)
@@ -308,3 +304,32 @@ def test_non_temperature_error_is_not_swallowed(monkeypatch):
         provider.generate_structured(
             [{"role": "evidence", "content": []}], schema={}, temperature=0.0
         )
+
+
+def test_temperature_word_without_rejection_is_not_retried(monkeypatch):
+    """Mentioning temperature is not enough; it must be a parameter rejection."""
+    calls = []
+    fake = types.ModuleType("openai")
+
+    def _create(**kw):
+        calls.append(kw)
+        raise RuntimeError("temporary outage while recording temperature telemetry")
+
+    class _Client:
+        def __init__(self, *a, **k):
+            self.chat = types.SimpleNamespace(completions=types.SimpleNamespace(create=_create))
+
+    fake.OpenAI = _Client
+    monkeypatch.setitem(sys.modules, "openai", fake)
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "test-model")
+
+    from ipca_dashboard.ai.providers.openai_provider import OpenAIProvider
+
+    provider = OpenAIProvider()
+    with pytest.raises(RuntimeError, match="temporary outage"):
+        provider.generate_structured(
+            [{"role": "evidence", "content": []}], schema={}, temperature=0.0
+        )
+    assert len(calls) == 1
+    assert "temperature" in calls[0]

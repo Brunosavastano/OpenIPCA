@@ -25,6 +25,22 @@ _SYSTEM = (
 )
 
 
+def _is_temperature_rejection(exc: Exception) -> bool:
+    message = str(exc).lower()
+    if "temperature" not in message:
+        return False
+    rejection_markers = (
+        "unsupported",
+        "does not support",
+        "not support",
+        "invalid",
+        "not allowed",
+        "only accept",
+        "only support",
+    )
+    return any(marker in message for marker in rejection_markers)
+
+
 class OpenAIProvider:
     """Generates a grounded brief via the OpenAI Chat Completions API."""
 
@@ -80,7 +96,7 @@ class OpenAIProvider:
             # Some newer models only accept the default temperature (1). Retry
             # once without the param so any such model works (model-agnostic),
             # instead of falling back to the deterministic brief.
-            if "temperature" in str(exc).lower():
+            if _is_temperature_rejection(exc):
                 kwargs.pop("temperature", None)
                 response = self._client.chat.completions.create(**kwargs)
             else:
