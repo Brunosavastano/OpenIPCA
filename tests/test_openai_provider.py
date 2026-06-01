@@ -46,6 +46,19 @@ def test_resolve_openai_without_key_falls_back_to_no_ai_without_importing_sdk(mo
     assert "openai" not in sys.modules
 
 
+def test_resolve_openai_without_model_falls_back_to_no_ai_without_importing_sdk(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.delenv("OPENIPCA_AI_MODEL", raising=False)
+    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+    sys.modules.pop("openai", None)
+    monkeypatch.setattr(sys, "meta_path", [_BlockOpenAIImport(), *sys.meta_path])
+
+    provider = registry.resolve_provider("openai")
+
+    assert provider.name == "no_ai"
+    assert "openai" not in sys.modules
+
+
 def test_importing_ai_package_does_not_import_openai_sdk():
     code = """
 import importlib.abc
@@ -74,6 +87,7 @@ def test_provider_construction_without_sdk_raises_runtimeerror(monkeypatch):
     # Simulate the SDK being absent: importing `openai` fails.
     monkeypatch.setitem(sys.modules, "openai", None)
     monkeypatch.setenv("OPENAI_API_KEY", "irrelevant")
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "test-model")
     from ipca_dashboard.ai.providers.openai_provider import OpenAIProvider
 
     with pytest.raises(RuntimeError):
@@ -145,6 +159,7 @@ def test_fake_openai_client_output_passes_guardrails(monkeypatch):
     fake.OpenAI = _Client
     monkeypatch.setitem(sys.modules, "openai", fake)
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "test-model")
 
     from ipca_dashboard.ai.providers.openai_provider import OpenAIProvider
 
@@ -175,6 +190,7 @@ def test_provider_key_is_redacted_from_fallback_error(monkeypatch):
     monkeypatch.setenv("OPENIPCA_AI_ENABLED", "true")
     monkeypatch.setenv("OPENIPCA_AI_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_API_KEY", secret)
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "test-model")
 
     bcb = pd.DataFrame(
         [

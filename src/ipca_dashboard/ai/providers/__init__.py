@@ -20,8 +20,17 @@ def _make_openai() -> LLMProvider:
     return OpenAIProvider()
 
 
+def _make_anthropic() -> LLMProvider:
+    # Imported lazily so the Anthropic SDK is never required to load this package
+    # or run CI — only when the 'anthropic' provider is actually resolved.
+    from ipca_dashboard.ai.providers.anthropic_provider import AnthropicProvider
+
+    return AnthropicProvider()
+
+
 # Register hosted providers by name. The factory runs only on resolve_provider(),
 # so no vendor SDK is imported at package-load time (model-agnostic).
 register_provider("openai", _make_openai)
+register_provider("anthropic", _make_anthropic)
 
 __all__ = ["LLMProvider", "NoAIProvider"]
