@@ -42,10 +42,14 @@ class NoAIProvider:
             )
         for ev_id in ("ev_headline_mom", "ev_headline_12m", "ev_diffusion_mm3"):
             ev = by_id.get(ev_id)
-            if ev is not None and ev.get("value") is not None:
+            value = ev.get("value") if ev is not None else None
+            if isinstance(value, (int, float)) and value == value:
+                # Display at the evidence's natural precision (2 decimals); the
+                # rounded figure still matches the cited value under guardrails.
+                shown = f"{float(value):.2f}"
                 claims.append(
                     {
-                        "text": f"{ev['metric']}: {ev['value']}{ev['unit']}.",
+                        "text": f"{ev['metric']}: {shown}{ev['unit']}.",
                         "type": "number",
                         "evidence_ids": [ev_id],
                     }
