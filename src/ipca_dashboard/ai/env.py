@@ -31,10 +31,13 @@ def load_env_once() -> bool:
     _loaded = True
     try:
         from dotenv import load_dotenv  # type: ignore
-    except ImportError:
+    except Exception:
         return False
     env_path = _PROJECT_ROOT / ".env"
     if not env_path.exists():
         return False
     # override=False: real environment variables take precedence over the file.
-    return bool(load_dotenv(dotenv_path=env_path, override=False))
+    try:
+        return bool(load_dotenv(dotenv_path=env_path, override=False))
+    except Exception:
+        return False
