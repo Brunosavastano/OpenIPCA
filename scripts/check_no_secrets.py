@@ -23,8 +23,8 @@ from pathlib import Path
 # Key *value* shapes. Deliberately specific to avoid flagging prose like
 # "set OPENAI_API_KEY" — we require an actual key-looking token.
 KEY_PATTERNS = [
-    re.compile(r"sk-ant-[A-Za-z0-9_\-]{20,}"),   # Anthropic
-    re.compile(r"sk-(?!ant-)[A-Za-z0-9_\-]{20,}"),  # OpenAI-style, incl. sk-proj-...
+    re.compile(r"sk-ant-[A-Za-z0-9_\-]{20,}"),   # vendor-specific key prefix
+    re.compile(r"sk-(?!ant-)[A-Za-z0-9_\-]{20,}"),  # generic sk- key prefix
 ]
 
 # Files exempt from the value scan: example templates and Markdown docs
