@@ -37,7 +37,10 @@ def _month(row: pd.Series) -> str:
 
 
 def _num(value: object) -> float | None:
-    return float(value) if isinstance(value, (int, float)) and value == value else None
+    # Round at the source (2 decimals) so every evidence value is clean: the model
+    # copies "4.39", not "4.39171967147336", and the guardrail (_matches, 0.005
+    # tolerance) stays compatible. This is the single chokepoint for all evidence.
+    return round(float(value), 2) if isinstance(value, (int, float)) and value == value else None
 
 
 def get_headline(bcb: pd.DataFrame) -> list[Evidence]:
