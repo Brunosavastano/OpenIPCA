@@ -63,6 +63,27 @@ def _messages(evidence: list[dict]) -> list[dict]:
     ]
 
 
+def _minimal_brief() -> dict:
+    return {
+        "claims": [],
+        "short_brief": "Leitura determinística indisponível; evidências insuficientes.",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+
+
+def _append_error(existing: str | None, exc: BaseException) -> str:
+    current = f"{type(exc).__name__}: {exc}"
+    return current if existing is None else f"{existing}; {current}"
+
+
+def _provider_name(provider: LLMProvider) -> str:
+    try:
+        return str(getattr(provider, "name", "unknown"))
+    except Exception:  # noqa: BLE001 - provider metadata must not block
+        return "unknown"
+
+
 def generate_brief(
     bcb: pd.DataFrame,
     ipca_items: pd.DataFrame,
@@ -78,25 +99,41 @@ def generate_brief(
     `provider` is injectable for tests; in production it is resolved from config.
     `generated_at` is passed in (scripts stamp it) to keep this pure.
     """
-    config = load_ai_config()
-    if provider is None:
-        provider = resolve_provider(config.provider if config.is_active else "none")
-
-    evidence_items = build_evidence_table(bcb, ipca_items, core_metrics, alerts, core_set)
-    evidence = evidence_table_to_dicts(evidence_items)
-    messages = _messages(evidence)
-
     used_fallback = False
     error: str | None = None
+
+    try:
+        config = load_ai_config()
+        if provider is None:
+            provider = resolve_provider(config.provider if config.is_active else "none")
+    except Exception as exc:  # noqa: BLE001 - AI must never block
+        used_fallback = True
+        error = _append_error(error, exc)
+        provider = NoAIProvider()
+
+    try:
+        evidence_items = build_evidence_table(bcb, ipca_items, core_metrics, alerts, core_set)
+        evidence = evidence_table_to_dicts(evidence_items)
+    except Exception as exc:  # noqa: BLE001 - malformed/empty data must not block
+        used_fallback = True
+        error = _append_error(error, exc)
+        evidence = []
+        provider = NoAIProvider()
+    messages = _messages(evidence)
+
     try:
         brief = provider.generate_structured(messages, BRIEF_SCHEMA, temperature=0.0)
         validate_ai_output(brief, evidence)
     except (GuardrailError, Exception) as exc:  # noqa: BLE001 - AI must never block
         used_fallback = True
-        error = f"{type(exc).__name__}: {exc}"
+        error = _append_error(error, exc)
         fallback = NoAIProvider()
-        brief = fallback.generate_structured(messages, BRIEF_SCHEMA, temperature=0.0)
-        validate_ai_output(brief, evidence)  # the floor must always pass
+        try:
+            brief = fallback.generate_structured(messages, BRIEF_SCHEMA, temperature=0.0)
+            validate_ai_output(brief, evidence)  # the floor must always pass
+        except Exception as fallback_exc:  # noqa: BLE001 - last-resort deterministic floor
+            error = _append_error(error, fallback_exc)
+            brief = _minimal_brief()
         provider = fallback
 
     trace = {
@@ -104,12 +141,16 @@ def generate_brief(
         "tool_calls": [{"tool": name} for name in TOOL_NAMES],
         "evidence_ids": [e["evidence_id"] for e in evidence],
         "claims": [
-            {"text": c.get("text"), "type": c.get("type"), "evidence_ids": c.get("evidence_ids", [])}
+            {
+                "text": c.get("text"),
+                "type": c.get("type"),
+                "evidence_ids": c.get("evidence_ids", []),
+            }
             for c in brief.get("claims", [])
         ],
         "used_fallback": used_fallback,
     }
-    final_provider = getattr(provider, "name", "unknown")
+    final_provider = _provider_name(provider)
     # mode is unambiguous for a reader of the artifact:
     #  - "ai"          : a hosted provider produced the brief
     #  - "deterministic": NoAI produced it (AI off / unavailable) — not an error
@@ -137,7 +178,7 @@ def generate_brief(
         trace=trace,
         metadata=metadata,
         used_fallback=used_fallback,
-        provider_name=getattr(provider, "name", "unknown"),
+        provider_name=final_provider,
         error=error,
     )
 
@@ -156,7 +197,9 @@ def brief_to_markdown(result: BriefResult, reference_month: str = "") -> str:
     return "\n".join(lines).strip() + "\n"
 
 
-def write_brief_artifacts(result: BriefResult, out_dir: Path, reference_month: str = "") -> dict[str, Path]:
+def write_brief_artifacts(
+    result: BriefResult, out_dir: Path, reference_month: str = ""
+) -> dict[str, Path]:
     """Persist ai_brief.md, ai_trace.json, metadata.json under out_dir."""
     out_dir.mkdir(parents=True, exist_ok=True)
     paths = {

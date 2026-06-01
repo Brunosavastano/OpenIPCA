@@ -10,6 +10,7 @@ import json
 import pandas as pd
 import pytest
 
+import ipca_dashboard.ai.brief as brief_module
 from ipca_dashboard.ai.brief import (
     BriefResult,
     generate_brief,
@@ -23,12 +24,24 @@ def _bcb() -> pd.DataFrame:
     date = pd.Timestamp("2024-03-01")
     return pd.DataFrame(
         [
-            {"date": date, "series_short_name": "IPCA", "mom": 0.30, "rolling_12m": 4.50,
-             "moving_average_3m": 0.40, "percentile_since_2012": 35.0,
-             "moving_average_3m_percentile": 30.0},
-            {"date": date, "series_short_name": "Difusao", "mom": 58.0, "rolling_12m": None,
-             "moving_average_3m": 55.0, "percentile_since_2012": 40.0,
-             "moving_average_3m_percentile": 45.0},
+            {
+                "date": date,
+                "series_short_name": "IPCA",
+                "mom": 0.30,
+                "rolling_12m": 4.50,
+                "moving_average_3m": 0.40,
+                "percentile_since_2012": 35.0,
+                "moving_average_3m_percentile": 30.0,
+            },
+            {
+                "date": date,
+                "series_short_name": "Difusao",
+                "mom": 58.0,
+                "rolling_12m": None,
+                "moving_average_3m": 55.0,
+                "percentile_since_2012": 40.0,
+                "moving_average_3m_percentile": 45.0,
+            },
         ]
     )
 
@@ -46,8 +59,16 @@ def _items() -> pd.DataFrame:
 def _cores() -> pd.DataFrame:
     date = pd.Timestamp("2024-03-01")
     return pd.DataFrame(
-        [{"date": date, "core_set_name": "bcb_compact", "core_name": "Média",
-          "mom": 0.40, "moving_average_3m": 0.45, "is_complete": True}]
+        [
+            {
+                "date": date,
+                "core_set_name": "bcb_compact",
+                "core_name": "Média",
+                "mom": 0.40,
+                "moving_average_3m": 0.45,
+                "is_complete": True,
+            }
+        ]
     )
 
 
@@ -63,8 +84,14 @@ class _GroundedProvider:
         claims = []
         if "ev_regime" in ids:
             reg = next(e for e in evidence if e["evidence_id"] == "ev_regime")
-            claims.append({"text": f"Regime: {reg['value']}.", "type": "regime",
-                           "evidence_ids": ["ev_regime"], "rule_id": reg["interpretation"]})
+            claims.append(
+                {
+                    "text": f"Regime: {reg['value']}.",
+                    "type": "regime",
+                    "evidence_ids": ["ev_regime"],
+                    "rule_id": reg["interpretation"],
+                }
+            )
         return {
             "claims": claims,
             "short_brief": "Leitura aterrada.",
@@ -89,7 +116,9 @@ class _UngroundedProvider:
 
     def generate_structured(self, messages, schema, *, temperature=0.0):
         return {
-            "claims": [{"text": "IPCA foi 9.99%", "type": "number", "evidence_ids": ["ev_headline_mom"]}],
+            "claims": [
+                {"text": "IPCA foi 9.99%", "type": "number", "evidence_ids": ["ev_headline_mom"]}
+            ],
             "short_brief": "x",
             "monetary_policy_tone": "cautious",
             "investment_advice": False,
@@ -120,6 +149,37 @@ def test_guardrail_rejection_falls_back_to_deterministic():
     result = _gen(_UngroundedProvider())
     assert result.used_fallback is True
     assert result.provider_name == "no_ai"
+
+
+def test_empty_data_never_raises_and_falls_back():
+    result = generate_brief(
+        pd.DataFrame(),
+        pd.DataFrame(),
+        pd.DataFrame(),
+        pd.DataFrame(),
+        provider=_GroundedProvider(),
+    )
+    assert result.used_fallback is True
+    assert result.provider_name == "no_ai"
+    assert result.error
+    assert result.evidence == []
+
+
+def test_broken_fallback_still_returns_minimal_brief(monkeypatch):
+    class _BrokenNoAI:
+        name = "broken_no_ai"
+        capabilities = set()
+
+        def generate_structured(self, messages, schema, *, temperature=0.0):
+            raise RuntimeError("fallback failed")
+
+    monkeypatch.setattr(brief_module, "NoAIProvider", _BrokenNoAI)
+
+    result = _gen(_BoomProvider())
+    assert result.used_fallback is True
+    assert result.provider_name == "broken_no_ai"
+    assert result.brief["claims"] == []
+    assert "fallback failed" in result.error
 
 
 def test_trace_links_tools_evidence_and_claims():
