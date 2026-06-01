@@ -14,7 +14,7 @@ from ipca_dashboard.ai.guardrails import (
     validate_ai_output,
 )
 from ipca_dashboard.ai.providers.no_ai import NoAIProvider
-from ipca_dashboard.ai.tools import build_evidence_table, get_headline
+from ipca_dashboard.ai.tools import _num, build_evidence_table, get_headline
 
 pytestmark = pytest.mark.ai_contract
 
@@ -113,14 +113,35 @@ def test_grounding_rejects_unknown_evidence_id():
         validate_ai_output(bad, evidence)
 
 
-def test_number_claim_requires_exactly_one_evidence_id():
+def test_number_claim_allows_multiple_evidence_ids_for_fluent_prose():
+    # New contract: a sentence may weave several numbers from several cited
+    # evidences. _bcb(): IPCA m/m=0.30, 12m=4.50.
+    evidence = evidence_table_to_dicts(get_headline(_bcb()))
+    good = {
+        "claims": [
+            {
+                "text": "O IPCA avançou 0.30% no mês e acumulou 4.50% em 12 meses.",
+                "type": "number",
+                "evidence_ids": ["ev_headline_mom", "ev_headline_12m"],
+            }
+        ],
+        "short_brief": "x",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+    validate_ai_output(good, evidence)  # must NOT raise (readable prose)
+
+
+def test_number_claim_rejects_number_from_uncited_evidence():
+    # Anti-hallucination, stricter: the claim cites only ev_headline_mom (0.30)
+    # but quotes 4.50, which lives in ev_headline_12m (NOT cited) -> reject.
     evidence = evidence_table_to_dicts(get_headline(_bcb()))
     bad = {
         "claims": [
             {
-                "text": "0.30%",
+                "text": "O IPCA acumulou 4.50% em 12 meses.",
                 "type": "number",
-                "evidence_ids": ["ev_headline_mom", "ev_headline_12m"],
+                "evidence_ids": ["ev_headline_mom"],
             }
         ],
         "short_brief": "x",
@@ -288,3 +309,35 @@ def test_no_ai_provider_output_passes_guardrails():
     validate_ai_output(out, evidence)  # must not raise
     assert out["investment_advice"] is False
     assert out["claims"]
+
+
+# --- Rounding at the source -----------------------------------------------
+
+
+def test_num_rounds_to_two_decimals():
+    # Evidence values are clean at the source: the model copies 4.39, not the
+    # raw float, and a public artifact never shows 4.39171967147336.
+    assert _num(4.39171967147336) == 4.39
+    assert _num(0.494000000001) == 0.49
+    assert _num(65) == 65.0
+    assert _num(None) is None
+    assert _num(float("nan")) is None
+
+
+def test_evidence_values_are_rounded():
+    table = build_evidence_table(_bcb(), _items(), _cores(), pd.DataFrame())
+    for e in table:
+        if isinstance(e.value, float):
+            assert e.value == round(e.value, 2)
+
+
+def test_window_words_and_dates_are_not_treated_as_figures():
+    # Regression guard: prose like "em 12 meses" / "média de 3 meses" / a
+    # reference date must not be read as ungrounded data figures, but a real
+    # fake figure must still be caught.
+    from ipca_dashboard.ai.guardrails import _numbers_in
+
+    assert _numbers_in("acumulou 4.50% em 12 meses") == [4.5]
+    assert _numbers_in("média de 3 meses foi 0.40%") == [0.4]
+    assert _numbers_in("em 2024-03 o índice subiu 0.30%") == [0.3]
+    assert 9.99 in _numbers_in("o IPCA foi 9.99%")  # fake still caught

@@ -5,9 +5,15 @@ GuardrailError; callers (CP7) catch it and fall back to the deterministic brief,
 so the AI can never block the product.
 
 Enforced:
-- grounding: every claim cites existing evidence_id(s); a "number" claim cites
-  exactly one; "interpretation" one or more; "regime" needs a rule_id.
-- numbers: the output introduces no number absent from the evidence values.
+- grounding: every claim cites existing evidence_id(s) (>=1); "regime" also needs
+  a rule_id matching ev_regime.
+- numbers (anti-hallucination): every number in a claim's text must match a value
+  of an evidence THAT CLAIM cites — so a sentence may weave several numbers from
+  several cited evidences (readable prose), but cannot quote a number from an
+  uncited evidence. The short_brief (which cites nothing) is checked against all
+  evidence values.
+- monetary policy: tone is from a constrained set; no Copom/Selic forecast or
+  asset recommendation; investment_advice must be False.
 - monetary policy: tone is from a constrained set; no Copom/Selic forecast or
   asset recommendation; investment_advice must be False.
 - scope: a question/topic outside Brazilian inflation is refused.
@@ -61,9 +67,17 @@ _IN_SCOPE_HINTS = [
     "contribuicao",
 ]
 
-# A claimed figure: a number not attached to letters or a date/range hyphen.
-# This skips labels like "12m", "3m", "MM3M", "p80", and dates like "2024-03".
-_NUMBER_RE = re.compile(r"(?<![A-Za-z-])-?\d+(?:[.,]\d+)?(?![A-Za-z0-9-])")
+# A claimed figure: a number not attached to letters, and not part of a date
+# (hyphen on either side). Skips labels like "12m", "3m", "MM3M", "p80", and
+# dates like "2024-03" / "03-2024".
+_NUMBER_RE = re.compile(r"(?<![A-Za-z\d-])-?\d+(?:[.,]\d+)?(?![A-Za-z]|[\d-])")
+
+# Time-window words that follow a count ("12 meses", "3 meses", "12 mês"): the
+# number is a window label, not a data figure, so it is not a grounded value.
+_WINDOW_AFTER_NUMBER = re.compile(
+    r"(?<![A-Za-z\d-])\d+\s+(?:meses|mes|m[eê]s|anos?|trimestres?)\b",
+    re.IGNORECASE,
+)
 
 
 class GuardrailError(ValueError):
@@ -75,13 +89,28 @@ def _normalize_text(text: str) -> str:
     return "".join(ch for ch in decomposed if not unicodedata.combining(ch)).lower()
 
 
+def _is_year_token(raw: str, value: float) -> bool:
+    # A bare 4-digit integer in the plausible-year range is a date token
+    # ("em abril de 2026"), not a data figure. IPCA figures are rates /
+    # percentiles / contributions — never 4-digit integer magnitudes.
+    return raw.isdigit() and len(raw) == 4 and 1900 <= value <= 2100
+
+
 def _numbers_in(text: str) -> list[float]:
+    text = text or ""
+    # Remove "<count> meses/anos/..." window phrases first, so the count is not
+    # mistaken for a data figure. (A real data figure carries a unit like % or
+    # p.p., or stands alone — never an integer glued to a window word.)
+    cleaned = _WINDOW_AFTER_NUMBER.sub(" ", text)
     out: list[float] = []
-    for m in _NUMBER_RE.findall(text or ""):
+    for m in _NUMBER_RE.findall(cleaned):
         try:
-            out.append(float(m.replace(",", ".")))
+            value = float(m.replace(",", "."))
         except ValueError:
             continue
+        if _is_year_token(m, value):
+            continue
+        out.append(value)
     return out
 
 
@@ -103,6 +132,30 @@ def _require_numbers_in_evidence(text: str, values: list[float]) -> None:
     for claimed in _numbers_in(text):
         if not any(_matches(claimed, value) for value in values):
             raise GuardrailError(f"Number {claimed} is not grounded in evidence.")
+
+
+def _cited_values(by_id: dict[str, dict], ids: list[str]) -> list[float]:
+    """Numeric values of the evidences a claim cites."""
+    values: list[float] = []
+    for evidence_id in ids:
+        value = by_id.get(evidence_id, {}).get("value")
+        if isinstance(value, (int, float)) and value == value:
+            values.append(float(value))
+    return values
+
+
+def _require_numbers_in_cited(text: str, cited_values: list[float]) -> None:
+    """Every number in the sentence must match a value of an evidence IT cites.
+
+    Stricter than the global check: a claim cannot cite ev_A and quote a number
+    that only exists in an uncited ev_B. This preserves anti-hallucination while
+    allowing a sentence to weave several numbers from several cited evidences.
+    """
+    for claimed in _numbers_in(text):
+        if not any(_matches(claimed, value) for value in cited_values):
+            raise GuardrailError(
+                f"Number {claimed} is not grounded in the evidence cited by this claim."
+            )
 
 
 def check_scope(question: str) -> None:
@@ -141,20 +194,16 @@ def check_grounding(output: dict, evidence: list[dict]) -> None:
         if unknown:
             raise GuardrailError(f"Claim cites unknown evidence_id(s): {unknown}")
         if ctype == "number":
-            if len(ids) != 1:
-                raise GuardrailError("A 'number' claim must cite exactly one evidence_id.")
-            cited_value = by_id[ids[0]].get("value")
-            for claimed in _numbers_in(text):
-                if not isinstance(cited_value, (int, float)) or cited_value != cited_value:
-                    raise GuardrailError("A 'number' claim cites evidence with no numeric value.")
-                if not _matches(claimed, float(cited_value)):
-                    raise GuardrailError(
-                        f"Number {claimed} does not match cited evidence value {cited_value}."
-                    )
+            # A 'number' claim may cite >=1 evidences (fluent prose, not a table).
+            # Anti-hallucination is preserved — and made stricter — by requiring
+            # every number in the sentence to match a value of an evidence IT cites.
+            if len(ids) < 1:
+                raise GuardrailError("A 'number' claim needs >= 1 evidence_id.")
+            _require_numbers_in_cited(text, _cited_values(by_id, ids))
         elif ctype == "interpretation":
             if len(ids) < 1:
                 raise GuardrailError("An 'interpretation' claim needs >= 1 evidence_id.")
-            _require_numbers_in_evidence(text, numeric_values)
+            _require_numbers_in_cited(text, _cited_values(by_id, ids))
         elif ctype == "regime":
             if not claim.get("rule_id"):
                 raise GuardrailError("A 'regime' claim must reference a rule_id.")
@@ -164,7 +213,7 @@ def check_grounding(output: dict, evidence: list[dict]) -> None:
                 "interpretation"
             ):
                 raise GuardrailError("A 'regime' claim rule_id does not match ev_regime.")
-            _require_numbers_in_evidence(text, numeric_values)
+            _require_numbers_in_cited(text, _cited_values(by_id, ids))
     _require_numbers_in_evidence(output.get("short_brief", ""), numeric_values)
 
 
