@@ -24,7 +24,6 @@ from ipca_dashboard.reporting.render_markdown import (
     render_report_markdown,
     write_metadata,
 )
-from ipca_dashboard.reporting.render_static_charts import render_hero
 
 LOGGER = logging.getLogger(__name__)
 REPORTS_LATEST = PROJECT_ROOT / "reports" / "latest"
@@ -35,7 +34,9 @@ def _load(name: str) -> pd.DataFrame:
     return pd.read_parquet(path) if path.exists() else pd.DataFrame()
 
 
-def build_report(out_dir: Path, *, generated_at: str = "", with_charts: bool = False) -> dict[str, Path]:
+def build_report(
+    out_dir: Path, *, generated_at: str = "", with_charts: bool = False
+) -> dict[str, Path]:
     """Build report.md (+ hero PNG if with_charts) into out_dir. Returns paths.
 
     Charts are opt-in: kaleido's write_image can *hang* (not just fail) on some
@@ -52,7 +53,11 @@ def build_report(out_dir: Path, *, generated_at: str = "", with_charts: bool = F
         raise SystemExit("No processed data found. Run the pipeline first.")
 
     diagnostic = build_diagnostic_text(bcb, items, cores, alerts)
-    charts = render_hero(bcb, items, out_dir) if with_charts else []
+    charts = []
+    if with_charts:
+        from ipca_dashboard.reporting.render_static_charts import render_hero
+
+        charts = render_hero(bcb, items, out_dir)
     ai_brief_md = load_ai_brief(out_dir)
     markdown = render_report_markdown(bcb, diagnostic, ai_brief_md=ai_brief_md, charts=charts)
 
@@ -82,7 +87,9 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args(argv)
-    logging.basicConfig(level=getattr(logging, args.log_level.upper()), format="%(levelname)s:%(message)s")
+    logging.basicConfig(
+        level=getattr(logging, args.log_level.upper()), format="%(levelname)s:%(message)s"
+    )
 
     out_dir = REPORTS_LATEST if args.latest else Path(args.out)
     generated_at = datetime.now(UTC).isoformat(timespec="seconds")
