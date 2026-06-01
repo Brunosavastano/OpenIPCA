@@ -22,9 +22,12 @@ from ipca_dashboard.charts import (  # noqa: E402
     stacked_contribution,
     waterfall_latest,
 )
+from ipca_dashboard.ai.env import load_env_once  # noqa: E402
 from ipca_dashboard.config import OUTPUTS_DIR, PROCESSED_DIR, load_yaml  # noqa: E402
 from ipca_dashboard.diagnostics import classify_latest_regime  # noqa: E402
 from ipca_dashboard.transforms import calculate_diffusion_from_items  # noqa: E402
+
+load_env_once()  # honor a local .env for BYOK; no-op without python-dotenv
 
 
 st.set_page_config(page_title="IPCA Macro Dashboard", layout="wide")

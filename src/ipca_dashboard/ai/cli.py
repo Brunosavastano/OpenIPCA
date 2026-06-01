@@ -20,6 +20,7 @@ from pathlib import Path
 import pandas as pd
 
 from ipca_dashboard.ai.brief import generate_brief, write_brief_artifacts
+from ipca_dashboard.ai.env import load_env_once
 from ipca_dashboard.config import PROCESSED_DIR, PROJECT_ROOT
 
 LOGGER = logging.getLogger(__name__)
@@ -37,6 +38,9 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args(argv)
     logging.basicConfig(level=getattr(logging, args.log_level.upper()), format="%(levelname)s:%(message)s")
+
+    if load_env_once():
+        LOGGER.info("Loaded configuration from .env")
 
     bcb = _load("bcb_series_monthly.parquet")
     items = _load("ipca_items_monthly.parquet")

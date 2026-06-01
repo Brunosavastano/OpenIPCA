@@ -25,8 +25,10 @@ dev = [
 ]
 # Optional AI providers (BYOK). Not in CI; the app works fully without these.
 # The app is model-agnostic — this extra just makes one hosted provider available.
+# python-dotenv autoloads a local .env for BYOK convenience (best-effort).
 ai = [
   "openai>=1.0",
+  "python-dotenv>=1.0",
 ]
 # Static PNG export for the shareable report. Local/manual only — NOT in CI
 # (kaleido is heavy/flaky there); the Markdown report builds without it.
