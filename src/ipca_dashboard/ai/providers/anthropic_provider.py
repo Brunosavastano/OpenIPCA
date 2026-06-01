@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 from ipca_dashboard.ai.schemas import BRIEF_SCHEMA
 
@@ -29,19 +30,31 @@ _SYSTEM = (
 
 def _extract_json(text: str) -> dict:
     """Parse the model's text as JSON, tolerating a ```json fence or stray prose."""
-    text = text.strip()
-    if text.startswith("```"):
-        # strip a leading ```json / ``` fence and trailing ```
-        text = text.split("```", 2)[1] if text.count("```") >= 2 else text.strip("`")
-        if text.lstrip().lower().startswith("json"):
-            text = text.lstrip()[4:]
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        start, end = text.find("{"), text.rfind("}")
-        if start != -1 and end != -1 and end > start:
-            return json.loads(text[start : end + 1])
-        raise
+    decoder = json.JSONDecoder()
+    candidates = [text.strip()]
+    candidates.extend(
+        match.group(1).strip()
+        for match in re.finditer(
+            r"```(?:json)?\s*(.*?)\s*```", text, flags=re.IGNORECASE | re.DOTALL
+        )
+    )
+    for candidate in candidates:
+        try:
+            parsed = json.loads(candidate)
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError:
+            pass
+        for index, char in enumerate(candidate):
+            if char != "{":
+                continue
+            try:
+                parsed, _ = decoder.raw_decode(candidate[index:])
+            except json.JSONDecodeError:
+                continue
+            if isinstance(parsed, dict):
+                return parsed
+    raise json.JSONDecodeError("No valid JSON object found", text, 0)
 
 
 class AnthropicProvider:
@@ -54,6 +67,11 @@ class AnthropicProvider:
         api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
         if not api_key:
             raise RuntimeError("ANTHROPIC_API_KEY is not set.")
+        selected_model = (
+            model or os.environ.get("OPENIPCA_AI_MODEL") or os.environ.get("ANTHROPIC_MODEL")
+        )
+        if not selected_model:
+            raise RuntimeError("OPENIPCA_AI_MODEL is not set.")
         # Lazy import: the SDK is only needed when this provider is constructed.
         try:
             from anthropic import Anthropic  # type: ignore
@@ -61,13 +79,8 @@ class AnthropicProvider:
             raise RuntimeError(
                 "Anthropic provider requires the optional dependency: pip install '.[ai]'"
             ) from exc
-        # Model is config, not code: overridable via env, with a sane default.
-        self._model = (
-            model
-            or os.environ.get("OPENIPCA_AI_MODEL")
-            or os.environ.get("ANTHROPIC_MODEL")
-            or "claude-sonnet-4-6"
-        )
+        # Model is config, not code.
+        self._model = selected_model
         self._max_tokens = max_tokens
         self._client = Anthropic(api_key=api_key)
 
