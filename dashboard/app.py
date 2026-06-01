@@ -88,6 +88,33 @@ def load_diagnostic() -> str:
     return json.loads(path.read_text(encoding="utf-8")).get("diagnostic", "Diagnóstico indisponível.")
 
 
+REPORTS_LATEST = ROOT / "reports" / "latest"
+
+
+def render_ai_replay() -> None:
+    """Show the pre-generated, auditable AI brief + orchestration trace.
+
+    "AI Replay Mode": the public demo replays an artifact generated offline
+    (BYOK). If no artifact exists yet, the deterministic brief above is the
+    floor and this stays quiet.
+    """
+    brief_path = REPORTS_LATEST / "ai_brief.md"
+    trace_path = REPORTS_LATEST / "ai_trace.json"
+    if not brief_path.exists():
+        return
+    with st.expander("🤖 AI Replay Mode — como a IA montou este brief", expanded=False):
+        st.caption(
+            "Brief pré-gerado e auditável. Sem chamada de IA ao vivo na demo; "
+            "toda afirmação é rastreável a uma evidência. Rode localmente com sua "
+            "própria chave para gerar novas leituras."
+        )
+        st.markdown(brief_path.read_text(encoding="utf-8"))
+        if trace_path.exists():
+            trace = json.loads(trace_path.read_text(encoding="utf-8"))
+            st.markdown("**Trace de orquestração** (ferramentas → evidências → afirmações):")
+            st.json(trace)
+
+
 def freshness_notice() -> tuple[str, str] | None:
     """Return (severity, details) for the freshness check, if not 'pass'."""
     path = OUTPUTS_DIR / "validation_report.csv"
@@ -153,6 +180,8 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     )
 
     st.markdown(f"<div class='diagnostic'>{load_diagnostic()}</div>", unsafe_allow_html=True)
+
+    render_ai_replay()
 
     left, right = st.columns([1.25, 1])
     with left:
