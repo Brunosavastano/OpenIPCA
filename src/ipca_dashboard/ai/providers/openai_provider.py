@@ -32,6 +32,9 @@ class OpenAIProvider:
     capabilities = {"text", "structured"}
 
     def __init__(self, model: str | None = None) -> None:
+        api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+        if not api_key:
+            raise RuntimeError("OPENAI_API_KEY is not set.")
         # Lazy import: the SDK is only needed when this provider is constructed.
         try:
             from openai import OpenAI  # type: ignore
@@ -39,9 +42,6 @@ class OpenAIProvider:
             raise RuntimeError(
                 "OpenAI provider requires the optional dependency: pip install '.[ai]'"
             ) from exc
-        api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-        if not api_key:
-            raise RuntimeError("OPENAI_API_KEY is not set.")
         # Model is config, not code: overridable via env, with a sane default.
         self._model = model or os.environ.get("OPENIPCA_AI_MODEL", "gpt-4o-mini")
         self._client = OpenAI(api_key=api_key)
