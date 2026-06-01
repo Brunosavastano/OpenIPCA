@@ -65,15 +65,26 @@ class OpenAIProvider:
             + "\n\nSchema de saída (JSON):\n"
             + json.dumps(schema or BRIEF_SCHEMA, ensure_ascii=False)
         )
-        response = self._client.chat.completions.create(
-            model=self._model,
-            temperature=temperature,
-            response_format={"type": "json_object"},
-            messages=[
+        kwargs = {
+            "model": self._model,
+            "temperature": temperature,
+            "response_format": {"type": "json_object"},
+            "messages": [
                 {"role": "system", "content": _SYSTEM},
                 {"role": "user", "content": user},
             ],
-        )
+        }
+        try:
+            response = self._client.chat.completions.create(**kwargs)
+        except Exception as exc:  # noqa: BLE001
+            # Some newer models only accept the default temperature (1). Retry
+            # once without the param so any such model works (model-agnostic),
+            # instead of falling back to the deterministic brief.
+            if "temperature" in str(exc).lower():
+                kwargs.pop("temperature", None)
+                response = self._client.chat.completions.create(**kwargs)
+            else:
+                raise
         return json.loads(response.choices[0].message.content)
 
 

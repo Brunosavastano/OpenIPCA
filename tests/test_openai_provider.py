@@ -234,3 +234,77 @@ def test_provider_key_is_redacted_from_fallback_error(monkeypatch):
         ensure_ascii=False,
     )
     assert secret not in serialized
+
+
+def test_retries_without_temperature_when_model_rejects_it(monkeypatch):
+    """Some models accept only the default temperature; retry without the param."""
+    calls = []
+    grounded = {
+        "claims": [],
+        "short_brief": "Leitura aterrada.",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+
+    fake = types.ModuleType("openai")
+
+    class _Resp:
+        def __init__(self, content):
+            self.choices = [types.SimpleNamespace(message=types.SimpleNamespace(content=content))]
+
+    def _create(**kw):
+        calls.append(kw)
+        if "temperature" in kw:
+            raise RuntimeError(
+                "Unsupported value: 'temperature' does not support 0 with this model."
+            )
+        return _Resp(json.dumps(grounded))
+
+    class _Client:
+        def __init__(self, *a, **k):
+            self.chat = types.SimpleNamespace(
+                completions=types.SimpleNamespace(create=_create)
+            )
+
+    fake.OpenAI = _Client
+    monkeypatch.setitem(sys.modules, "openai", fake)
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "test-model")
+
+    from ipca_dashboard.ai.providers.openai_provider import OpenAIProvider
+
+    provider = OpenAIProvider()
+    out = provider.generate_structured(
+        [{"role": "evidence", "content": []}], schema={}, temperature=0.0
+    )
+    assert out["investment_advice"] is False
+    # Two attempts: first with temperature (rejected), second without it.
+    assert len(calls) == 2
+    assert "temperature" in calls[0] and "temperature" not in calls[1]
+
+
+def test_non_temperature_error_is_not_swallowed(monkeypatch):
+    """An unrelated API error must propagate (so generate_brief can fall back)."""
+    fake = types.ModuleType("openai")
+
+    def _create(**kw):
+        raise RuntimeError("some other API failure")
+
+    class _Client:
+        def __init__(self, *a, **k):
+            self.chat = types.SimpleNamespace(
+                completions=types.SimpleNamespace(create=_create)
+            )
+
+    fake.OpenAI = _Client
+    monkeypatch.setitem(sys.modules, "openai", fake)
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "test-model")
+
+    from ipca_dashboard.ai.providers.openai_provider import OpenAIProvider
+
+    provider = OpenAIProvider()
+    with pytest.raises(RuntimeError, match="some other API failure"):
+        provider.generate_structured(
+            [{"role": "evidence", "content": []}], schema={}, temperature=0.0
+        )
