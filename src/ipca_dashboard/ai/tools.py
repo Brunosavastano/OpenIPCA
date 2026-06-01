@@ -25,6 +25,13 @@ def _latest_row(bcb: pd.DataFrame, name: str) -> pd.Series | None:
     return subset.iloc[-1] if not subset.empty else None
 
 
+def _row_at(bcb: pd.DataFrame, name: str, date: pd.Timestamp) -> pd.Series | None:
+    subset = bcb[
+        (bcb["series_short_name"] == name) & (pd.to_datetime(bcb["date"]) == date)
+    ].sort_values("date")
+    return subset.iloc[-1] if not subset.empty else None
+
+
 def _month(row: pd.Series) -> str:
     return pd.to_datetime(row["date"]).strftime("%Y-%m")
 
@@ -41,14 +48,25 @@ def get_headline(bcb: pd.DataFrame) -> list[Evidence]:
     month = _month(row)
     return [
         Evidence("ev_headline_mom", "IPCA m/m", _num(row.get("mom")), "%", month, SOURCE_SGS),
-        Evidence("ev_headline_12m", "IPCA 12m", _num(row.get("rolling_12m")), "%", month, SOURCE_SGS),
         Evidence(
-            "ev_headline_mm3", "IPCA MM3M (NSA)", _num(row.get("moving_average_3m")),
-            "%", month, SOURCE_SGS, "média móvel 3m da variação m/m, sem ajuste sazonal",
+            "ev_headline_12m", "IPCA 12m", _num(row.get("rolling_12m")), "%", month, SOURCE_SGS
         ),
         Evidence(
-            "ev_headline_percentile", "IPCA m/m percentil", _num(row.get("percentile_since_2012")),
-            "percentile", month, SOURCE_SGS,
+            "ev_headline_mm3",
+            "IPCA MM3M (NSA)",
+            _num(row.get("moving_average_3m")),
+            "%",
+            month,
+            SOURCE_SGS,
+            "média móvel 3m da variação m/m, sem ajuste sazonal",
+        ),
+        Evidence(
+            "ev_headline_percentile",
+            "IPCA m/m percentil",
+            _num(row.get("percentile_since_2012")),
+            "percentile",
+            month,
+            SOURCE_SGS,
         ),
     ]
 
@@ -60,16 +78,36 @@ def get_diffusion(bcb: pd.DataFrame) -> list[Evidence]:
         return []
     month = _month(row)
     return [
-        Evidence("ev_diffusion_mom", "Difusão m/m", _num(row.get("mom")), "% de subitens", month, SOURCE_SGS),
-        Evidence("ev_diffusion_mm3", "Difusão MM3M", _num(row.get("moving_average_3m")), "% de subitens", month, SOURCE_SGS),
         Evidence(
-            "ev_diffusion_mm3_percentile", "Difusão MM3M percentil",
-            _num(row.get("moving_average_3m_percentile")), "percentile", month, SOURCE_SGS,
+            "ev_diffusion_mom",
+            "Difusão m/m",
+            _num(row.get("mom")),
+            "% de subitens",
+            month,
+            SOURCE_SGS,
+        ),
+        Evidence(
+            "ev_diffusion_mm3",
+            "Difusão MM3M",
+            _num(row.get("moving_average_3m")),
+            "% de subitens",
+            month,
+            SOURCE_SGS,
+        ),
+        Evidence(
+            "ev_diffusion_mm3_percentile",
+            "Difusão MM3M percentil",
+            _num(row.get("moving_average_3m_percentile")),
+            "percentile",
+            month,
+            SOURCE_SGS,
         ),
     ]
 
 
-def get_cores(bcb: pd.DataFrame, core_metrics: pd.DataFrame, core_set: str = "bcb_compact") -> list[Evidence]:
+def get_cores(
+    bcb: pd.DataFrame, core_metrics: pd.DataFrame, core_set: str = "bcb_compact"
+) -> list[Evidence]:
     """Core mean for the preset: m/m and MM3M, with completeness."""
     if core_metrics.empty:
         return []
@@ -86,8 +124,24 @@ def get_cores(bcb: pd.DataFrame, core_metrics: pd.DataFrame, core_set: str = "bc
     complete = row.get("is_complete", row.get("is_complete_core_set"))
     interp = "" if bool(complete) else "preset incompleto no mês"
     return [
-        Evidence("ev_core_mean_mom", f"Média núcleos m/m ({core_set})", _num(row.get("mom")), "%", month, SOURCE_SGS, interp),
-        Evidence("ev_core_mean_mm3", f"Média núcleos MM3M ({core_set})", _num(row.get("moving_average_3m")), "%", month, SOURCE_SGS, interp),
+        Evidence(
+            "ev_core_mean_mom",
+            f"Média núcleos m/m ({core_set})",
+            _num(row.get("mom")),
+            "%",
+            month,
+            SOURCE_SGS,
+            interp,
+        ),
+        Evidence(
+            "ev_core_mean_mm3",
+            f"Média núcleos MM3M ({core_set})",
+            _num(row.get("moving_average_3m")),
+            "%",
+            month,
+            SOURCE_SGS,
+            interp,
+        ),
     ]
 
 
@@ -101,15 +155,29 @@ def get_contributions(ipca_items: pd.DataFrame, top_n: int = 3) -> list[Evidence
     month = pd.to_datetime(latest_date).strftime("%Y-%m")
     out: list[Evidence] = []
     for i, (_, r) in enumerate(latest.head(top_n).iterrows()):
-        out.append(Evidence(
-            f"ev_contrib_top_pos_{i}", f"Contribuição: {r['item_name']}",
-            _num(r["contribution_mom"]), "p.p.", month, SOURCE_SIDRA, "pressão altista",
-        ))
+        out.append(
+            Evidence(
+                f"ev_contrib_top_pos_{i}",
+                f"Contribuição: {r['item_name']}",
+                _num(r["contribution_mom"]),
+                "p.p.",
+                month,
+                SOURCE_SIDRA,
+                "pressão altista",
+            )
+        )
     for i, (_, r) in enumerate(latest.tail(top_n).iloc[::-1].iterrows()):
-        out.append(Evidence(
-            f"ev_contrib_top_neg_{i}", f"Contribuição: {r['item_name']}",
-            _num(r["contribution_mom"]), "p.p.", month, SOURCE_SIDRA, "alívio / menor pressão",
-        ))
+        out.append(
+            Evidence(
+                f"ev_contrib_top_neg_{i}",
+                f"Contribuição: {r['item_name']}",
+                _num(r["contribution_mom"]),
+                "p.p.",
+                month,
+                SOURCE_SIDRA,
+                "alívio / menor pressão",
+            )
+        )
     return out
 
 
@@ -120,17 +188,27 @@ def get_alerts(alerts: pd.DataFrame) -> list[Evidence]:
     out: list[Evidence] = []
     for i, (_, r) in enumerate(alerts.iterrows()):
         month = str(r.get("reference_month", ""))
-        out.append(Evidence(
-            f"ev_alert_{i}", f"Alerta: {r.get('alert_id', 'desconhecido')}",
-            _num(r.get("value")), "", month, SOURCE_SGS, str(r.get("severity", "")),
-        ))
+        out.append(
+            Evidence(
+                f"ev_alert_{i}",
+                f"Alerta: {r.get('alert_id', 'desconhecido')}",
+                _num(r.get("value")),
+                "",
+                month,
+                SOURCE_SGS,
+                str(r.get("severity", "")),
+            )
+        )
     return out
 
 
 def get_regime(bcb: pd.DataFrame) -> list[Evidence]:
     """The deterministic regime label (CP5) as a citable evidence item."""
-    head = _latest_row(bcb, "IPCA")
-    diff = _latest_row(bcb, "Difusao")
+    if bcb.empty:
+        return []
+    latest_date = pd.to_datetime(bcb["date"]).max()
+    head = _row_at(bcb, "IPCA", latest_date)
+    diff = _row_at(bcb, "Difusao", latest_date)
     if head is None or diff is None:
         return []
     # Reuse the global-latest-month context contract from CP5 via the classifier.
@@ -143,8 +221,13 @@ def get_regime(bcb: pd.DataFrame) -> list[Evidence]:
     month = _month(head)
     return [
         Evidence(
-            "ev_regime", "Regime inflacionário", result.label_pt, "label", month,
-            "OpenIPCA (determinístico)", result.rule_id,
+            "ev_regime",
+            "Regime inflacionário",
+            result.label_pt,
+            "label",
+            month,
+            "OpenIPCA (determinístico)",
+            result.rule_id,
         )
     ]
 
