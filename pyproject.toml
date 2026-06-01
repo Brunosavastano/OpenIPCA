@@ -23,6 +23,11 @@ dev = [
   "pytest>=8.0",
   "ruff>=0.6",
 ]
+# Static PNG export for the shareable report. Local/manual only — NOT in CI
+# (kaleido is heavy/flaky there); the Markdown report builds without it.
+report = [
+  "kaleido>=0.2",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
