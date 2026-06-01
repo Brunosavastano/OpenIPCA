@@ -23,6 +23,11 @@ dev = [
   "pytest>=8.0",
   "ruff>=0.6",
 ]
+# Optional AI providers (BYOK). Not in CI; the app works fully without these.
+# The app is model-agnostic — this extra just makes one hosted provider available.
+ai = [
+  "openai>=1.0",
+]
 # Static PNG export for the shareable report. Local/manual only — NOT in CI
 # (kaleido is heavy/flaky there); the Markdown report builds without it.
 report = [

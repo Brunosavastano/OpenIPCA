@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -72,8 +73,20 @@ def _minimal_brief() -> dict:
     }
 
 
+def _redact_secrets(text: str) -> str:
+    redacted = text
+    for name, value in os.environ.items():
+        upper = name.upper()
+        if not upper.endswith(("API_KEY", "TOKEN", "SECRET")):
+            continue
+        value = value.strip()
+        if len(value) >= 4:
+            redacted = redacted.replace(value, "[redacted]")
+    return redacted
+
+
 def _append_error(existing: str | None, exc: BaseException) -> str:
-    current = f"{type(exc).__name__}: {exc}"
+    current = _redact_secrets(f"{type(exc).__name__}: {exc}")
     return current if existing is None else f"{existing}; {current}"
 
 
