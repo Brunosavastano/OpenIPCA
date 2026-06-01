@@ -5,8 +5,14 @@ import pandas as pd
 from ipca_dashboard.regime import RegimeResult, classify_inflation_regime
 
 
-def latest_row(df: pd.DataFrame, series_short_name: str) -> pd.Series | None:
+def latest_row(
+    df: pd.DataFrame,
+    series_short_name: str,
+    reference_date: pd.Timestamp | None = None,
+) -> pd.Series | None:
     subset = df[df["series_short_name"] == series_short_name].sort_values("date")
+    if reference_date is not None:
+        subset = subset[pd.to_datetime(subset["date"]) == reference_date]
     if subset.empty:
         return None
     return subset.iloc[-1]
@@ -18,8 +24,11 @@ def build_regime_context(bcb: pd.DataFrame) -> dict:
     Reuses existing pipeline columns (no recompute): the headline IPCA m/m
     expanding percentile and the diffusion MM3M percentile.
     """
-    ipca = latest_row(bcb, "IPCA")
-    diffusion = latest_row(bcb, "Difusao")
+    if bcb.empty:
+        return {}
+    latest_date = pd.to_datetime(bcb["date"]).max()
+    ipca = latest_row(bcb, "IPCA", latest_date)
+    diffusion = latest_row(bcb, "Difusao", latest_date)
     context: dict[str, object] = {}
     if ipca is not None and "percentile_since_2012" in ipca:
         context["headline_percentile"] = (

@@ -53,6 +53,13 @@ def test_evidence_ids_pass_through():
     assert r.evidence_ids == ("ev_a", "ev_b")
 
 
+def test_evidence_ids_none_is_treated_as_empty():
+    r = classify_inflation_regime(
+        {"headline_percentile": 90.0, "diffusion_mm3_percentile": 90.0, "evidence_ids": None}
+    )
+    assert r.evidence_ids == ()
+
+
 def test_build_regime_context_reads_existing_columns():
     date = pd.Timestamp("2024-03-01")
     bcb = pd.DataFrame(
@@ -68,3 +75,18 @@ def test_build_regime_context_reads_existing_columns():
     assert ctx["diffusion_mm3_percentile"] == 85.0
     # Headline high + diffusion high -> broad_pressure.
     assert classify_latest_regime(bcb).regime == "broad_pressure"
+
+
+def test_build_regime_context_uses_global_latest_month_only():
+    bcb = pd.DataFrame(
+        [
+            {"date": pd.Timestamp("2024-04-01"), "series_short_name": "IPCA",
+             "percentile_since_2012": 90.0, "moving_average_3m_percentile": 10.0},
+            {"date": pd.Timestamp("2024-03-01"), "series_short_name": "Difusao",
+             "percentile_since_2012": 10.0, "moving_average_3m_percentile": 90.0},
+        ]
+    )
+    ctx = build_regime_context(bcb)
+    assert ctx["headline_percentile"] == 90.0
+    assert "diffusion_mm3_percentile" not in ctx
+    assert classify_latest_regime(bcb).regime == "insufficient_data"

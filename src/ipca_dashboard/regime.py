@@ -7,7 +7,6 @@ same regime + rule_id, always.
 Signals (all percentiles are 0-100, mid-rank, from the deterministic pipeline):
 - headline percentile (IPCA m/m vs its own expanding history)
 - diffusion MM3M percentile
-- core direction (MM3M vs 12m, when both available)
 
 Spec_V3 §4 / §5.5.
 """
@@ -70,7 +69,7 @@ def classify_inflation_regime(context: dict) -> RegimeResult:
     """
     headline = context.get("headline_percentile")
     diffusion = context.get("diffusion_mm3_percentile")
-    evidence_ids = tuple(context.get("evidence_ids", ()))
+    evidence_ids = tuple(context.get("evidence_ids") or ())
 
     if not _is_number(headline) or not _is_number(diffusion):
         return RegimeResult(
