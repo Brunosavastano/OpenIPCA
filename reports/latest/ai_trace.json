@@ -97,7 +97,8 @@
       "type": "regime",
       "evidence_ids": [
         "ev_regime"
-      ]
+      ],
+      "rule_id": "regime_v1_headline_high_diffusion_high"
     }
   ],
   "used_fallback": false
