@@ -36,3 +36,20 @@ BRIEF_SCHEMA: dict = {
         "investment_advice": {"const": False},
     },
 }
+
+# Schema for a live "Ask the IPCA" answer. Same `claims` shape as the brief so it
+# reuses check_grounding wholesale (every number in the answer traces to a cited
+# evidence). `answer` is the prose shown to the user; `refused` lets the model
+# decline an out-of-scope question gracefully.
+ANSWER_SCHEMA: dict = {
+    "type": "object",
+    "required": ["answer", "claims", "monetary_policy_tone", "investment_advice"],
+    "properties": {
+        "answer": {"type": "string"},
+        "claims": BRIEF_SCHEMA["properties"]["claims"],
+        "monetary_policy_tone": {"enum": sorted(MONETARY_POLICY_TONES)},
+        "investment_advice": {"const": False},
+        "refused": {"type": "boolean"},
+        "refusal_reason": {"type": "string"},
+    },
+}

@@ -32,25 +32,26 @@ _FORBIDDEN_PATTERNS = [
     re.compile(
         r"\bcopom\b.{0,40}\b"
         r"(vai|deve|ira|corta|cortara|cortar|reduz|reduzira|reduzir|"
-        r"baixa|baixara|baixar|sobe|subira|subir|eleva|elevara|elevar|"
-        r"aumenta|aumentara|aumentar|mantem|mantera|manter)\b"
+        r"reduza|baixa|baixara|baixar|sobe|subira|subir|eleva|elevara|elevar|"
+        r"aumenta|aumentara|aumentar|mantem|mantera|manter|mantenha)\b"
     ),
     re.compile(
         r"\bselic\b.{0,40}\b"
-        r"(vai|deve|ira|sera|cai|caira|cair|cortada|reduzida|sobe|subira|subir|"
-        r"elevada|aumentada|mantida|fica|ficara)\b"
+        r"(vai|deve|ira|sera|cai|caia|caira|cair|cortada|reduzida|sobe|subira|subir|"
+        r"elevada|aumentada|mantida|fica|ficara|fique)\b"
     ),
     re.compile(
-        r"\b(corte|alta|queda|manutencao)\s+(da\s+selic|de\s+juros)\s+"
+        r"\b(corte|alta|queda|manutencao)\s+(da\s+selic|de\s+juros)\s+(?:e\s+)?"
         r"(certo|garantid|inevitavel)\w*\b"
     ),
     re.compile(
-        r"\b(compre|compra|comprar|venda|vender)\b.{0,40}\b"
+        r"\b(compre|compra|comprar|venda|vender|invista|investir|aplique|aplicar|"
+        r"aloque|alocar)\b.{0,40}\b"
         r"(acao|acoes|ativo|ativos|dolar|tesouro|ipca\+|ntn-?b|bova11|ivvb11|"
         r"fundo|fundos|titulo|titulos)\b"
     ),
     re.compile(
-        r"\b(recomendo|recomenda|recomendar|recomendaria|sugiro|indico)\b.{0,40}\b"
+        r"\b(recomendo|recomenda|recomendar|recomendaria|sugiro|indico|indicaria)\b.{0,40}\b"
         r"(acao|acoes|ativo|ativos|dolar|tesouro|ipca\+|ntn-?b|selic|fundo|fundos|"
         r"titulo|titulos)\b"
     ),
@@ -65,6 +66,40 @@ _IN_SCOPE_HINTS = [
     "headline",
     "regime",
     "contribuicao",
+]
+
+# Prompt-injection / jailbreak markers. A PUBLIC free-text box invites attempts to
+# override the system prompt ("ignore your instructions", "you are now ...") so
+# the model says something off-brand with the owner's name on it. We refuse the
+# QUESTION before it ever reaches the model (defence in depth; the system prompt
+# also tells the model to ignore embedded commands). Matched on accent-stripped
+# lowercase text, like _FORBIDDEN_PATTERNS.
+_INJECTION_PATTERNS = [
+    re.compile(r"\bignore?\b.{0,30}\b(instru\w*|prompt|regras|orienta\w*|tudo|acima)\b"),
+    re.compile(r"\b(desconsidere|esque[cç]a|apague|desfa[cç]a)\b.{0,30}\b(instru\w*|prompt|regras|acima|anterior\w*|tudo|contexto)\b"),
+    re.compile(r"\b(you are now|act as|pretend to be|disregard|forget (the|all|your)|system prompt|jailbreak|developer mode)\b"),
+    re.compile(r"\b(aja como|finja (ser|que)|voce agora e|a partir de agora voce|assuma o papel)\b"),
+    re.compile(r"\b(responda como se|fa[cç]a de conta|ignore o contexto|sem restri[cç]\w*)\b"),
+]
+
+# Same intent, but matched on a compact skeleton that strips spaces, zero-width
+# separators and punctuation. This catches "i g n o r e" / "ig\u200bnore" without
+# refusing benign words like "ignorada" or "acima" on their own.
+_COMPACT_INJECTION_PATTERNS = [
+    re.compile(
+        r"ignore(?:a|as|o|os|suas|todas|todos|all|previous|your|the)*"
+        r"(instrucoes|instructions|prompt|regras|rules|acima|anteriores|previous|"
+        r"contexto|context|tudo|systemprompt)"
+    ),
+    re.compile(
+        r"(desconsidere|esqueca|forget|disregard)"
+        r"(instrucoes|instructions|prompt|regras|rules|acima|anteriores|previous|"
+        r"contexto|context|tudo|all)"
+    ),
+    re.compile(
+        r"(youarenow|actas|pretendtobe|ajacomo|voceagorae|apartirdeagoravoce|"
+        r"assumaopapel|developermode|jailbreak)"
+    ),
 ]
 
 # A claimed figure: a number not attached to letters, and not part of a date
@@ -86,8 +121,13 @@ class GuardrailError(ValueError):
 
 
 def _normalize_text(text: str) -> str:
-    decomposed = unicodedata.normalize("NFKD", text or "")
+    normalized = unicodedata.normalize("NFKC", text or "")
+    decomposed = unicodedata.normalize("NFKD", normalized)
     return "".join(ch for ch in decomposed if not unicodedata.combining(ch)).lower()
+
+
+def _compact_text(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", text)
 
 
 def _has_numeric_unit_after(text: str, end: int) -> bool:
@@ -155,6 +195,13 @@ def _cited_values(by_id: dict[str, dict], ids: list[str]) -> list[float]:
     return values
 
 
+def _all_claim_cited_values(by_id: dict[str, dict], claims: list[dict]) -> list[float]:
+    values: list[float] = []
+    for claim in claims:
+        values.extend(_cited_values(by_id, claim.get("evidence_ids", []) or []))
+    return values
+
+
 def _require_numbers_in_cited(text: str, cited_values: list[float]) -> None:
     """Every number in the sentence must match a value of an evidence IT cites.
 
@@ -176,15 +223,36 @@ def check_scope(question: str) -> None:
         raise GuardrailError("Out of scope: question is not about Brazilian inflation.")
 
 
+def check_injection(question: str) -> None:
+    """Refuse a question that tries to override the system prompt (jailbreak)."""
+    text = _normalize_text(question or "")
+    for pat in _INJECTION_PATTERNS:
+        if pat.search(text):
+            raise GuardrailError("Refused: the input looks like a prompt-injection attempt.")
+    compact = _compact_text(text)
+    for pat in _COMPACT_INJECTION_PATTERNS:
+        if pat.search(compact):
+            raise GuardrailError("Refused: the input looks like a prompt-injection attempt.")
+
+
+def check_question(question: str) -> None:
+    """Run all input-side guardrails for a public Q&A box (injection then scope)."""
+    check_injection(question)
+    check_scope(question)
+
+
 def check_monetary_policy(output: dict) -> None:
     tone = output.get("monetary_policy_tone")
     if tone is not None and tone not in MONETARY_POLICY_TONES:
         raise GuardrailError(f"Invalid monetary_policy_tone: {tone!r}")
     if output.get("investment_advice", False):
         raise GuardrailError("investment_advice must be False.")
+    # Scan every user-facing text field: the brief uses short_brief, the Q&A uses
+    # `answer`. Both must be checked so a forecast can't hide in the answer prose.
     blob = _normalize_text(
         " ".join(
-            [output.get("short_brief", "")] + [c.get("text", "") for c in output.get("claims", [])]
+            [output.get("short_brief", ""), output.get("answer", "")]
+            + [c.get("text", "") for c in output.get("claims", [])]
         )
     )
     for pat in _FORBIDDEN_PATTERNS:
@@ -195,7 +263,8 @@ def check_monetary_policy(output: dict) -> None:
 def check_grounding(output: dict, evidence: list[dict]) -> None:
     by_id = {ev["evidence_id"]: ev for ev in evidence}
     numeric_values = _numeric_evidence_values(evidence)
-    for claim in output.get("claims", []):
+    claims = output.get("claims", []) or []
+    for claim in claims:
         ctype = claim.get("type")
         ids = claim.get("evidence_ids", []) or []
         text = claim.get("text", "")
@@ -225,7 +294,11 @@ def check_grounding(output: dict, evidence: list[dict]) -> None:
             ):
                 raise GuardrailError("A 'regime' claim rule_id does not match ev_regime.")
             _require_numbers_in_cited(text, _cited_values(by_id, ids))
+    # The brief's short_brief cites no specific ids, so check against all values.
     _require_numbers_in_evidence(output.get("short_brief", ""), numeric_values)
+    # The Q&A answer is accompanied by claims. Any number in the user-facing
+    # answer must be covered by at least one evidence_id cited by those claims.
+    _require_numbers_in_cited(output.get("answer", ""), _all_claim_cited_values(by_id, claims))
 
 
 def validate_ai_output(output: dict, evidence: list[dict]) -> None:
