@@ -28,9 +28,18 @@ def _make_anthropic() -> LLMProvider:
     return AnthropicProvider()
 
 
+def _make_gemini() -> LLMProvider:
+    # Imported lazily so the Google SDK is never required to load this package
+    # or run CI — only when the 'gemini' provider is actually resolved.
+    from ipca_dashboard.ai.providers.gemini_provider import GeminiProvider
+
+    return GeminiProvider()
+
+
 # Register hosted providers by name. The factory runs only on resolve_provider(),
 # so no vendor SDK is imported at package-load time (model-agnostic).
 register_provider("openai", _make_openai)
 register_provider("anthropic", _make_anthropic)
+register_provider("gemini", _make_gemini)
 
 __all__ = ["LLMProvider", "NoAIProvider"]
