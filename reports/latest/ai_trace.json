@@ -83,7 +83,7 @@
       ]
     },
     {
-      "text": "Os alertas reforçam a leitura adversa: a média dos núcleos em ritmo de três meses anualizado aparece em 6,37 com classificação high, algum núcleo nesse mesmo conceito aparece em 7,31 com classificação critical, e a difusão em MM3M no percentil 94,23 aciona classificações high e critical.",
+      "text": "Os alertas reforçam a leitura adversa: a média dos núcleos em ritmo de três meses anualizado aparece em 6,37 com classificação alta, algum núcleo nesse mesmo conceito aparece em 7,31 com classificação crítica, e a difusão em MM3M no percentil 94,23 aciona classificações alta e crítica.",
       "type": "interpretation",
       "evidence_ids": [
         "ev_alert_0",

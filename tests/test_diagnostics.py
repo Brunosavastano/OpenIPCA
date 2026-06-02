@@ -84,3 +84,27 @@ def test_diagnostic_uses_readable_alert_message_not_raw_id():
     # Readable message used; raw machine id never leaks into the prose.
     assert "Média dos núcleos acima do limite." in text
     assert "core_mean_3m_saar_high" not in text
+
+
+def test_diagnostic_does_not_fallback_to_raw_alert_id_without_message():
+    date = pd.Timestamp("2024-03-01")
+    bcb = pd.DataFrame(
+        [
+            {"date": date, "series_short_name": "IPCA", "mom": 0.30, "rolling_12m": 4.50,
+             "moving_average_3m": 0.40},
+            {"date": date, "series_short_name": "Difusao", "mom": 60.0, "moving_average_3m": 55.0},
+        ]
+    )
+    items = pd.DataFrame(
+        [{"date": date, "level": "group", "item_name": "Grupo A", "contribution_mom": 0.20}]
+    )
+    cores = pd.DataFrame(
+        [{"date": date, "core_set_name": "bcb_compact", "core_name": "Média",
+          "mom": 0.40, "moving_average_3m": 0.50, "rolling_12m": 5.0}]
+    )
+    alerts = pd.DataFrame([{"alert_id": "core_mean_3m_saar_high", "severity": "high"}])
+
+    text = build_diagnostic_text(bcb, items, cores, alerts)["diagnostic"]
+
+    assert "alerta ativo sem descrição configurada" in text
+    assert "core_mean_3m_saar_high" not in text
