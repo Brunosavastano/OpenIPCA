@@ -187,6 +187,8 @@ def test_trace_links_tools_evidence_and_claims():
     assert result.trace["tool_calls"]
     assert result.trace["evidence_ids"]
     assert "ev_regime" in result.trace["evidence_ids"]
+    regime_claim = next(c for c in result.trace["claims"] if c["type"] == "regime")
+    assert regime_claim["rule_id"] == "regime_v1_headline_low_diffusion_low"
 
 
 def test_artifacts_are_written(tmp_path):
@@ -205,6 +207,8 @@ def test_artifacts_are_written(tmp_path):
     # ...but full traceability is preserved in the trace.
     trace = json.loads(paths["trace"].read_text(encoding="utf-8"))
     assert trace["evidence_ids"]
+    regime_claim = next(c for c in trace["claims"] if c["type"] == "regime")
+    assert "rule_id" in regime_claim
 
 
 def test_default_provider_resolution_is_offline_safe():

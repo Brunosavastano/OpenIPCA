@@ -149,18 +149,22 @@ def generate_brief(
             brief = _minimal_brief()
         provider = fallback
 
+    trace_claims = []
+    for c in brief.get("claims", []):
+        trace_claim = {
+            "text": c.get("text"),
+            "type": c.get("type"),
+            "evidence_ids": c.get("evidence_ids", []),
+        }
+        if c.get("rule_id"):
+            trace_claim["rule_id"] = c.get("rule_id")
+        trace_claims.append(trace_claim)
+
     trace = {
         "prompt_version": PROMPT_VERSION,
         "tool_calls": [{"tool": name} for name in TOOL_NAMES],
         "evidence_ids": [e["evidence_id"] for e in evidence],
-        "claims": [
-            {
-                "text": c.get("text"),
-                "type": c.get("type"),
-                "evidence_ids": c.get("evidence_ids", []),
-            }
-            for c in brief.get("claims", [])
-        ],
+        "claims": trace_claims,
         "used_fallback": used_fallback,
     }
     final_provider = _provider_name(provider)

@@ -157,7 +157,7 @@ def render_active_alerts(alerts: pd.DataFrame) -> None:
     for _, row in alerts.iterrows():
         alert_id = str(row.get("alert_id", ""))
         sev = str(row.get("severity", "info"))
-        text = messages.get(alert_id, alert_id)
+        text = messages.get(alert_id, "Alerta ativo sem descrição configurada.")
         sev_pt = SEVERITY_PT.get(sev, sev)
         st.markdown(f"{badge.get(sev, '⚪')} **[{sev_pt}]** {text}")
 
