@@ -197,16 +197,22 @@ def generate_brief(
 
 
 def brief_to_markdown(result: BriefResult, reference_month: str = "") -> str:
+    # Reading copy is kept clean: no per-claim evidence_ids in the text. Full
+    # traceability (claim -> evidence_ids) lives in ai_trace.json, which the app
+    # shows under "ver os bastidores". The short_brief is the lead paragraph;
+    # claims follow as readable bullets.
     lines = [f"# Brief de IA — IPCA {reference_month}".rstrip(), ""]
     mode = "AI Replay Mode (fallback determinístico)" if result.used_fallback else "AI Replay Mode"
     lines.append(f"_{mode} · provider: {result.provider_name}_")
     lines.append("")
-    lines.append(result.brief.get("short_brief", ""))
-    lines.append("")
-    lines.append("## Afirmações (cada uma aterrada em evidência)")
+    short = result.brief.get("short_brief", "")
+    if short:
+        lines.append(short)
+        lines.append("")
     for c in result.brief.get("claims", []):
-        ids = ", ".join(c.get("evidence_ids", []))
-        lines.append(f"- {c.get('text', '')}  \n  _evidência: {ids}_")
+        text = (c.get("text") or "").strip()
+        if text:
+            lines.append(f"- {text}")
     return "\n".join(lines).strip() + "\n"
 
 

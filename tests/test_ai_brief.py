@@ -197,7 +197,14 @@ def test_artifacts_are_written(tmp_path):
     assert meta["schema_version"] == "brief_v1"
     assert meta["prompt_hash"].startswith("sha256:")
     assert meta["evidence_hash"].startswith("sha256:")
-    assert "AI Replay Mode" in paths["brief"].read_text(encoding="utf-8")
+    brief_md = paths["brief"].read_text(encoding="utf-8")
+    assert "AI Replay Mode" in brief_md
+    # Reading copy is clean: no per-claim evidence_ids leak into the prose...
+    assert "evidência:" not in brief_md
+    assert "ev_regime" not in brief_md
+    # ...but full traceability is preserved in the trace.
+    trace = json.loads(paths["trace"].read_text(encoding="utf-8"))
+    assert trace["evidence_ids"]
 
 
 def test_default_provider_resolution_is_offline_safe():

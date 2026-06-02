@@ -113,11 +113,16 @@ def build_diagnostic_text(
             core_assessment = "núcleos ainda sem janela completa"
 
     alert_count = 0 if alerts.empty else len(alerts)
-    alert_phrase = (
-        "sem alertas ativos"
-        if alert_count == 0
-        else f"com {alert_count} alerta(s) ativo(s), incluindo {alerts.iloc[0]['alert_id']}"
-    )
+    if alert_count == 0:
+        alert_phrase = "sem alertas ativos"
+    else:
+        # Prefer the human-readable message over the raw alert_id; the message may
+        # carry technical wording but never the bare machine id.
+        first = alerts.iloc[0]
+        first_alert = first["message"] if "message" in alerts.columns and pd.notna(
+            first.get("message")
+        ) else str(first.get("alert_id", ""))
+        alert_phrase = f"com {alert_count} alerta(s) ativo(s), incluindo: {first_alert}"
     composition = "moderada"
     if alert_count > 0:
         composition = "adversa"

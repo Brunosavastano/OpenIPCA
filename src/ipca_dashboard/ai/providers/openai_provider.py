@@ -26,6 +26,8 @@ _SYSTEM = (
     "números citados naquela frase. NUNCA invente números nem cite um número que "
     "não venha de uma evidência citada na própria frase. "
     "Use no máximo 2 casas decimais. "
+    "Escreva para um leitor LEIGO: ao usar um termo técnico inevitável (difusão, "
+    "núcleo, MM3M, regime), explique-o em poucas palavras na própria frase. "
     "Para uma afirmação do tipo 'regime', cite a evidência ev_regime e copie em "
     "rule_id o valor do campo interpretation dessa evidência. "
     "NÃO faça previsão de Copom/Selic nem recomende ativos. "

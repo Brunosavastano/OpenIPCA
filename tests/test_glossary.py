@@ -1,0 +1,49 @@
+"""Glossary tests — plain-language definitions for the executive panel.
+
+These assert coverage and tolerant lookup, not exact wording (the wording is
+owned/reviewed by Bruno).
+"""
+
+from ipca_dashboard.glossary import (
+    CARD_TERMS,
+    CORE_TERMS,
+    describe,
+)
+
+CARD_KEYS = [
+    "IPCA m/m",
+    "IPCA 12m",
+    "IPCA MM3M",
+    "Média núcleos MM3M",
+    "Difusão MM3M",
+    "Alertas ativos",
+]
+
+CORE_CODES = ["EX0", "EX1", "EX2", "EX3", "EX_FE", "DP", "MA", "MS", "P55"]
+
+
+def test_every_card_has_a_definition():
+    for key in CARD_KEYS:
+        assert describe(key), f"missing glossary for card {key!r}"
+        assert key in CARD_TERMS
+
+
+def test_every_core_code_has_a_definition():
+    for code in CORE_CODES:
+        assert describe(code), f"missing glossary for core {code!r}"
+        assert code in CORE_TERMS
+
+
+def test_lookup_is_accent_and_case_insensitive():
+    assert describe("difusão") == describe("difusao") == describe("DIFUSAO")
+    assert describe("Difusão MM3M") == describe("difusao mm3m")
+
+
+def test_concepts_are_present():
+    for key in ("difusao", "nucleos", "mm3m", "regime", "alertas"):
+        assert describe(key), f"missing concept {key!r}"
+
+
+def test_unknown_term_returns_empty_string():
+    assert describe("termo inexistente xyz") == ""
+    assert describe("") == ""
