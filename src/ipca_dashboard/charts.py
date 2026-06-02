@@ -7,6 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from ipca_dashboard.config import load_yaml
+from ipca_dashboard.glossary import metric_label
 
 GROUP_COLORS = {
     "Alimentação e bebidas": "#B45309",
@@ -21,13 +22,14 @@ GROUP_COLORS = {
 }
 
 # Fallback theme if config/chart_theme.yaml is missing — keeps charts working.
+# Dark by default, coherent with .streamlit/config.toml (base="dark").
 _DEFAULT_TEMPLATE = {
-    "paper_bgcolor": "white",
-    "plot_bgcolor": "white",
-    "font_family": "Arial",
-    "gridcolor": "#E5E7EB",
+    "paper_bgcolor": "#0E1117",
+    "plot_bgcolor": "#0E1117",
+    "font_family": "sans-serif",
+    "gridcolor": "#2A2F3A",
 }
-_TEXT_COLOR = "#111827"
+_TEXT_COLOR = "#E6EAF1"  # light text, visible on the dark chart background
 
 
 @lru_cache(maxsize=1)
@@ -110,7 +112,7 @@ def waterfall_latest(ipca_items: pd.DataFrame, date: pd.Timestamp) -> go.Figure:
             connector={"line": {"color": "#9CA3AF"}},
             increasing={"marker": {"color": "#B91C1C"}},
             decreasing={"marker": {"color": "#2563EB"}},
-            totals={"marker": {"color": "#111827"}},
+            totals={"marker": {"color": "#E6EAF1"}},
         )
     )
     return apply_layout(fig, f"Waterfall do IPCA - {date:%Y-%m}", "p.p.")
@@ -192,7 +194,7 @@ def core_lines(core_metrics: pd.DataFrame, core_set_name: str, metric: str = "ro
         color="core_name_display",
         labels={"date": "Mês", metric: "%", "core_name_display": "Núcleo"},
     )
-    return apply_layout(fig, f"Núcleos - {metric}", "%")
+    return apply_layout(fig, f"Núcleos — {metric_label(metric)}", yaxis_title="%", xaxis_title="Mês")
 
 
 def core_fan(core_metrics: pd.DataFrame, core_set_name: str, metric: str = "rolling_12m") -> go.Figure:
@@ -227,8 +229,16 @@ def core_fan(core_metrics: pd.DataFrame, core_set_name: str, metric: str = "roll
             name="faixa min-max",
         )
     )
-    fig.add_trace(go.Scatter(x=summary.index, y=summary["mean"], name="média", line=dict(color="#111827", width=2)))
-    return apply_layout(fig, "Fan chart simples dos núcleos", "%")
+    fig.add_trace(
+        go.Scatter(x=summary.index, y=summary["mean"], name="média", line=dict(color="#E6EAF1", width=2))
+    )
+    return apply_layout(
+        fig,
+        f"Dispersão dos núcleos — {metric_label(metric)}",
+        yaxis_title="%",
+        xaxis_title="Mês",
+        subtitle="faixa azul = do menor ao maior núcleo · linha = média dos núcleos",
+    )
 
 
 def diffusion_line(bcb: pd.DataFrame) -> go.Figure:
@@ -236,7 +246,7 @@ def diffusion_line(bcb: pd.DataFrame) -> go.Figure:
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=data["date"], y=data["mom"], name="mensal", line=dict(color="#047857", width=1.5)))
     fig.add_trace(
-        go.Scatter(x=data["date"], y=data["moving_average_3m"], name="MM3M", line=dict(color="#111827", width=2.5))
+        go.Scatter(x=data["date"], y=data["moving_average_3m"], name="MM3M", line=dict(color="#E6EAF1", width=2.5))
     )
     if not data.empty:
         for p, color in [(20, "#D1D5DB"), (50, "#9CA3AF"), (80, "#F59E0B"), (90, "#DC2626")]:

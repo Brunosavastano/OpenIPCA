@@ -28,6 +28,7 @@ from ipca_dashboard.diagnostics import classify_latest_regime  # noqa: E402
 from ipca_dashboard.glossary import (  # noqa: E402
     CONCEPTS,
     CORE_TERMS,
+    METRIC_LABELS,
     SEVERITY_PT,
     describe,
 )
@@ -47,27 +48,28 @@ st.set_page_config(page_title="IPCA Macro Dashboard", layout="wide")
 
 CSS = """
 <style>
+  /* Dark theme, coherent with .streamlit/config.toml (base="dark"). */
   .main .block-container { padding-top: 1.5rem; max-width: 1400px; }
-  h1, h2, h3 { color: #111827; letter-spacing: 0; }
+  h1, h2, h3 { color: #E6EAF1; letter-spacing: 0; }
   [data-testid="stMetric"] {
-    background: #FFFFFF;
-    border: 1px solid #E5E7EB;
+    background: #1A1F2B;
+    border: 1px solid #2A2F3A;
     border-radius: 8px;
     padding: 14px 16px;
   }
-  [data-testid="stMetricLabel"] { color: #6B7280; }
-  [data-testid="stMetricValue"] { color: #111827; font-size: 1.55rem; }
+  [data-testid="stMetricLabel"] { color: #9CA3AF; }
+  [data-testid="stMetricValue"] { color: #E6EAF1; font-size: 1.55rem; }
   .diagnostic {
-    border-left: 4px solid #111827;
-    background: #F9FAFB;
-    color: #111827;
+    border-left: 4px solid #4DA3FF;
+    background: #1A1F2B;
+    color: #E6EAF1;
     padding: 16px 18px;
     border-radius: 6px;
     font-size: 1.02rem;
     line-height: 1.55;
   }
-  .diagnostic strong { color: #111827; }
-  .small-note { color: #6B7280; font-size: 0.9rem; }
+  .diagnostic strong { color: #FFFFFF; }
+  .small-note { color: #9CA3AF; font-size: 0.9rem; }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
@@ -385,21 +387,51 @@ def page_cores(data: dict[str, pd.DataFrame]) -> None:
                     f"Faltando: {missing}. A média é omitida quando o preset está incompleto."
                 )
 
-    metric_labels = {
-        "moving_average_3m": "MM3M (m/m, NSA)",
-        "rolling_12m": "12m",
-        "mom": "m/m",
-        "three_month_saar": "3m anualizado (NSA, experimental)",
-    }
-    metric = st.selectbox(
-        "Métrica", list(metric_labels), index=0, format_func=lambda key: metric_labels[key]
-    )
     st.header("Monitor de núcleos")
+    # What "núcleos" are, then a legend for the cores in the selected preset.
+    st.caption(describe("nucleos"))
+    members = core_sets.get(selected, {}).get("members", [])
+    if members:
+        legend = "  \n".join(f"- {describe(m)}" for m in members if describe(m))
+        if legend:
+            with st.popover("ℹ️ O que é cada núcleo deste preset"):
+                st.markdown(legend)
+
+    # Metric selector reuses the single-source METRIC_LABELS (same labels the
+    # chart titles use, so they never diverge). Default to MM3M.
+    metric_options = [m for m in ("moving_average_3m", "rolling_12m", "mom", "three_month_saar")]
+    metric = st.selectbox(
+        "Métrica",
+        metric_options,
+        index=0,
+        format_func=lambda key: METRIC_LABELS.get(key, key),
+    )
     st.caption("Momentum sem ajuste sazonal (NSA). Versão com ajuste sazonal (SA) chega no v0.2.")
     st.plotly_chart(core_lines(cores, selected, metric), use_container_width=True)
     st.plotly_chart(core_fan(cores, selected, metric), use_container_width=True)
-    latest = cores[cores["core_set_name"] == selected].sort_values("date").groupby("core_name").tail(1)
-    st.dataframe(latest.sort_values("moving_average_3m", ascending=False), use_container_width=True)
+
+    # Numeric detail behind a toggle: clean headers, useful columns only.
+    with st.expander("Ver tabela de núcleos (detalhe)", expanded=False):
+        st.caption("Valores mais recentes de cada núcleo do preset.")
+        latest = (
+            cores[cores["core_set_name"] == selected]
+            .sort_values("date")
+            .groupby("core_name")
+            .tail(1)
+            .sort_values("moving_average_3m", ascending=False)
+        )
+        rename = {
+            "core_name": "Núcleo",
+            "mom": "No mês (%)",
+            "moving_average_3m": "MM3M (%)",
+            "rolling_12m": "12m (%)",
+        }
+        cols = [c for c in rename if c in latest.columns]
+        st.dataframe(
+            latest[cols].rename(columns=rename),
+            use_container_width=True,
+            hide_index=True,
+        )
 
 
 def page_diffusion(data: dict[str, pd.DataFrame]) -> None:
