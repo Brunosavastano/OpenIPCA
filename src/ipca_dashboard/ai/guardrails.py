@@ -32,25 +32,26 @@ _FORBIDDEN_PATTERNS = [
     re.compile(
         r"\bcopom\b.{0,40}\b"
         r"(vai|deve|ira|corta|cortara|cortar|reduz|reduzira|reduzir|"
-        r"baixa|baixara|baixar|sobe|subira|subir|eleva|elevara|elevar|"
-        r"aumenta|aumentara|aumentar|mantem|mantera|manter)\b"
+        r"reduza|baixa|baixara|baixar|sobe|subira|subir|eleva|elevara|elevar|"
+        r"aumenta|aumentara|aumentar|mantem|mantera|manter|mantenha)\b"
     ),
     re.compile(
         r"\bselic\b.{0,40}\b"
-        r"(vai|deve|ira|sera|cai|caira|cair|cortada|reduzida|sobe|subira|subir|"
-        r"elevada|aumentada|mantida|fica|ficara)\b"
+        r"(vai|deve|ira|sera|cai|caia|caira|cair|cortada|reduzida|sobe|subira|subir|"
+        r"elevada|aumentada|mantida|fica|ficara|fique)\b"
     ),
     re.compile(
-        r"\b(corte|alta|queda|manutencao)\s+(da\s+selic|de\s+juros)\s+"
+        r"\b(corte|alta|queda|manutencao)\s+(da\s+selic|de\s+juros)\s+(?:e\s+)?"
         r"(certo|garantid|inevitavel)\w*\b"
     ),
     re.compile(
-        r"\b(compre|compra|comprar|venda|vender)\b.{0,40}\b"
+        r"\b(compre|compra|comprar|venda|vender|invista|investir|aplique|aplicar|"
+        r"aloque|alocar)\b.{0,40}\b"
         r"(acao|acoes|ativo|ativos|dolar|tesouro|ipca\+|ntn-?b|bova11|ivvb11|"
         r"fundo|fundos|titulo|titulos)\b"
     ),
     re.compile(
-        r"\b(recomendo|recomenda|recomendar|recomendaria|sugiro|indico)\b.{0,40}\b"
+        r"\b(recomendo|recomenda|recomendar|recomendaria|sugiro|indico|indicaria)\b.{0,40}\b"
         r"(acao|acoes|ativo|ativos|dolar|tesouro|ipca\+|ntn-?b|selic|fundo|fundos|"
         r"titulo|titulos)\b"
     ),
@@ -81,6 +82,26 @@ _INJECTION_PATTERNS = [
     re.compile(r"\b(responda como se|fa[cç]a de conta|ignore o contexto|sem restri[cç]\w*)\b"),
 ]
 
+# Same intent, but matched on a compact skeleton that strips spaces, zero-width
+# separators and punctuation. This catches "i g n o r e" / "ig\u200bnore" without
+# refusing benign words like "ignorada" or "acima" on their own.
+_COMPACT_INJECTION_PATTERNS = [
+    re.compile(
+        r"ignore(?:a|as|o|os|suas|todas|todos|all|previous|your|the)*"
+        r"(instrucoes|instructions|prompt|regras|rules|acima|anteriores|previous|"
+        r"contexto|context|tudo|systemprompt)"
+    ),
+    re.compile(
+        r"(desconsidere|esqueca|forget|disregard)"
+        r"(instrucoes|instructions|prompt|regras|rules|acima|anteriores|previous|"
+        r"contexto|context|tudo|all)"
+    ),
+    re.compile(
+        r"(youarenow|actas|pretendtobe|ajacomo|voceagorae|apartirdeagoravoce|"
+        r"assumaopapel|developermode|jailbreak)"
+    ),
+]
+
 # A claimed figure: a number not attached to letters, and not part of a date
 # (hyphen on either side). Skips labels like "12m", "3m", "MM3M", "p80", and
 # dates like "2024-03" / "03-2024".
@@ -100,8 +121,13 @@ class GuardrailError(ValueError):
 
 
 def _normalize_text(text: str) -> str:
-    decomposed = unicodedata.normalize("NFKD", text or "")
+    normalized = unicodedata.normalize("NFKC", text or "")
+    decomposed = unicodedata.normalize("NFKD", normalized)
     return "".join(ch for ch in decomposed if not unicodedata.combining(ch)).lower()
+
+
+def _compact_text(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", text)
 
 
 def _has_numeric_unit_after(text: str, end: int) -> bool:
@@ -169,6 +195,13 @@ def _cited_values(by_id: dict[str, dict], ids: list[str]) -> list[float]:
     return values
 
 
+def _all_claim_cited_values(by_id: dict[str, dict], claims: list[dict]) -> list[float]:
+    values: list[float] = []
+    for claim in claims:
+        values.extend(_cited_values(by_id, claim.get("evidence_ids", []) or []))
+    return values
+
+
 def _require_numbers_in_cited(text: str, cited_values: list[float]) -> None:
     """Every number in the sentence must match a value of an evidence IT cites.
 
@@ -195,6 +228,10 @@ def check_injection(question: str) -> None:
     text = _normalize_text(question or "")
     for pat in _INJECTION_PATTERNS:
         if pat.search(text):
+            raise GuardrailError("Refused: the input looks like a prompt-injection attempt.")
+    compact = _compact_text(text)
+    for pat in _COMPACT_INJECTION_PATTERNS:
+        if pat.search(compact):
             raise GuardrailError("Refused: the input looks like a prompt-injection attempt.")
 
 
@@ -226,7 +263,8 @@ def check_monetary_policy(output: dict) -> None:
 def check_grounding(output: dict, evidence: list[dict]) -> None:
     by_id = {ev["evidence_id"]: ev for ev in evidence}
     numeric_values = _numeric_evidence_values(evidence)
-    for claim in output.get("claims", []):
+    claims = output.get("claims", []) or []
+    for claim in claims:
         ctype = claim.get("type")
         ids = claim.get("evidence_ids", []) or []
         text = claim.get("text", "")
@@ -256,10 +294,11 @@ def check_grounding(output: dict, evidence: list[dict]) -> None:
             ):
                 raise GuardrailError("A 'regime' claim rule_id does not match ev_regime.")
             _require_numbers_in_cited(text, _cited_values(by_id, ids))
-    # Free-text fields that cite no specific ids (brief's short_brief, Q&A's
-    # answer) are checked against ALL evidence values — no invented number slips in.
+    # The brief's short_brief cites no specific ids, so check against all values.
     _require_numbers_in_evidence(output.get("short_brief", ""), numeric_values)
-    _require_numbers_in_evidence(output.get("answer", ""), numeric_values)
+    # The Q&A answer is accompanied by claims. Any number in the user-facing
+    # answer must be covered by at least one evidence_id cited by those claims.
+    _require_numbers_in_cited(output.get("answer", ""), _all_claim_cited_values(by_id, claims))
 
 
 def validate_ai_output(output: dict, evidence: list[dict]) -> None:

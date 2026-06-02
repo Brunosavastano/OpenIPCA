@@ -89,6 +89,20 @@ def _fallback_answer() -> dict:
     }
 
 
+def _require_answer_payload(out: object) -> dict:
+    if not isinstance(out, dict):
+        raise GuardrailError("Answer output must be a JSON object.")
+    answer = out.get("answer")
+    if not isinstance(answer, str) or not answer.strip():
+        raise GuardrailError("Answer output is missing a non-empty answer.")
+    claims = out.get("claims")
+    if claims is None:
+        out["claims"] = []
+    elif not isinstance(claims, list):
+        raise GuardrailError("Answer output claims must be a list.")
+    return out
+
+
 def answer_question(
     question: str,
     bcb: pd.DataFrame,
@@ -100,11 +114,18 @@ def answer_question(
     core_set: str = "bcb_compact",
 ) -> QAResult:
     """Answer a user question, grounded in the evidence. Never raises."""
+    try:
+        question_text = "" if question is None else str(question)
+    except Exception:  # noqa: BLE001 - hostile input must not crash the Q&A box
+        question_text = ""
+
     # 1) Input guardrails — refuse injection / off-scope BEFORE calling the model.
     try:
-        check_question(question)
+        check_question(question_text)
     except GuardrailError as exc:
-        return _refused_result(question, _redact_secrets(f"{type(exc).__name__}: {exc}"))
+        return _refused_result(
+            question_text, _redact_secrets(f"{type(exc).__name__}: {exc}")
+        )
 
     # 2) Resolve provider (config) + build evidence (reused from the brief path).
     used_fallback = False
@@ -122,11 +143,12 @@ def answer_question(
         provider, evidence, used_fallback = NoAIProvider(), [], True
         error = _redact_secrets(f"{type(exc).__name__}: {exc}")
 
-    messages = _messages(question, evidence)
+    messages = _messages(question_text, evidence)
 
     # 3) Generate + validate (grounding + monetary policy). Any failure -> fallback.
     try:
         out = provider.generate_structured(messages, ANSWER_SCHEMA, temperature=0.0)
+        out = _require_answer_payload(out)
         check_grounding(out, evidence)
         check_monetary_policy(out)
     except (GuardrailError, Exception) as exc:  # noqa: BLE001 - AI must never block
@@ -139,7 +161,7 @@ def answer_question(
     claims = out.get("claims", []) or []
     trace = {
         "prompt_version": QA_PROMPT_VERSION,
-        "question": question,
+        "question": question_text,
         "evidence_ids": [e["evidence_id"] for e in evidence],
         "claims": [
             {"text": c.get("text"), "type": c.get("type"), "evidence_ids": c.get("evidence_ids", [])}
@@ -151,7 +173,7 @@ def answer_question(
         "provider": final_provider,
         "mode": mode,
         "prompt_version": QA_PROMPT_VERSION,
-        "question_hash": _hash(question),
+        "question_hash": _hash(question_text),
         "evidence_hash": _hash(evidence),
         "schema_version": SCHEMA_VERSION,
         "used_fallback": used_fallback,
