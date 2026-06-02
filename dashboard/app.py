@@ -128,12 +128,14 @@ def render_ai_replay() -> None:
         st.markdown(brief_path.read_text(encoding="utf-8"))
         if trace_path.exists():
             trace = json.loads(trace_path.read_text(encoding="utf-8"))
-            with st.expander("🔎 Ver os bastidores (como a IA chegou a isto)", expanded=False):
-                st.caption(
-                    "Passo a passo do que a IA consultou (somente dados oficiais já "
-                    "calculados) antes de escrever — para quem quiser auditar a leitura."
-                )
-                st.json(trace)
+            # NOTE: no nested expander here — Streamlit forbids expander-in-expander.
+            # The trace is a labelled section inside this expander instead.
+            st.markdown("**🔎 Bastidores (como a IA chegou a isto)**")
+            st.caption(
+                "Passo a passo do que a IA consultou (somente dados oficiais já "
+                "calculados) antes de escrever — para quem quiser auditar a leitura."
+            )
+            st.json(trace, expanded=False)
 
 
 def _alert_messages() -> dict[str, str]:
