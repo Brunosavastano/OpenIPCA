@@ -165,12 +165,41 @@ def test_streamlit_app_renders_all_pages():
         assert not app.exception
 
         pages = list(app.sidebar.radio[0].options)
-        assert pages == ["Painel executivo", "Decomposição", "Núcleos", "Difusão", "Alertas", "Metodologia"]
+        assert pages == [
+            "Painel executivo", "Pergunte ao IPCA", "Decomposição",
+            "Núcleos", "Difusão", "Alertas", "Metodologia",
+        ]
 
         for page in pages:
             app.sidebar.radio[0].set_value(page)
             app.run(timeout=60)
             assert not app.exception, f"Streamlit page failed to render: {page}"
+    finally:
+        for path in created:
+            path.unlink(missing_ok=True)
+
+
+def test_ask_page_renders_an_answer_without_network(monkeypatch):
+    """The Q&A page must render an ANSWER path, not just its empty state.
+
+    Force AI OFF so the live call degrades to the deterministic fallback with no
+    network — even if the developer has a key in their local .env. This exercises
+    page_ask end-to-end: question in -> answer out, no exception, mode seal shown.
+    """
+    monkeypatch.setenv("OPENIPCA_AI_ENABLED", "false")
+    for key in ("GOOGLE_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
+        monkeypatch.delenv(key, raising=False)
+    created = _ensure_processed_fixtures()
+    try:
+        app = AppTest.from_file("dashboard/app.py")
+        app.run(timeout=60)
+        app.sidebar.radio[0].set_value("Pergunte ao IPCA")
+        # Simulate the user having asked a curated, in-scope question.
+        app.session_state["qa_last_q"] = "Como está a difusão do IPCA?"
+        app.run(timeout=60)
+        assert not app.exception
+        # the answer prose is rendered (fallback message is non-empty markdown)
+        assert any("IA" in md.value or "brief" in md.value for md in app.markdown)
     finally:
         for path in created:
             path.unlink(missing_ok=True)

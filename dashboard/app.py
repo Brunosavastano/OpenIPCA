@@ -23,6 +23,7 @@ from ipca_dashboard.charts import (  # noqa: E402
     waterfall_latest,
 )
 from ipca_dashboard.ai.env import load_env_once  # noqa: E402
+from ipca_dashboard.ai.qa_replay import CURATED_QUESTIONS, answer_with_replay  # noqa: E402
 from ipca_dashboard.config import OUTPUTS_DIR, PROCESSED_DIR, load_yaml  # noqa: E402
 from ipca_dashboard.diagnostics import classify_latest_regime  # noqa: E402
 from ipca_dashboard.glossary import (  # noqa: E402
@@ -70,6 +71,17 @@ CSS = """
   }
   .diagnostic strong { color: #FFFFFF; }
   .small-note { color: #9CA3AF; font-size: 0.9rem; }
+  .ask-teaser {
+    border-left: 4px solid #34D399;
+    background: #14241F;
+    color: #E6EAF1;
+    padding: 14px 18px;
+    border-radius: 6px;
+    font-size: 1.02rem;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .ask-teaser strong { color: #34D399; }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
@@ -245,6 +257,14 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     )
 
     st.markdown(f"<div class='diagnostic'>{load_diagnostic()}</div>", unsafe_allow_html=True)
+
+    st.markdown(
+        "<div class='ask-teaser'>💬 <strong>Pergunte ao IPCA.</strong> "
+        "Faça uma pergunta em português sobre a inflação e receba uma resposta "
+        "aterrada nos dados oficiais — cada número rastreável a uma evidência. "
+        "Abra <em>“Pergunte ao IPCA”</em> na barra lateral.</div>",
+        unsafe_allow_html=True,
+    )
 
     render_ai_replay()
     render_glossary()
@@ -501,6 +521,69 @@ def page_methodology(data: dict[str, pd.DataFrame]) -> None:
         )
 
 
+_ASK_SEAL = {
+    "ai": "🟢 Resposta gerada ao vivo, aterrada nos dados oficiais.",
+    "replay": "🗂️ Resposta pré-gerada e auditada (IA ao vivo indisponível agora).",
+    "fallback": "⚪ A IA está indisponível no momento — use o painel e o brief para os números oficiais.",
+    "deterministic": "⚪ A IA está indisponível no momento — use o painel e o brief para os números oficiais.",
+    "refused": "🚫 Pergunta fora do escopo (apenas inflação/IPCA) ou recusada por segurança.",
+}
+
+
+def page_ask(data: dict[str, pd.DataFrame]) -> None:
+    bcb, items, cores, alerts = data["bcb"], data["items"], data["cores"], data["alerts"]
+    st.title("Pergunte ao IPCA")
+    st.caption(
+        "Pergunte em português sobre a inflação brasileira. A resposta é aterrada nos "
+        "dados oficiais já calculados — cada número é rastreável a uma evidência. Com uma "
+        "chave de IA configurada, a resposta é gerada ao vivo; caso contrário, mostramos "
+        "uma resposta pré-gerada e auditada. A IA nunca dá recomendação de investimento "
+        "nem previsão de Copom/Selic."
+    )
+
+    st.markdown("**Perguntas para começar:**")
+    cols = st.columns(2)
+    for index, question in enumerate(CURATED_QUESTIONS):
+        if cols[index % 2].button(question, key=f"ask_sugg_{index}", use_container_width=True):
+            st.session_state["qa_last_q"] = question
+
+    typed = st.text_input(
+        "Ou escreva a sua pergunta:",
+        key="qa_input",
+        placeholder="Ex.: O que puxou a inflação do mês?",
+    )
+    if st.button("Perguntar", key="qa_submit", type="primary") and typed.strip():
+        st.session_state["qa_last_q"] = typed.strip()
+
+    question = st.session_state.get("qa_last_q")
+    if not question:
+        st.info("Escolha uma pergunta acima ou escreva a sua para começar.")
+        return
+
+    # Cache the answer for the current question: Streamlit reruns on every widget
+    # interaction, and without this each rerun would re-hit the live model — wasted
+    # quota on a public box with no rate-limit. Only call when the question changes.
+    cache = st.session_state.get("qa_cache")
+    if cache is None or cache.get("q") != question:
+        with st.spinner("Consultando os dados do IPCA..."):
+            result = answer_with_replay(question, bcb, items, cores, alerts)
+        st.session_state["qa_cache"] = {"q": question, "result": result}
+    result = st.session_state["qa_cache"]["result"]
+
+    st.markdown(f"**Você perguntou:** {question}")
+    st.caption(_ASK_SEAL.get(result.mode, ""))
+    # No unsafe_allow_html here: the model's prose is rendered as inert text so a
+    # crafted answer can never inject HTML into the public page.
+    st.markdown(result.answer)
+
+    if result.claims:
+        with st.expander("🔎 Evidências — cada número rastreado a um dado oficial", expanded=False):
+            for claim in result.claims:
+                text = claim.get("text", "")
+                ids = ", ".join(claim.get("evidence_ids", []) or [])
+                st.markdown(f"- {text}" + (f"  \n  `{ids}`" if ids else ""))
+
+
 def main() -> None:
     try:
         data = load_data(processed_signature())
@@ -513,10 +596,12 @@ def main() -> None:
 
     page = st.sidebar.radio(
         "Navegação",
-        ["Painel executivo", "Decomposição", "Núcleos", "Difusão", "Alertas", "Metodologia"],
+        ["Painel executivo", "Pergunte ao IPCA", "Decomposição", "Núcleos", "Difusão", "Alertas", "Metodologia"],
     )
     if page == "Painel executivo":
         page_executive(data)
+    elif page == "Pergunte ao IPCA":
+        page_ask(data)
     elif page == "Decomposição":
         page_decomposition(data)
     elif page == "Núcleos":
