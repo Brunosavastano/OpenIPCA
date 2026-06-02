@@ -1,6 +1,41 @@
+import plotly.graph_objects as go
 import pandas as pd
 
-from ipca_dashboard.charts import contribution_ranking
+from ipca_dashboard.charts import (
+    apply_layout,
+    contribution_ranking,
+    load_chart_theme,
+    stacked_contribution,
+)
+
+
+def test_apply_layout_uses_theme_background_and_visible_title():
+    fig = apply_layout(go.Figure(), "Título de teste", yaxis_title="p.p.")
+    tpl = {**{"paper_bgcolor": "white", "plot_bgcolor": "white"},
+           **load_chart_theme().get("plotly_template", {})}
+    assert fig.layout.paper_bgcolor == tpl["paper_bgcolor"]
+    assert "Título de teste" in fig.layout.title.text
+    # Title font must be the dark text color (visible on the light theme bg).
+    assert fig.layout.title.font.color == "#111827"
+
+
+def test_apply_layout_subtitle_is_embedded():
+    fig = apply_layout(go.Figure(), "T", subtitle="🔴 cima · 🔵 baixo")
+    assert "cima" in fig.layout.title.text and "<sub>" in fig.layout.title.text
+
+
+def test_stacked_contribution_axis_labels_not_swapped():
+    df = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2024-01-01", "2024-02-01"]),
+            "level": ["group", "group"],
+            "item_name": ["Alimentação e bebidas", "Alimentação e bebidas"],
+            "contribution_mom": [0.2, 0.3],
+        }
+    )
+    fig = stacked_contribution(df)
+    assert fig.layout.xaxis.title.text == "Mês"
+    assert "p.p." in fig.layout.yaxis.title.text  # not "Mês" on the Y axis
 
 
 def _items(n: int, date: str = "2024-01-01") -> pd.DataFrame:

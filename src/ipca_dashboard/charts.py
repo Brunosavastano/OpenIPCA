@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from functools import lru_cache
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+from ipca_dashboard.config import load_yaml
 
 GROUP_COLORS = {
     "Alimentação e bebidas": "#B45309",
@@ -17,21 +20,55 @@ GROUP_COLORS = {
     "Comunicação": "#4B5563",
 }
 
+# Fallback theme if config/chart_theme.yaml is missing — keeps charts working.
+_DEFAULT_TEMPLATE = {
+    "paper_bgcolor": "white",
+    "plot_bgcolor": "white",
+    "font_family": "Arial",
+    "gridcolor": "#E5E7EB",
+}
+_TEXT_COLOR = "#111827"
 
-def apply_layout(fig: go.Figure, title: str, yaxis_title: str | None = None) -> go.Figure:
+
+@lru_cache(maxsize=1)
+def load_chart_theme() -> dict:
+    """Single source of chart styling (spec_V3 §253). Reads config/chart_theme.yaml."""
+    try:
+        return load_yaml("chart_theme.yaml")
+    except Exception:  # noqa: BLE001 - missing/invalid config must not break charts
+        return {"plotly_template": _DEFAULT_TEMPLATE, "palette": {}}
+
+
+def theme_palette() -> dict:
+    return load_chart_theme().get("palette", {})
+
+
+def apply_layout(
+    fig: go.Figure,
+    title: str,
+    yaxis_title: str | None = None,
+    xaxis_title: str | None = None,
+    subtitle: str | None = None,
+) -> go.Figure:
+    tpl = {**_DEFAULT_TEMPLATE, **load_chart_theme().get("plotly_template", {})}
+    # Optional subtitle rendered under the title (used to explain the heatmap colors).
+    title_text = title if not subtitle else f"{title}<br><sub>{subtitle}</sub>"
     fig.update_layout(
-        title=title,
-        template="plotly_white",
-        font=dict(family="Arial", size=13, color="#111827"),
-        title_font=dict(size=18, color="#111827"),
-        margin=dict(l=32, r=24, t=64, b=48),
-        legend=dict(orientation="h", yanchor="bottom", y=-0.28, xanchor="left", x=0),
+        title=dict(text=title_text, x=0, xanchor="left", font=dict(size=18, color=_TEXT_COLOR)),
+        paper_bgcolor=tpl["paper_bgcolor"],
+        plot_bgcolor=tpl["plot_bgcolor"],
+        font=dict(family=tpl["font_family"], size=13, color=_TEXT_COLOR),
+        # Generous bottom margin so the horizontal legend never overlaps x labels.
+        margin=dict(l=32, r=24, t=72, b=96),
+        legend=dict(orientation="h", yanchor="top", y=-0.32, xanchor="left", x=0),
         hovermode="x unified",
     )
-    fig.update_xaxes(showgrid=False)
-    fig.update_yaxes(gridcolor="#E5E7EB", zerolinecolor="#9CA3AF")
+    fig.update_xaxes(showgrid=False, automargin=True)
+    fig.update_yaxes(gridcolor=tpl["gridcolor"], zerolinecolor="#9CA3AF", automargin=True)
     if yaxis_title:
         fig.update_yaxes(title=yaxis_title)
+    if xaxis_title:
+        fig.update_xaxes(title=xaxis_title)
     return fig
 
 
@@ -44,9 +81,17 @@ def stacked_contribution(ipca_items: pd.DataFrame, months: int = 24) -> go.Figur
         y="contribution_mom",
         color="item_name",
         color_discrete_map=GROUP_COLORS,
-        labels={"date": "Mês", "contribution_mom": "p.p.", "item_name": "Grupo"},
+        labels={"date": "Mês", "contribution_mom": "Contribuição (p.p.)", "item_name": "Grupo"},
     )
-    return apply_layout(fig, "Contribuição mensal por grupo do IPCA", "p.p.")
+    # Quarterly ticks + angled short dates so labels fit on narrow screens.
+    fig.update_xaxes(dtick="M3", tickformat="%b/%y", tickangle=-45)
+    fig = apply_layout(
+        fig,
+        f"Contribuição mensal por grupo (últimos {months} meses)",
+        yaxis_title="Contribuição (p.p.)",
+        xaxis_title="Mês",
+    )
+    return fig
 
 
 def waterfall_latest(ipca_items: pd.DataFrame, date: pd.Timestamp) -> go.Figure:
@@ -89,25 +134,52 @@ def contribution_ranking(ipca_items: pd.DataFrame, date: pd.Timestamp, level: st
             .sort_values("contribution_mom")
         )
     colors = ranking["contribution_mom"].map(lambda value: "#B91C1C" if value > 0 else "#2563EB")
-    fig = go.Figure(go.Bar(x=ranking["contribution_mom"], y=ranking["item_name"], orientation="h", marker_color=colors))
-    return apply_layout(fig, f"Top pressões altistas e baixistas - {level}", "p.p.")
+    fig = go.Figure(
+        go.Bar(
+            x=ranking["contribution_mom"],
+            y=ranking["item_name"],
+            orientation="h",
+            marker_color=colors,
+            hovertemplate="%{y}<br>%{x:.2f} p.p.<extra></extra>",
+        )
+    )
+    level_pt = {"group": "grupo", "subgroup": "subgrupo", "item": "item", "subitem": "subitem"}
+    return apply_layout(
+        fig,
+        f"Maiores pressões de alta e de baixa — por {level_pt.get(level, level)}",
+        yaxis_title="",
+        xaxis_title="Contribuição (p.p.)",
+    )
 
 
 def heatmap_groups(ipca_items: pd.DataFrame, months: int = 24) -> go.Figure:
     groups = ipca_items[ipca_items["level"] == "group"].sort_values("date")
     groups = groups[groups["date"] >= groups["date"].max() - pd.DateOffset(months=months - 1)]
     pivot = groups.pivot_table(index="item_name", columns="date", values="contribution_mom", aggfunc="first")
+    # Order rows so the groups that pushed inflation the most sit on top.
+    pivot = pivot.reindex(pivot.mean(axis=1).sort_values(ascending=True).index)
+    x_labels = [d.strftime("%b/%y") for d in pivot.columns]
     fig = go.Figure(
         go.Heatmap(
             z=pivot.values,
-            x=[d.strftime("%Y-%m") for d in pivot.columns],
+            x=x_labels,
             y=pivot.index,
             colorscale="RdBu_r",
             zmid=0,
-            colorbar={"title": "p.p."},
+            colorbar={
+                "title": "Contribuição<br>(p.p.)",
+                "ticksuffix": " p.p.",
+            },
+            hovertemplate="<b>%{y}</b><br>%{x}<br>%{z:.2f} p.p.<extra></extra>",
         )
     )
-    return apply_layout(fig, "Heatmap de contribuição por grupo", "Grupo")
+    return apply_layout(
+        fig,
+        f"Mapa de calor: contribuição por grupo (últimos {months} meses)",
+        yaxis_title="Grupo",
+        xaxis_title="Mês",
+        subtitle="🔴 vermelho = puxou a inflação para cima · 🔵 azul = segurou para baixo",
+    )
 
 
 def core_lines(core_metrics: pd.DataFrame, core_set_name: str, metric: str = "rolling_12m") -> go.Figure:
