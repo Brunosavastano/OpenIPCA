@@ -167,7 +167,7 @@ def test_fake_gemini_output_passes_guardrails(monkeypatch):
 
 
 def test_gemini_key_is_redacted_from_fallback_error(monkeypatch):
-    secret = "AIza-redaction-test-secret-value-123456"
+    secret = "redaction-test-secret-value"
     fake = types.ModuleType("google.generativeai")
     fake.configure = lambda **kwargs: None
 
