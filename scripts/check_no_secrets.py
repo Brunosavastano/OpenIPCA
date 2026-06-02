@@ -25,6 +25,7 @@ from pathlib import Path
 KEY_PATTERNS = [
     re.compile(r"sk-ant-[A-Za-z0-9_\-]{20,}"),   # vendor-specific key prefix
     re.compile(r"sk-(?!ant-)[A-Za-z0-9_\-]{20,}"),  # generic sk- key prefix
+    re.compile(r"AIza[0-9A-Za-z_\-]{30,}"),      # Google API key shape
 ]
 
 # Files exempt from the value scan: example templates and Markdown docs
