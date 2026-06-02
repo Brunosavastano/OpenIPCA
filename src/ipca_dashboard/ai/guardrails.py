@@ -67,6 +67,20 @@ _IN_SCOPE_HINTS = [
     "contribuicao",
 ]
 
+# Prompt-injection / jailbreak markers. A PUBLIC free-text box invites attempts to
+# override the system prompt ("ignore your instructions", "you are now ...") so
+# the model says something off-brand with the owner's name on it. We refuse the
+# QUESTION before it ever reaches the model (defence in depth; the system prompt
+# also tells the model to ignore embedded commands). Matched on accent-stripped
+# lowercase text, like _FORBIDDEN_PATTERNS.
+_INJECTION_PATTERNS = [
+    re.compile(r"\bignore?\b.{0,30}\b(instru\w*|prompt|regras|orienta\w*|tudo|acima)\b"),
+    re.compile(r"\b(desconsidere|esque[cç]a|apague|desfa[cç]a)\b.{0,30}\b(instru\w*|prompt|regras|acima|anterior\w*|tudo|contexto)\b"),
+    re.compile(r"\b(you are now|act as|pretend to be|disregard|forget (the|all|your)|system prompt|jailbreak|developer mode)\b"),
+    re.compile(r"\b(aja como|finja (ser|que)|voce agora e|a partir de agora voce|assuma o papel)\b"),
+    re.compile(r"\b(responda como se|fa[cç]a de conta|ignore o contexto|sem restri[cç]\w*)\b"),
+]
+
 # A claimed figure: a number not attached to letters, and not part of a date
 # (hyphen on either side). Skips labels like "12m", "3m", "MM3M", "p80", and
 # dates like "2024-03" / "03-2024".
@@ -176,15 +190,32 @@ def check_scope(question: str) -> None:
         raise GuardrailError("Out of scope: question is not about Brazilian inflation.")
 
 
+def check_injection(question: str) -> None:
+    """Refuse a question that tries to override the system prompt (jailbreak)."""
+    text = _normalize_text(question or "")
+    for pat in _INJECTION_PATTERNS:
+        if pat.search(text):
+            raise GuardrailError("Refused: the input looks like a prompt-injection attempt.")
+
+
+def check_question(question: str) -> None:
+    """Run all input-side guardrails for a public Q&A box (injection then scope)."""
+    check_injection(question)
+    check_scope(question)
+
+
 def check_monetary_policy(output: dict) -> None:
     tone = output.get("monetary_policy_tone")
     if tone is not None and tone not in MONETARY_POLICY_TONES:
         raise GuardrailError(f"Invalid monetary_policy_tone: {tone!r}")
     if output.get("investment_advice", False):
         raise GuardrailError("investment_advice must be False.")
+    # Scan every user-facing text field: the brief uses short_brief, the Q&A uses
+    # `answer`. Both must be checked so a forecast can't hide in the answer prose.
     blob = _normalize_text(
         " ".join(
-            [output.get("short_brief", "")] + [c.get("text", "") for c in output.get("claims", [])]
+            [output.get("short_brief", ""), output.get("answer", "")]
+            + [c.get("text", "") for c in output.get("claims", [])]
         )
     )
     for pat in _FORBIDDEN_PATTERNS:
@@ -225,7 +256,10 @@ def check_grounding(output: dict, evidence: list[dict]) -> None:
             ):
                 raise GuardrailError("A 'regime' claim rule_id does not match ev_regime.")
             _require_numbers_in_cited(text, _cited_values(by_id, ids))
+    # Free-text fields that cite no specific ids (brief's short_brief, Q&A's
+    # answer) are checked against ALL evidence values — no invented number slips in.
     _require_numbers_in_evidence(output.get("short_brief", ""), numeric_values)
+    _require_numbers_in_evidence(output.get("answer", ""), numeric_values)
 
 
 def validate_ai_output(output: dict, evidence: list[dict]) -> None:
