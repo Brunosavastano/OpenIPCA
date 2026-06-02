@@ -136,6 +136,20 @@ SEVERITY_PT: dict[str, str] = {
     "info": "informativo",
 }
 
+# Friendly labels for the momentum metrics (single source — used by the cores
+# page selectbox AND the chart titles, so they never diverge).
+METRIC_LABELS: dict[str, str] = {
+    "mom": "no mês (m/m)",
+    "rolling_12m": "em 12 meses",
+    "moving_average_3m": "média de 3 meses (MM3M, sem ajuste sazonal)",
+    "three_month_saar": "3 meses anualizado (NSA, experimental)",
+}
+
+
+def metric_label(key: str) -> str:
+    """Friendly label for a momentum metric key; falls back to the key itself."""
+    return METRIC_LABELS.get(key, key)
+
 # Unified lookup table.
 _ALL: dict[str, str] = {**CARD_TERMS, **CONCEPTS, **REGIME_TERMS, **CORE_TERMS}
 

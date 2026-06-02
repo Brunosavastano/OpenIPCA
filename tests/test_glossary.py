@@ -7,7 +7,9 @@ owned/reviewed by Bruno).
 from ipca_dashboard.glossary import (
     CARD_TERMS,
     CORE_TERMS,
+    METRIC_LABELS,
     describe,
+    metric_label,
 )
 
 CARD_KEYS = [
@@ -47,3 +49,10 @@ def test_concepts_are_present():
 def test_unknown_term_returns_empty_string():
     assert describe("termo inexistente xyz") == ""
     assert describe("") == ""
+
+
+def test_metric_label_friendly_for_known_keys_and_falls_back():
+    for key in ("mom", "rolling_12m", "moving_average_3m", "three_month_saar"):
+        assert metric_label(key) == METRIC_LABELS[key]
+        assert "_" not in metric_label(key)  # no raw underscores reach the user
+    assert metric_label("unknown_key") == "unknown_key"  # graceful fallback
