@@ -1,0 +1,10 @@
+# Fixed light theme so the public demo looks the same for every visitor,
+# regardless of their OS/browser dark-mode preference. (spec_V3 §14.4)
+# Without this, dark-mode users saw dark chart titles vanish on dark page bg.
+[theme]
+base = "light"
+primaryColor = "#1F4E79"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F8FAFC"
+textColor = "#111827"
+font = "sans serif"

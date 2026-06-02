@@ -31,6 +31,12 @@ from ipca_dashboard.glossary import (  # noqa: E402
     SEVERITY_PT,
     describe,
 )
+from ipca_dashboard.hierarchy import (  # noqa: E402
+    LEVEL_LABEL_PT,
+    children,
+    node_label,
+    top_level_rows,
+)
 from ipca_dashboard.transforms import calculate_diffusion_from_items  # noqa: E402
 
 load_env_once()  # honor a local .env for BYOK; no-op without python-dotenv
@@ -249,25 +255,105 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     render_active_alerts(alerts)
 
 
+def render_drilldown(items: pd.DataFrame, date: pd.Timestamp) -> None:
+    """Navigate the hierarchy: group → subgroup → item → subitem.
+
+    Answers 'which subitems make up an item?' using the parent/child links
+    already in the data. Each step shows the children ordered by contribution.
+    """
+    st.subheader("Composição: do grupo ao subitem")
+    st.caption(
+        "Escolha um grupo e desça nos níveis para ver de que ele é feito. "
+        "O IPCA se organiza em grupo → subgrupo → item → subitem."
+    )
+
+    groups = top_level_rows(items, date)
+    if groups.empty:
+        st.info("Sem dados de composição para o mês selecionado.")
+        return
+
+    # Selected path of classification codes, one per level (built via selectboxes).
+    def _pick(level_rows: pd.DataFrame, level: str, key: str) -> pd.Series | None:
+        if level_rows.empty:
+            return None
+        options = list(level_rows["classification_code"])
+        labels = {
+            r["classification_code"]: f"{r['item_name']} ({r['contribution_mom']:.2f} p.p.)"
+            for _, r in level_rows.iterrows()
+        }
+        chosen = st.selectbox(
+            LEVEL_LABEL_PT.get(level, level),
+            options,
+            format_func=lambda c: labels.get(c, c),
+            key=key,
+        )
+        return level_rows[level_rows["classification_code"] == chosen].iloc[0]
+
+    crumbs: list[str] = []
+    group_row = _pick(groups, "group", "dd_group")
+    if group_row is not None:
+        crumbs.append(group_row["item_name"])
+        subgroups = children(items, group_row["classification_code"], date)
+        sub_row = _pick(subgroups, "subgroup", "dd_subgroup") if not subgroups.empty else None
+        if sub_row is not None:
+            crumbs.append(sub_row["item_name"])
+            sub_items = children(items, sub_row["classification_code"], date)
+            item_row = _pick(sub_items, "item", "dd_item") if not sub_items.empty else None
+            current = item_row if item_row is not None else sub_row
+        else:
+            current = group_row
+        # Show the children of whatever node is currently selected (deepest picked).
+        st.markdown("**" + " › ".join(crumbs) + "**")
+        kids = children(items, current["classification_code"], date)
+        if kids.empty:
+            st.caption(f"{current['item_name']} não tem subdivisão neste nível.")
+        else:
+            label = node_label(items, current["classification_code"], date)
+            st.markdown(f"{label} ({current['contribution_mom']:.2f} p.p.) é composto por:")
+            show = kids[["item_name", "contribution_mom", "weight"]].rename(
+                columns={
+                    "item_name": "Componente",
+                    "contribution_mom": "Contribuição (p.p.)",
+                    "weight": "Peso (%)",
+                }
+            )
+            st.dataframe(show, use_container_width=True, hide_index=True)
+
+
 def page_decomposition(data: dict[str, pd.DataFrame]) -> None:
     items = data["items"]
     st.header("Decomposição do IPCA")
     dates = sorted(pd.to_datetime(items["date"]).dropna().unique())
-    selected_date = st.selectbox("Mês de referência", dates, index=len(dates) - 1, format_func=lambda x: pd.Timestamp(x).strftime("%Y-%m"))
+    selected_date = st.selectbox(
+        "Mês de referência",
+        dates,
+        index=len(dates) - 1,
+        format_func=lambda x: pd.Timestamp(x).strftime("%Y-%m"),
+    )
     selected_date = pd.Timestamp(selected_date)
-    level = st.selectbox("Nível para ranking", ["group", "subgroup", "item", "subitem"], index=3)
+    level = st.selectbox(
+        "Nível de detalhe (ranking e download)",
+        ["group", "subgroup", "item", "subitem"],
+        index=3,
+        format_func=lambda lv: LEVEL_LABEL_PT.get(lv, lv),
+    )
 
+    # Time-series charts (always last 24 months — independent of the month picker).
     st.plotly_chart(stacked_contribution(items), use_container_width=True)
     left, right = st.columns(2)
     with left:
+        st.caption(f"Waterfall e ranking referem-se a {selected_date:%Y-%m}.")
         st.plotly_chart(waterfall_latest(items, selected_date), use_container_width=True)
     with right:
+        st.caption("Maiores altas e baixas no nível de detalhe selecionado.")
         st.plotly_chart(contribution_ranking(items, selected_date, level), use_container_width=True)
     st.plotly_chart(heatmap_groups(items), use_container_width=True)
 
+    render_drilldown(items, selected_date)
+
     latest = items[(items["date"] == selected_date) & (items["level"] == level)].copy()
     st.download_button(
-        "Baixar ranking CSV",
+        f"Baixar dados ({LEVEL_LABEL_PT.get(level, level)}) — CSV",
         latest.sort_values("contribution_mom", ascending=False).to_csv(index=False).encode("utf-8"),
         file_name=f"ranking_{level}_{selected_date:%Y_%m}.csv",
         mime="text/csv",
