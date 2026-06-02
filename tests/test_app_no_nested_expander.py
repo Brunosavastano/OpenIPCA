@@ -7,6 +7,7 @@ directly encodes the rule: no `with st.expander(...)` may appear inside another
 """
 
 import ast
+import textwrap
 from pathlib import Path
 
 APP = Path(__file__).resolve().parents[1] / "dashboard" / "app.py"
@@ -36,6 +37,36 @@ def _has_nested_expander(node: ast.AST, inside_expander: bool = False) -> bool:
         if _has_nested_expander(child, child_inside):
             return True
     return False
+
+
+def _first_function(source: str) -> ast.FunctionDef:
+    tree = ast.parse(textwrap.dedent(source))
+    return tree.body[0]
+
+
+def test_nested_expander_guard_detects_bug_pattern():
+    fn = _first_function(
+        """
+        def bad():
+            with st.expander("outer"):
+                with st.expander("inner"):
+                    pass
+        """
+    )
+    assert _has_nested_expander(fn)
+
+
+def test_nested_expander_guard_allows_sequential_expanders():
+    fn = _first_function(
+        """
+        def good():
+            with st.expander("first"):
+                pass
+            with st.expander("second"):
+                pass
+        """
+    )
+    assert not _has_nested_expander(fn)
 
 
 def test_app_has_no_nested_expanders():
