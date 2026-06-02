@@ -5,6 +5,7 @@ import ipca_dashboard.charts as charts
 from ipca_dashboard.charts import (
     apply_layout,
     contribution_ranking,
+    core_fan,
     core_lines,
     load_chart_theme,
     stacked_contribution,
@@ -33,6 +34,21 @@ def test_core_lines_title_has_no_raw_metric_key():
     title = core_lines(df, "bcb_compact", "moving_average_3m").layout.title.text
     assert "moving_average_3m" not in title  # no raw key / underscores
     assert "média de 3 meses" in title  # friendly label instead
+
+
+def test_core_fan_title_has_no_raw_metric_key():
+    df = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2024-01-01", "2024-01-01", "2024-02-01", "2024-02-01"]),
+            "core_set_name": ["bcb_compact"] * 4,
+            "core_name": ["EX0", "EX3", "EX0", "EX3"],
+            "moving_average_3m": [0.4, 0.6, 0.5, 0.7],
+        }
+    )
+    fig = core_fan(df, "bcb_compact", "moving_average_3m")
+    assert "moving_average_3m" not in fig.layout.title.text
+    assert "média de 3 meses" in fig.layout.title.text
+    assert fig.data[-1].line.color == charts._TEXT_COLOR
 
 
 def test_apply_layout_subtitle_is_embedded():

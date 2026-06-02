@@ -112,7 +112,7 @@ def waterfall_latest(ipca_items: pd.DataFrame, date: pd.Timestamp) -> go.Figure:
             connector={"line": {"color": "#9CA3AF"}},
             increasing={"marker": {"color": "#B91C1C"}},
             decreasing={"marker": {"color": "#2563EB"}},
-            totals={"marker": {"color": "#111827"}},
+            totals={"marker": {"color": "#E6EAF1"}},
         )
     )
     return apply_layout(fig, f"Waterfall do IPCA - {date:%Y-%m}", "p.p.")
@@ -246,7 +246,7 @@ def diffusion_line(bcb: pd.DataFrame) -> go.Figure:
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=data["date"], y=data["mom"], name="mensal", line=dict(color="#047857", width=1.5)))
     fig.add_trace(
-        go.Scatter(x=data["date"], y=data["moving_average_3m"], name="MM3M", line=dict(color="#111827", width=2.5))
+        go.Scatter(x=data["date"], y=data["moving_average_3m"], name="MM3M", line=dict(color="#E6EAF1", width=2.5))
     )
     if not data.empty:
         for p, color in [(20, "#D1D5DB"), (50, "#9CA3AF"), (80, "#F59E0B"), (90, "#DC2626")]:
