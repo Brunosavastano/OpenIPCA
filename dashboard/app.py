@@ -25,6 +25,12 @@ from ipca_dashboard.charts import (  # noqa: E402
 from ipca_dashboard.ai.env import load_env_once  # noqa: E402
 from ipca_dashboard.config import OUTPUTS_DIR, PROCESSED_DIR, load_yaml  # noqa: E402
 from ipca_dashboard.diagnostics import classify_latest_regime  # noqa: E402
+from ipca_dashboard.glossary import (  # noqa: E402
+    CONCEPTS,
+    CORE_TERMS,
+    SEVERITY_PT,
+    describe,
+)
 from ipca_dashboard.transforms import calculate_diffusion_from_items  # noqa: E402
 
 load_env_once()  # honor a local .env for BYOK; no-op without python-dotenv
@@ -48,11 +54,13 @@ CSS = """
   .diagnostic {
     border-left: 4px solid #111827;
     background: #F9FAFB;
+    color: #111827;
     padding: 16px 18px;
     border-radius: 6px;
     font-size: 1.02rem;
     line-height: 1.55;
   }
+  .diagnostic strong { color: #111827; }
   .small-note { color: #6B7280; font-size: 0.9rem; }
 </style>
 """
@@ -114,8 +122,48 @@ def render_ai_replay() -> None:
         st.markdown(brief_path.read_text(encoding="utf-8"))
         if trace_path.exists():
             trace = json.loads(trace_path.read_text(encoding="utf-8"))
-            st.markdown("**Trace de orquestração** (ferramentas → evidências → afirmações):")
-            st.json(trace)
+            with st.expander("🔎 Ver os bastidores (como a IA chegou a isto)", expanded=False):
+                st.caption(
+                    "Passo a passo do que a IA consultou (somente dados oficiais já "
+                    "calculados) antes de escrever — para quem quiser auditar a leitura."
+                )
+                st.json(trace)
+
+
+def _alert_messages() -> dict[str, str]:
+    """Map alert_id -> human-readable message from config (reused, not hard-coded)."""
+    try:
+        rules = load_yaml("alert_rules.yaml").get("rules", [])
+    except Exception:  # noqa: BLE001 - missing/invalid config must not break the page
+        return {}
+    return {r["id"]: r.get("message", r["id"]) for r in rules if "id" in r}
+
+
+def render_active_alerts(alerts: pd.DataFrame) -> None:
+    """Active alerts in plain language: the config message + translated severity."""
+    st.subheader("Alertas ativos")
+    st.caption(describe("alertas"))
+    if alerts.empty:
+        st.info("Nenhum alerta ativo neste mês.")
+        return
+    messages = _alert_messages()
+    badge = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🔵", "info": "⚪"}
+    for _, row in alerts.iterrows():
+        alert_id = str(row.get("alert_id", ""))
+        sev = str(row.get("severity", "info"))
+        text = messages.get(alert_id, "Alerta ativo sem descrição configurada.")
+        sev_pt = SEVERITY_PT.get(sev, sev)
+        st.markdown(f"{badge.get(sev, '⚪')} **[{sev_pt}]** {text}")
+
+
+def render_glossary() -> None:
+    """A persistent, plain-language glossary for readers without macro context."""
+    with st.expander("📖 O que significam estes termos?", expanded=False):
+        for text in CONCEPTS.values():
+            st.markdown(f"- {text}")
+        st.markdown("**Núcleos do IPCA:**")
+        for text in CORE_TERMS.values():
+            st.markdown(f"- {text}")
 
 
 def freshness_notice() -> tuple[str, str] | None:
@@ -166,16 +214,20 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
         severity, details = notice
         (st.error if severity == "block" else st.warning)(f"Freshness: {details}")
 
+    # Each card carries a plain-language tooltip ("(i)") via st.metric(help=...).
     cols = st.columns(6)
-    cols[0].metric("IPCA m/m", fmt(ipca["mom"] if ipca is not None else None))
-    cols[1].metric("IPCA 12m", fmt(ipca["rolling_12m"] if ipca is not None else None))
-    cols[2].metric("IPCA MM3M", fmt(ipca["moving_average_3m"] if ipca is not None else None))
-    cols[3].metric("Média núcleos MM3M", fmt(core_row["moving_average_3m"] if core_row is not None else None))
-    cols[4].metric("Difusão MM3M", fmt(diffusion["moving_average_3m"] if diffusion is not None else None))
-    cols[5].metric("Alertas ativos", len(alerts), "")
+    cols[0].metric("IPCA m/m", fmt(ipca["mom"] if ipca is not None else None), help=describe("IPCA m/m"))
+    cols[1].metric("IPCA 12m", fmt(ipca["rolling_12m"] if ipca is not None else None), help=describe("IPCA 12m"))
+    cols[2].metric("IPCA MM3M", fmt(ipca["moving_average_3m"] if ipca is not None else None), help=describe("IPCA MM3M"))
+    cols[3].metric("Média núcleos MM3M", fmt(core_row["moving_average_3m"] if core_row is not None else None), help=describe("Média núcleos MM3M"))
+    cols[4].metric("Difusão MM3M", fmt(diffusion["moving_average_3m"] if diffusion is not None else None), help=describe("Difusão MM3M"))
+    cols[5].metric("Alertas ativos", len(alerts), help=describe("Alertas ativos"))
 
     regime = classify_latest_regime(bcb)
     st.markdown(f"**Regime inflacionário:** {regime.label_pt}")
+    regime_explanation = describe(regime.label_pt)
+    if regime_explanation:
+        st.caption(regime_explanation)
     st.caption(
         "Momentum em MM3M (média móvel de 3 meses, sem ajuste sazonal/NSA). "
         "A versão anualizada com ajuste sazonal (SA) chega no v0.2. "
@@ -185,6 +237,7 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     st.markdown(f"<div class='diagnostic'>{load_diagnostic()}</div>", unsafe_allow_html=True)
 
     render_ai_replay()
+    render_glossary()
 
     left, right = st.columns([1.25, 1])
     with left:
@@ -193,9 +246,7 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
         st.plotly_chart(diffusion_line(bcb), use_container_width=True)
     st.plotly_chart(core_lines(cores, "bcb_compact", "moving_average_3m"), use_container_width=True)
 
-    if not alerts.empty:
-        st.subheader("Alertas ativos")
-        st.dataframe(alerts[["reference_month", "severity", "metric", "value", "message"]], use_container_width=True)
+    render_active_alerts(alerts)
 
 
 def page_decomposition(data: dict[str, pd.DataFrame]) -> None:
