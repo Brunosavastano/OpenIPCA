@@ -54,7 +54,9 @@ bridge_secrets_to_env(_deploy_secrets)
 load_env_once()
 
 
-st.set_page_config(page_title="IPCA Macro Dashboard", layout="wide")
+st.set_page_config(
+    page_title="IPCA Macro Dashboard", layout="wide", initial_sidebar_state="expanded"
+)
 
 
 CSS = """
@@ -128,6 +130,60 @@ CSS = """
   }
   .mode-seal.live { color: #35B07D; border-color: rgba(53,176,125,.45); }
   .mode-seal.refused { color: #E5484D; border-color: rgba(229,72,77,.45); }
+
+  /* sidebar brand + nav (turns st.sidebar.radio into a terminal menu) */
+  [data-testid="stSidebar"] .brand { display: flex; align-items: center; gap: 9px; padding: 4px 4px 0; }
+  [data-testid="stSidebar"] .brand-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 6px; background: #E8943A; color: #0A0E14;
+    font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: .95rem;
+  }
+  [data-testid="stSidebar"] .brand-name { font-weight: 600; font-size: 1.05rem; color: #E6EAF1; letter-spacing: -.01em; }
+  [data-testid="stSidebar"] .nav-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: .6rem; letter-spacing: .18em;
+    text-transform: uppercase; color: #5A6373; margin: 18px 4px 6px;
+  }
+  [data-testid="stSidebar"] [role="radiogroup"] { gap: 1px; }
+  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"] {
+    display: flex; align-items: center; gap: 9px; width: 100%; margin: 0; padding: 7px 10px;
+    border-left: 2px solid transparent; border-radius: 0 5px 5px 0; cursor: pointer;
+  }
+  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:hover { background: #161D28; }
+  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"] > div:first-child { display: none; }
+  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]::before {
+    content: "\\25CF"; font-size: .42rem; color: #5A6373; flex: none;
+  }
+  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"] div[data-testid="stMarkdownContainer"] p {
+    color: #B7BECB; font-size: .92rem; margin: 0;
+  }
+  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) {
+    background: #161D28; border-left-color: #E8943A;
+  }
+  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked)::before { color: #E8943A; }
+  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) div[data-testid="stMarkdownContainer"] p {
+    color: #E8943A; font-weight: 600;
+  }
+
+  /* top status strip (terminal-style header band) */
+  .status-strip {
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: 'IBM Plex Mono', monospace; font-size: .64rem; letter-spacing: .12em;
+    text-transform: uppercase; color: #8A93A3;
+    border-bottom: 1px solid #222A36; padding: 0 2px 9px; margin-bottom: 14px;
+  }
+  .status-strip .strip-left { display: flex; align-items: center; gap: 8px; }
+  .status-strip .dot { width: 7px; height: 7px; border-radius: 50%; background: #E8943A; }
+  .status-strip .strip-right { color: #5A6373; }
+
+  /* regime pill */
+  .regime-row { display: flex; align-items: center; gap: 10px; margin: 4px 0 2px; flex-wrap: wrap; }
+  .regime-key { color: #8A93A3; }
+  .regime-pill {
+    font-family: 'IBM Plex Mono', monospace; font-size: .66rem; letter-spacing: .12em;
+    text-transform: uppercase; color: #E8943A;
+    border: 1px solid rgba(232,148,58,.5); background: rgba(232,148,58,.08);
+    padding: 4px 10px; border-radius: 4px;
+  }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
@@ -277,6 +333,21 @@ def latest_series_row(bcb: pd.DataFrame, name: str) -> pd.Series | None:
     return subset.iloc[-1]
 
 
+def prev_series_row(bcb: pd.DataFrame, name: str) -> pd.Series | None:
+    """The month before the latest, for month-over-month KPI deltas."""
+    subset = bcb[bcb["series_short_name"] == name].sort_values("date")
+    if len(subset) < 2:
+        return None
+    return subset.iloc[-2]
+
+
+def delta_pp(curr: float | int | None, prev: float | int | None) -> str | None:
+    """Signed month-over-month change in p.p. — drives the inverted KPI arrows."""
+    if curr is None or prev is None or pd.isna(curr) or pd.isna(prev):
+        return None
+    return f"{curr - prev:+.2f} p.p."
+
+
 def page_executive(data: dict[str, pd.DataFrame]) -> None:
     bcb, items, cores, alerts = data["bcb"], data["items"], data["cores"], data["alerts"]
     latest_date = pd.to_datetime(bcb["date"]).max()
@@ -288,6 +359,14 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
         & (cores["date"] == latest_date)
     ]
     core_row = core_mean.iloc[0] if not core_mean.empty else None
+    ipca_prev = prev_series_row(bcb, "IPCA")
+    diffusion_prev = prev_series_row(bcb, "Difusao")
+    core_prev_df = cores[
+        (cores["core_set_name"] == "bcb_compact")
+        & (cores["core_name"].isin(["Media", "Média"]))
+        & (cores["date"] < latest_date)
+    ].sort_values("date")
+    core_prev = core_prev_df.iloc[-1] if not core_prev_df.empty else None
 
     st.title("IPCA Macro Dashboard")
     st.caption(f"Último dado processado: {latest_date:%Y-%m} | Fontes: BCB/SGS e IBGE/SIDRA")
@@ -297,35 +376,65 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
         severity, details = notice
         (st.error if severity == "block" else st.warning)(f"Freshness: {details}")
 
-    # Each card carries a plain-language tooltip ("(i)") via st.metric(help=...).
+    # Each card carries a plain-language tooltip ("(i)") via st.metric(help=...) and
+    # a month-over-month delta. delta_color="inverse" => up = bad = red, down = green
+    # (for diffusion too: a falling MM3M is good, so it reads green).
+    ipca_mom = ipca["mom"] if ipca is not None else None
+    ipca_12m = ipca["rolling_12m"] if ipca is not None else None
+    ipca_mm3m = ipca["moving_average_3m"] if ipca is not None else None
+    core_mm3m = core_row["moving_average_3m"] if core_row is not None else None
+    diff_mm3m = diffusion["moving_average_3m"] if diffusion is not None else None
+
     cols = st.columns(6)
     cols[0].metric(
-        "IPCA m/m", fmt(ipca["mom"] if ipca is not None else None), help=describe("IPCA m/m")
+        "IPCA m/m",
+        fmt(ipca_mom),
+        delta=delta_pp(ipca_mom, ipca_prev["mom"] if ipca_prev is not None else None),
+        delta_color="inverse",
+        help=describe("IPCA m/m"),
     )
     cols[1].metric(
         "IPCA 12m",
-        fmt(ipca["rolling_12m"] if ipca is not None else None),
+        fmt(ipca_12m),
+        delta=delta_pp(ipca_12m, ipca_prev["rolling_12m"] if ipca_prev is not None else None),
+        delta_color="inverse",
         help=describe("IPCA 12m"),
     )
     cols[2].metric(
         "IPCA MM3M",
-        fmt(ipca["moving_average_3m"] if ipca is not None else None),
+        fmt(ipca_mm3m),
+        delta=delta_pp(
+            ipca_mm3m, ipca_prev["moving_average_3m"] if ipca_prev is not None else None
+        ),
+        delta_color="inverse",
         help=describe("IPCA MM3M"),
     )
     cols[3].metric(
         "Média núcleos MM3M",
-        fmt(core_row["moving_average_3m"] if core_row is not None else None),
+        fmt(core_mm3m),
+        delta=delta_pp(
+            core_mm3m, core_prev["moving_average_3m"] if core_prev is not None else None
+        ),
+        delta_color="inverse",
         help=describe("Média núcleos MM3M"),
     )
     cols[4].metric(
         "Difusão MM3M",
-        fmt(diffusion["moving_average_3m"] if diffusion is not None else None),
+        fmt(diff_mm3m),
+        delta=delta_pp(
+            diff_mm3m, diffusion_prev["moving_average_3m"] if diffusion_prev is not None else None
+        ),
+        delta_color="inverse",
         help=describe("Difusão MM3M"),
     )
     cols[5].metric("Alertas ativos", len(alerts), help=describe("Alertas ativos"))
 
     regime = classify_latest_regime(bcb)
-    st.markdown(f"**Regime inflacionário:** {regime.label_pt}")
+    st.markdown(
+        "<div class='regime-row'><span class='regime-key'>Regime inflacionário:</span>"
+        f"<span class='regime-pill'>{escape(regime.label_pt.upper())}</span></div>",
+        unsafe_allow_html=True,
+    )
     regime_explanation = describe(regime.label_pt)
     if regime_explanation:
         st.caption(regime_explanation)
@@ -335,7 +444,9 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
         "Regime classificado por regra determinística (headline × difusão)."
     )
 
-    st.markdown(f"<div class='diagnostic'>{escape(load_diagnostic())}</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='diagnostic'>{escape(load_diagnostic())}</div>", unsafe_allow_html=True
+    )
 
     st.markdown(
         "<div class='ask-teaser'>💬 <strong>Pergunte ao IPCA.</strong> "
@@ -694,6 +805,12 @@ def main() -> None:
         st.caption(str(exc))
         return
 
+    st.sidebar.markdown(
+        "<div class='brand'><span class='brand-mark'>I</span>"
+        "<span class='brand-name'>OpenIPCA</span></div>"
+        "<div class='nav-label'>Navegação</div>",
+        unsafe_allow_html=True,
+    )
     page = st.sidebar.radio(
         "Navegação",
         [
@@ -705,6 +822,13 @@ def main() -> None:
             "Alertas",
             "Metodologia",
         ],
+        label_visibility="collapsed",
+    )
+    st.markdown(
+        "<div class='status-strip'>"
+        f"<span class='strip-left'><span class='dot'></span>{escape(page.upper())}</span>"
+        "<span class='strip-right'>openipca.streamlit.app</span></div>",
+        unsafe_allow_html=True,
     )
     if page == "Painel executivo":
         page_executive(data)
