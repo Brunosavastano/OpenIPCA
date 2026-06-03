@@ -111,7 +111,6 @@ def transform_bcb_series(raw: pd.DataFrame) -> pd.DataFrame:
         "zscore_60m",
         "percentile_since_2012",
         "moving_average_3m_percentile",
-        "fetched_at",
     ]
     return pd.concat(transformed, ignore_index=True)[columns]
 
@@ -225,7 +224,7 @@ def transform_ipca_items(items: pd.DataFrame) -> pd.DataFrame:
     )
     chain = _chain_contribution(df)
     df = df.merge(chain, on=["date", "classification_code"], how="left")
-    return df
+    return df.drop(columns=["fetched_at"], errors="ignore")
 
 
 def _chain_contribution(df: pd.DataFrame) -> pd.DataFrame:

@@ -6,6 +6,7 @@ from ipca_dashboard.transforms import (
     calc_3m_saar,
     expanding_percentile,
     percentile_midrank,
+    transform_bcb_series,
     transform_ipca_items,
 )
 
@@ -59,6 +60,55 @@ def test_ipca_contribution_formula_and_simple_12m():
     group = result[result["classification_code"] == "1"].sort_values("date")
     assert group["contribution_mom"].iloc[0] == 0.8
     assert math.isclose(group["contribution_12m_simple"].iloc[-1], 9.6)
+    assert "fetched_at" not in result.columns
+
+
+def test_transform_bcb_series_drops_execution_timestamp_from_processed_output():
+    raw = pd.DataFrame(
+        {
+            "date": pd.date_range("2024-01-01", periods=24, freq="MS"),
+            "value": [0.5] * 24,
+            "source": ["BCB/SGS"] * 24,
+            "sgs_code": [433] * 24,
+            "series_name": ["IPCA"] * 24,
+            "series_short_name": ["IPCA"] * 24,
+            "series_group": ["headline"] * 24,
+            "unit": ["pct_mom"] * 24,
+            "fetched_at": ["run-clock"] * 24,
+        }
+    )
+    result = transform_bcb_series(raw)
+    assert "fetched_at" not in result.columns
+    changed_clock = raw.copy()
+    changed_clock["fetched_at"] = "next-run-clock"
+    pd.testing.assert_frame_equal(result, transform_bcb_series(changed_clock))
+
+
+def test_transform_ipca_items_is_stable_when_only_fetch_timestamp_changes():
+    dates = pd.date_range("2024-01-01", periods=12, freq="MS")
+    rows = [
+        {
+            "date": date,
+            "source": "IBGE/SIDRA",
+            "item_code": "headline",
+            "classification_code": "",
+            "item_name": "Indice geral",
+            "level": "headline",
+            "parent_classification_code": "",
+            "group_classification_code": "",
+            "weight": 100.0,
+            "mom": 0.5,
+            "ytd": None,
+            "yoy": None,
+            "fetched_at": "first-run-clock",
+        }
+        for date in dates
+    ]
+    first = transform_ipca_items(pd.DataFrame(rows))
+    rows_next = [{**row, "fetched_at": "next-run-clock"} for row in rows]
+    second = transform_ipca_items(pd.DataFrame(rows_next))
+    assert "fetched_at" not in first.columns
+    pd.testing.assert_frame_equal(first, second)
 
 
 def test_percentile_midrank_handles_ties():

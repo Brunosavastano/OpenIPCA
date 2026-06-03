@@ -37,4 +37,4 @@ def test_normalize_sidra_7060_pivots_variables_and_levels():
     assert out.iloc[0]["level"] == "group"
     assert out.iloc[0]["mom"] == 1.2
     assert out.iloc[0]["weight"] == 21.5
-
+    assert "fetched_at" not in out.columns
