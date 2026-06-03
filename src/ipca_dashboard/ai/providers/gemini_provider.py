@@ -18,6 +18,7 @@ import json
 import os
 import re
 
+from ipca_dashboard.ai.providers.base import resolve_directives
 from ipca_dashboard.ai.schemas import BRIEF_SCHEMA
 
 _SYSTEM = (
@@ -91,7 +92,8 @@ class GeminiProvider:
         genai.configure(api_key=api_key)
         self._model_name = selected_model
         self._genai = genai
-        self._client = genai.GenerativeModel(selected_model, system_instruction=_SYSTEM)
+        # The model is built per call so the system prompt can vary by task
+        # (brief default vs Q&A analyst), resolved from the messages.
 
     def generate_structured(
         self,
@@ -100,8 +102,8 @@ class GeminiProvider:
         *,
         temperature: float = 0.0,
     ) -> dict:
+        system, question = resolve_directives(messages, _SYSTEM)
         evidence = next((m["content"] for m in messages if m.get("role") == "evidence"), [])
-        question = next((m["content"] for m in messages if m.get("role") == "user"), "")
         prompt = (
             (f"Pergunta do usuário:\n{question}\n\n" if question else "")
             + "Tabela de evidências (JSON):\n"
@@ -109,7 +111,8 @@ class GeminiProvider:
             + "\n\nSchema de saída (JSON):\n"
             + json.dumps(schema or BRIEF_SCHEMA, ensure_ascii=False)
         )
-        response = self._client.generate_content(
+        client = self._genai.GenerativeModel(self._model_name, system_instruction=system)
+        response = client.generate_content(
             prompt,
             generation_config={"temperature": temperature, "response_mime_type": "application/json"},
         )

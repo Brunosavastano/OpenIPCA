@@ -199,6 +199,23 @@ def test_invented_number_in_answer_field_is_caught():
     assert _ask(_P()).mode == "fallback"
 
 
+def test_external_hypothesis_cannot_smuggle_ungrounded_number():
+    """Analyst reasoning can discuss mechanisms, but cannot invent figures."""
+    class _P:
+        name = "fake"
+        capabilities = {"structured"}
+
+        def generate_structured(self, messages, schema, *, temperature=0.0):
+            return {
+                "answer": "A hipótese de petróleo exigiria impacto de 12% nos combustíveis.",
+                "claims": [],
+                "monetary_policy_tone": "cautious",
+                "investment_advice": False,
+            }
+
+    assert _ask(_P()).mode == "fallback"
+
+
 def test_answer_number_must_be_covered_by_cited_claim_evidence():
     """A real evidence number cannot hide in `answer` unless a claim cites it."""
     class _P:
@@ -235,6 +252,20 @@ def test_copom_forecast_in_answer_field_is_caught():
     assert _ask(_P()).mode == "fallback"
 
 
+def test_central_bank_forecast_in_answer_field_is_caught():
+    """Policy forecasts cannot hide behind analyst wording without 'Copom'."""
+    class _P:
+        name = "fake"
+        capabilities = {"structured"}
+
+        def generate_structured(self, messages, schema, *, temperature=0.0):
+            return {"answer": "O Banco Central deve cortar juros na próxima reunião.",
+                    "claims": [], "monetary_policy_tone": "cautious",
+                    "investment_advice": False}
+
+    assert _ask(_P()).mode == "fallback"
+
+
 def test_asset_recommendation_in_answer_field_is_caught():
     """A live Q&A answer cannot recommend a financial asset."""
     class _P:
@@ -243,6 +274,19 @@ def test_asset_recommendation_in_answer_field_is_caught():
 
         def generate_structured(self, messages, schema, *, temperature=0.0):
             return {"answer": "Invista em Tesouro IPCA+ agora.", "claims": [],
+                    "monetary_policy_tone": "cautious", "investment_advice": False}
+
+    assert _ask(_P()).mode == "fallback"
+
+
+def test_position_recommendation_in_answer_field_is_caught():
+    """Asset recommendation cannot use 'posição' wording to bypass the guardrail."""
+    class _P:
+        name = "fake"
+        capabilities = {"structured"}
+
+        def generate_structured(self, messages, schema, *, temperature=0.0):
+            return {"answer": "Monte posição em dólar agora.", "claims": [],
                     "monetary_policy_tone": "cautious", "investment_advice": False}
 
     assert _ask(_P()).mode == "fallback"

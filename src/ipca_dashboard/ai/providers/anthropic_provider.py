@@ -17,6 +17,7 @@ import json
 import os
 import re
 
+from ipca_dashboard.ai.providers.base import resolve_directives
 from ipca_dashboard.ai.schemas import BRIEF_SCHEMA
 
 _SYSTEM = (
@@ -101,9 +102,11 @@ class AnthropicProvider:
         *,
         temperature: float = 0.0,
     ) -> dict:
+        system, question = resolve_directives(messages, _SYSTEM)
         evidence = next((m["content"] for m in messages if m.get("role") == "evidence"), [])
         user = (
-            "Tabela de evidências (JSON):\n"
+            (f"Pergunta do usuário:\n{question}\n\n" if question else "")
+            + "Tabela de evidências (JSON):\n"
             + json.dumps(evidence, ensure_ascii=False)
             + "\n\nSchema de saída (JSON):\n"
             + json.dumps(schema or BRIEF_SCHEMA, ensure_ascii=False)
@@ -112,7 +115,7 @@ class AnthropicProvider:
             model=self._model,
             max_tokens=self._max_tokens,
             temperature=temperature,
-            system=_SYSTEM,
+            system=system,
             messages=[{"role": "user", "content": user}],
         )
         # Anthropic returns a list of content blocks; concatenate text blocks.
