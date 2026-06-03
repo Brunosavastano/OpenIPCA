@@ -6,7 +6,8 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pandas as pd
-import requests
+
+from ipca_dashboard._http import session_with_retries
 
 LOGGER = logging.getLogger(__name__)
 SIDRA_BASE_URL = "https://apisidra.ibge.gov.br/values"
@@ -70,6 +71,7 @@ def fetch_sidra_7060(
     territory_code = int(territory.get("code", 1))
     classification_code = int(classification.get("code", 315))
 
+    session = session_with_retries()
     frames: list[pd.DataFrame] = []
     for period in period_chunks:
         for variable_chunk in _chunks(variable_codes, 2):
@@ -79,7 +81,7 @@ def fetch_sidra_7060(
                 f"/v/{variable_selector}/p/{period}/c{classification_code}/all"
             )
             LOGGER.info("Fetching SIDRA table %s variables %s period %s", table, variable_selector, period)
-            response = requests.get(
+            response = session.get(
                 url,
                 timeout=timeout,
                 headers={"User-Agent": "ipca-dashboard/0.1"},

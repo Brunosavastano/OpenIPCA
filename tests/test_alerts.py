@@ -11,7 +11,7 @@ def test_evaluate_condition_basic_ops():
     assert evaluate_condition(7.0, "outside_band", [4.0, 6.0])
 
 
-def test_generate_alerts_for_core_mean_threshold():
+def _alert_inputs():
     dates = pd.date_range("2023-01-01", periods=30, freq="MS")
     bcb = pd.DataFrame(
         {
@@ -48,6 +48,33 @@ def test_generate_alerts_for_core_mean_threshold():
             }
         ]
     }
+    return rules, bcb, cores
+
+
+def test_generate_alerts_for_core_mean_threshold():
+    rules, bcb, cores = _alert_inputs()
     alerts = generate_alerts(rules, bcb, cores)
     assert len(alerts) == 1
     assert alerts.iloc[0]["alert_id"] == "core_high"
+
+
+def test_generate_alerts_is_deterministic():
+    """Same input -> identical output, including the date/created_at fields.
+
+    The alerts table is versioned and refreshed by the monthly Action. A
+    wall-clock timestamp would make the file differ on every run and produce
+    phantom commits even when no inflation number changed. This pins the fix:
+    the artifact is a pure function of the data.
+    """
+    rules, bcb, cores = _alert_inputs()
+    first = generate_alerts(rules, bcb, cores)
+    second = generate_alerts(rules, bcb, cores)
+    pd.testing.assert_frame_equal(first, second)
+
+
+def test_alert_timestamps_anchor_to_reference_month():
+    rules, bcb, cores = _alert_inputs()
+    alerts = generate_alerts(rules, bcb, cores)
+    reference = pd.to_datetime(bcb["date"]).max()
+    assert alerts.iloc[0]["date"] == reference  # the data's month, not "now"
+    assert str(reference.date()) in alerts.iloc[0]["created_at"]

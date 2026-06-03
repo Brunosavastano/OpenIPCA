@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import operator
-from datetime import UTC, datetime
 from typing import Any
 
 import pandas as pd
-
 
 OPS = {
     ">": operator.gt,
@@ -103,7 +101,11 @@ def generate_alerts(
     if pd.to_datetime(bcb["date"]).nunique() < min_history_months:
         return pd.DataFrame(columns=ALERT_COLUMNS)
     reference_date, metrics = build_metric_snapshot(bcb, core_metrics, core_set_name)
-    created_at = datetime.now(UTC).isoformat(timespec="seconds")
+    # Anchor the alert's timestamps to the DATA (the reference month), not the wall
+    # clock. The alerts table is versioned and refreshed by an Action; a wall-clock
+    # value would make the file differ on every run and produce phantom commits even
+    # when no inflation number changed. Deterministic data -> commit only on real change.
+    created_at = pd.Timestamp(reference_date).isoformat()
     rows: list[dict[str, Any]] = []
     for rule in rules_config.get("rules", []):
         metric = rule["metric"]
@@ -113,7 +115,7 @@ def generate_alerts(
         if evaluate_condition(value, rule["condition"], rule["threshold"]):
             rows.append(
                 {
-                    "date": pd.Timestamp.utcnow().tz_localize(None),
+                    "date": reference_date,
                     "reference_month": reference_date.strftime("%Y-%m"),
                     "alert_id": rule["id"],
                     "metric": metric,
