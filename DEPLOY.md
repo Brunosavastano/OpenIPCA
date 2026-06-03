@@ -36,16 +36,20 @@ pode ser premium. O app é model-agnostic — isto já é suportado.
    OPENIPCA_AI_MODEL=gpt-5.4
    OPENAI_API_KEY=sua-chave
    ```
-2. Gere:
+2. Garanta que as dependências opcionais de IA estejam instaladas no ambiente local:
+   ```
+   python -m pip install -e ".[ai]"
+   ```
+3. Gere:
    ```
    python -m ipca_dashboard.ai.qa_replay
    ```
-3. Leia o resumo no fim:
+4. Leia o resumo no fim:
    - `Wrote N/M grounded replay pair(s)` — quantas perguntas aterraram.
    - Se **N < M**: algumas não aterraram (modelo fraco ou pergunta difícil). Troque
      de modelo ou revise as perguntas em `CURATED_QUESTIONS` e rode de novo.
    - Se **N == 0**: a demo **não** terá rede de segurança — corrija antes de seguir.
-4. Confira `reports/qa/replay.json` (respostas aterradas, **sem nenhuma chave dentro**)
+5. Confira `reports/qa/replay.json` (respostas aterradas, **sem nenhuma chave dentro**)
    e faça commit dele.
 
 > As perguntas são as `CURATED_QUESTIONS` em `src/ipca_dashboard/ai/qa_replay.py`

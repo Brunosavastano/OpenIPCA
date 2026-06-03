@@ -64,8 +64,10 @@ def bridge_secrets_to_env(secrets: object) -> int:
     Needed on deploys (e.g. Streamlit Community Cloud) where the key is set as a
     *secret*: the app reads os.environ, so without this the deploy key would be
     invisible and the AI would never activate. Real environment variables win
-    (os.environ.setdefault), so a .env or shell value is never clobbered. A
-    boolean secret (TOML `true`) is stringified, which load_ai_config accepts.
+    (os.environ.setdefault), so a .env or shell value is never clobbered. String
+    secrets are stripped; boolean secrets (TOML `true`/`false`) are normalized.
+    Other TOML types are ignored so a numeric/list value cannot accidentally
+    activate AI or become a bogus key/model.
 
     Best-effort and never raises: a missing secrets store (no secrets.toml) or an
     odd value is ignored. Returns the number of keys bridged.
@@ -77,11 +79,8 @@ def bridge_secrets_to_env(secrets: object) -> int:
         try:
             if key not in secrets:
                 continue
-            value = secrets[key]
-            if value is None:
-                continue
-            text = str(value).strip()
-            if not text:
+            text = _secret_to_env_text(secrets[key])
+            if text is None:
                 continue
             before = os.environ.get(key)
             os.environ.setdefault(key, text)
@@ -90,3 +89,14 @@ def bridge_secrets_to_env(secrets: object) -> int:
         except Exception:
             continue
     return bridged
+
+
+def _secret_to_env_text(value: object) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    return text or None

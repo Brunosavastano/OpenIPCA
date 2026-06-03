@@ -158,7 +158,7 @@ def generate_replay(
         result = answer_question(
             question, bcb, ipca_items, core_metrics, alerts, provider=provider
         )
-        if result.mode != "ai":
+        if not _is_grounded_replay_result(result):
             skipped.append((question, f"{result.mode}: {result.error or 'not grounded'}"))
             continue
         pairs.append(
@@ -179,6 +179,17 @@ def generate_replay(
         "pairs": pairs,
         "skipped": [{"question": q, "reason": r} for q, r in skipped],
     }
+
+
+def _is_grounded_replay_result(result: QAResult) -> bool:
+    if result.mode != "ai" or not result.claims:
+        return False
+    evidence_ids = {ev.get("evidence_id") for ev in result.evidence}
+    for claim in result.claims:
+        ids = claim.get("evidence_ids", []) or []
+        if ids and all(evidence_id in evidence_ids for evidence_id in ids):
+            return True
+    return False
 
 
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover - BYOK entry point

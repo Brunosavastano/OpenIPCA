@@ -7,11 +7,13 @@ anything else gets the honest "unavailable" fallback.
 """
 
 import json
+import logging
 
 import pandas as pd
 import pytest
 
 from ipca_dashboard.ai.qa import REFUSAL_TEXT
+from ipca_dashboard.ai import qa_replay
 from ipca_dashboard.ai.qa_replay import (
     CURATED_QUESTIONS,
     _norm_q,
@@ -69,6 +71,19 @@ class _BoomProvider:
 
     def generate_structured(self, messages, schema, *, temperature=0.0):
         raise RuntimeError("simulated outage")
+
+
+class _NoEvidenceClaimsProvider:
+    name = "fake_no_evidence"
+    capabilities = {"structured"}
+
+    def generate_structured(self, messages, schema, *, temperature=0.0):
+        return {
+            "answer": "Leitura qualitativa sem evidências citadas.",
+            "claims": [],
+            "monetary_policy_tone": "cautious",
+            "investment_advice": False,
+        }
 
 
 def _write_replay(tmp_path, question=DIFFUSION_Q, answer="RESPOSTA PRÉ-GERADA."):
@@ -261,6 +276,16 @@ def test_generate_replay_skips_ungrounded(tmp_path):
     assert len(artifact["skipped"]) == 1
 
 
+def test_generate_replay_skips_ai_answer_without_auditable_claims():
+    artifact = generate_replay(
+        _bcb(), _items(), pd.DataFrame(), pd.DataFrame(),
+        questions=[DIFFUSION_Q], provider=_NoEvidenceClaimsProvider(),
+    )
+    assert artifact["pairs"] == []
+    assert len(artifact["skipped"]) == 1
+    assert "not grounded" in artifact["skipped"][0]["reason"]
+
+
 def test_curated_questions_are_in_scope():
     # every advertised question must survive the input guardrails (no self-refusal)
     from ipca_dashboard.ai.guardrails import check_question
@@ -292,3 +317,27 @@ def test_generated_artifact_roundtrips_to_a_served_answer(tmp_path):
     assert result.mode == "replay"
     assert result.answer == artifact["pairs"][0]["answer"]
     assert result.claims  # audited claims travel with the served replay
+
+
+def test_replay_cli_warns_loudly_when_zero_pairs_ground(tmp_path, monkeypatch, caplog):
+    processed = tmp_path / "processed"
+    processed.mkdir()
+    pd.DataFrame(
+        [{"date": pd.Timestamp("2024-03-01"), "series_short_name": "IPCA", "mom": 0.30}]
+    ).to_parquet(processed / "bcb_series_monthly.parquet", index=False)
+
+    monkeypatch.setattr("ipca_dashboard.config.PROCESSED_DIR", processed)
+    monkeypatch.setattr(
+        qa_replay,
+        "generate_replay",
+        lambda *args, **kwargs: {
+            "pairs": [],
+            "skipped": [{"question": DIFFUSION_Q, "reason": "fallback: not grounded"}],
+        },
+    )
+    caplog.set_level(logging.INFO)
+
+    qa_replay.main(["--out", str(tmp_path / "replay.json")])
+
+    assert "Wrote 0/1 grounded replay pair(s)" in caplog.text
+    assert "NO replay pairs were grounded" in caplog.text

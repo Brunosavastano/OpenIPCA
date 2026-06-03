@@ -41,7 +41,6 @@ from ipca_dashboard.hierarchy import (  # noqa: E402
 )
 from ipca_dashboard.transforms import calculate_diffusion_from_items  # noqa: E402
 
-load_env_once()  # honor a local .env for BYOK; no-op without python-dotenv
 # On a deploy (e.g. Streamlit Community Cloud) the AI key is set as a *secret*.
 # The AI config reads os.environ, so mirror secrets into it (real env vars win).
 # Accessing st.secrets with no secrets.toml raises, so guard the read.
@@ -50,6 +49,8 @@ try:
 except Exception:
     _deploy_secrets = None
 bridge_secrets_to_env(_deploy_secrets)
+# Honor a local .env for BYOK; override=False means real env/secrets above win.
+load_env_once()
 
 
 st.set_page_config(page_title="IPCA Macro Dashboard", layout="wide")
