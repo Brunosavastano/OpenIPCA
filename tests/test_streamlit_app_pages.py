@@ -300,6 +300,7 @@ def test_page_ask_does_not_enable_unsafe_html_for_user_or_model_text():
     page_ask = next(
         node for node in module.body if isinstance(node, ast.FunctionDef) and node.name == "page_ask"
     )
+    unsafe_calls = []
     for call in [node for node in ast.walk(page_ask) if isinstance(node, ast.Call)]:
         if not (
             isinstance(call.func, ast.Attribute)
@@ -309,7 +310,13 @@ def test_page_ask_does_not_enable_unsafe_html_for_user_or_model_text():
         ):
             continue
         unsafe = [
-            kw.value for kw in call.keywords
+            kw.value.value for kw in call.keywords
             if kw.arg == "unsafe_allow_html" and isinstance(kw.value, ast.Constant)
         ]
-        assert unsafe != [True]
+        if unsafe == [True]:
+            unsafe_calls.append(ast.get_source_segment(source, call) or ast.unparse(call))
+
+    assert len(unsafe_calls) == 1
+    assert "mode-seal" in unsafe_calls[0]
+    assert "result.answer" not in unsafe_calls[0]
+    assert "question" not in unsafe_calls[0]

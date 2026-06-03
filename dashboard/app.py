@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+from html import escape
 from pathlib import Path
 
 import pandas as pd
@@ -230,8 +231,11 @@ def render_active_alerts(alerts: pd.DataFrame) -> None:
         sev_pt = SEVERITY_PT.get(sev, sev)
         cls = badge_class.get(sev, "info")
         # Alert text comes from our config (alert_rules.yaml), not user input.
+        safe_text = escape(str(text))
+        safe_sev_pt = escape(str(sev_pt))
         st.markdown(
-            f"<span class='badge {cls}'>{sev_pt}</span> &nbsp;{text}", unsafe_allow_html=True
+            f"<span class='badge {cls}'>{safe_sev_pt}</span> &nbsp;{safe_text}",
+            unsafe_allow_html=True,
         )
 
 
@@ -331,7 +335,7 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
         "Regime classificado por regra determinística (headline × difusão)."
     )
 
-    st.markdown(f"<div class='diagnostic'>{load_diagnostic()}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='diagnostic'>{escape(load_diagnostic())}</div>", unsafe_allow_html=True)
 
     st.markdown(
         "<div class='ask-teaser'>💬 <strong>Pergunte ao IPCA.</strong> "
@@ -658,9 +662,12 @@ def page_ask(data: dict[str, pd.DataFrame]) -> None:
     st.markdown(f"**Você perguntou:** {question}")
     seal_cls, seal_label, seal_note = _ASK_SEAL.get(result.mode, ("", "", ""))
     if seal_label:
+        safe_cls = escape(seal_cls, quote=True)
+        safe_label = escape(seal_label)
+        safe_note = escape(seal_note)
         st.markdown(
-            f"<span class='mode-seal {seal_cls}'>● {seal_label}</span> "
-            f"&nbsp;<span class='small-note'>{seal_note}</span>",
+            f"<span class='mode-seal {safe_cls}'>● {safe_label}</span> "
+            f"&nbsp;<span class='small-note'>{safe_note}</span>",
             unsafe_allow_html=True,
         )
     # No unsafe_allow_html here: the model's prose is rendered as inert text so a

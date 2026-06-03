@@ -25,6 +25,7 @@ GROUP_COLORS = {
 # semantics: up = bad = red, down = good = green.
 _UP = "#E5484D"  # inflation accelerates / upward contribution
 _DOWN = "#35B07D"  # decelerates / downward contribution
+_INFO = "#4A8FE0"  # metric identity / informational line, not value direction
 _MONO = "IBM Plex Mono"
 _MUTED = "#8A93A3"  # axis ticks / secondary text
 
@@ -295,7 +296,7 @@ def diffusion_line(bcb: pd.DataFrame) -> go.Figure:
     data = bcb[bcb["series_short_name"] == "Difusao"].sort_values("date")
     fig = go.Figure()
     fig.add_trace(
-        go.Scatter(x=data["date"], y=data["mom"], name="mensal", line=dict(color=_DOWN, width=1.3))
+        go.Scatter(x=data["date"], y=data["mom"], name="mensal", line=dict(color=_INFO, width=1.3))
     )
     fig.add_trace(
         go.Scatter(
@@ -306,7 +307,7 @@ def diffusion_line(bcb: pd.DataFrame) -> go.Figure:
         )
     )
     if not data.empty:
-        for p, color in [(20, "#5A6373"), (50, _MUTED), (80, "#E0A046"), (90, _UP)]:
+        for p, color in [(20, _DOWN), (50, _MUTED), (80, "#E0A046"), (90, _UP)]:
             value = data["mom"].quantile(p / 100)
             fig.add_hline(y=value, line_dash="dot", line_color=color, annotation_text=f"p{p}")
     return apply_layout(fig, "Difusão do IPCA: mensal, MM3M e percentis", "% de subitens")
