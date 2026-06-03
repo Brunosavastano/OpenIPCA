@@ -45,8 +45,21 @@ _FORBIDDEN_PATTERNS = [
         r"(certo|garantid|inevitavel)\w*\b"
     ),
     re.compile(
+        r"\b(banco\s+central|bc|bcb)\b.{0,40}\b"
+        r"(vai|deve|ira|corta|cortara|cortar|reduz|reduzira|reduzir|reduza|"
+        r"baixa|baixara|baixar|sobe|subira|subir|eleva|elevara|elevar|"
+        r"aumenta|aumentara|aumentar|mantem|mantera|manter|mantenha)\b"
+        r".{0,30}\b(juros|selic)\b"
+    ),
+    re.compile(
         r"\b(compre|compra|comprar|venda|vender|invista|investir|aplique|aplicar|"
-        r"aloque|alocar)\b.{0,40}\b"
+        r"aloque|alocar|aposte|apostar)\b.{0,40}\b"
+        r"(acao|acoes|ativo|ativos|dolar|tesouro|ipca\+|ntn-?b|bova11|ivvb11|"
+        r"fundo|fundos|titulo|titulos)\b"
+    ),
+    re.compile(
+        r"\b(monte|montar|abra|abrir|faca|fazer)\b.{0,30}\b"
+        r"(posicao|exposicao)\b.{0,40}\b"
         r"(acao|acoes|ativo|ativos|dolar|tesouro|ipca\+|ntn-?b|bova11|ivvb11|"
         r"fundo|fundos|titulo|titulos)\b"
     ),
