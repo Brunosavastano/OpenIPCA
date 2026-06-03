@@ -1,0 +1,9 @@
+{
+  "schema_version": "brief_v1",
+  "prompt_version": "ask_ipca_v1",
+  "reference_month": null,
+  "generated_at": null,
+  "note": "Placeholder. Generate the real pairs (BYOK) with a key configured: `python -m ipca_dashboard.ai.qa_replay`. Each pair is a grounded answer (mode=ai); no key is ever written here.",
+  "pairs": [],
+  "skipped": []
+}
