@@ -15,14 +15,19 @@ venv/
 .streamlit/secrets.toml.*
 !.streamlit/secrets.toml.example
 
-# local data outputs (built locally; not versioned)
+# Raw and staging stay local. The *processed* data the app serves IS versioned,
+# so the public deploy has data and the monthly Action can refresh it (it's tiny —
+# a few hundred KB total). Only the exact files the app reads are tracked.
 data/raw/*
 data/processed/*
 data/processed_staging/*
 outputs/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+!data/processed/*.parquet
 !outputs/.gitkeep
+!outputs/validation_report.csv
+!outputs/diagnostic_latest.json
 
 # editor / OS noise
 .DS_Store
