@@ -9,10 +9,13 @@ the AI layer model-upgradable without touching brief.py (§3.5).
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 
 from ipca_dashboard.ai.providers.base import LLMProvider
 from ipca_dashboard.ai.providers.no_ai import NoAIProvider
+
+LOGGER = logging.getLogger(__name__)
 
 # name -> factory returning an LLMProvider (or raising if unavailable).
 _REGISTRY: dict[str, Callable[[], LLMProvider]] = {}
@@ -33,10 +36,20 @@ def resolve_provider(name: str | None) -> LLMProvider:
         return NoAIProvider()
     factory = _REGISTRY.get(key)
     if factory is None:
+        LOGGER.warning("AI provider %r is not registered; using the deterministic floor.", key)
         return NoAIProvider()
     try:
         return factory()
-    except Exception:  # missing key / SDK / init error -> deterministic floor
+    except Exception as exc:  # missing key / SDK / init error -> deterministic floor
+        # The build error (e.g. "GOOGLE_API_KEY is not set") never contains the key
+        # itself, so it is safe to log — and it is the only way to see, on a deploy,
+        # WHY the live AI silently fell back instead of answering.
+        LOGGER.warning(
+            "AI provider %r unavailable (%s: %s); using the deterministic floor.",
+            key,
+            type(exc).__name__,
+            exc,
+        )
         return NoAIProvider()
 
 
