@@ -267,3 +267,28 @@ def test_curated_questions_are_in_scope():
 
     for q in CURATED_QUESTIONS:
         check_question(q)  # must not raise
+
+
+def test_generated_artifact_roundtrips_to_a_served_answer(tmp_path):
+    """The exact JSON the BYOK CLI writes must load back and be served on degrade.
+
+    This is the owner's real path: generate_replay -> write reports/qa/replay.json
+    -> (later, live path degraded) answer_with_replay serves that pair. A schema
+    drift between writer and reader would silently leave the demo with no safety
+    net, so pin the round-trip end-to-end.
+    """
+    artifact = generate_replay(
+        _bcb(), _items(), pd.DataFrame(), pd.DataFrame(),
+        questions=[DIFFUSION_Q], provider=_GroundedProvider(),
+    )
+    path = tmp_path / "replay.json"
+    path.write_text(json.dumps(artifact, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # live path degrades (outage) -> the generated pair is what the user sees
+    result = answer_with_replay(
+        DIFFUSION_Q, _bcb(), _items(), pd.DataFrame(), pd.DataFrame(),
+        provider=_BoomProvider(), replay_path=path,
+    )
+    assert result.mode == "replay"
+    assert result.answer == artifact["pairs"][0]["answer"]
+    assert result.claims  # audited claims travel with the served replay

@@ -22,7 +22,7 @@ from ipca_dashboard.charts import (  # noqa: E402
     stacked_contribution,
     waterfall_latest,
 )
-from ipca_dashboard.ai.env import load_env_once  # noqa: E402
+from ipca_dashboard.ai.env import bridge_secrets_to_env, load_env_once  # noqa: E402
 from ipca_dashboard.ai.qa_replay import CURATED_QUESTIONS, answer_with_replay  # noqa: E402
 from ipca_dashboard.config import OUTPUTS_DIR, PROCESSED_DIR, load_yaml  # noqa: E402
 from ipca_dashboard.diagnostics import classify_latest_regime  # noqa: E402
@@ -42,6 +42,14 @@ from ipca_dashboard.hierarchy import (  # noqa: E402
 from ipca_dashboard.transforms import calculate_diffusion_from_items  # noqa: E402
 
 load_env_once()  # honor a local .env for BYOK; no-op without python-dotenv
+# On a deploy (e.g. Streamlit Community Cloud) the AI key is set as a *secret*.
+# The AI config reads os.environ, so mirror secrets into it (real env vars win).
+# Accessing st.secrets with no secrets.toml raises, so guard the read.
+try:
+    _deploy_secrets = st.secrets
+except Exception:
+    _deploy_secrets = None
+bridge_secrets_to_env(_deploy_secrets)
 
 
 st.set_page_config(page_title="IPCA Macro Dashboard", layout="wide")

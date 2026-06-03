@@ -220,9 +220,25 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - BYOK entr
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(artifact, ensure_ascii=False, indent=2), encoding="utf-8")
-    logger.info("Wrote %d replay pair(s) -> %s", len(artifact["pairs"]), out_path)
+
+    grounded = len(artifact["pairs"])
+    skipped = len(artifact["skipped"])
+    total = grounded + skipped
     for skip in artifact["skipped"]:
         logger.warning("Skipped (not grounded): %s — %s", skip["question"], skip["reason"])
+    logger.info("Wrote %d/%d grounded replay pair(s) -> %s", grounded, total, out_path)
+    if grounded == 0:
+        logger.error(
+            "NO replay pairs were grounded. The public demo will have NO safety net: "
+            "without a live key (or when the free quota runs out) visitors see only the "
+            "'AI unavailable' fallback. Configure a provider key (a STRONGER model like "
+            "openai/anthropic is recommended for the one-off replay) and re-run."
+        )
+    elif skipped:
+        logger.warning(
+            "%d/%d question(s) did not ground. Consider a stronger provider/model for the "
+            "replay, or revise those questions, then re-run.", skipped, total,
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover
