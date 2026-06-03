@@ -9,6 +9,7 @@ the URL) and is redacted on error.
 """
 
 import json
+import logging
 import subprocess
 import sys
 
@@ -120,6 +121,23 @@ def test_resolve_gemini_without_model_falls_back_to_no_ai(monkeypatch):
     assert provider.name == "no_ai"
 
 
+def test_provider_resolution_log_redacts_google_api_key(monkeypatch, caplog):
+    secret = "redaction-test-google-secret"
+
+    def _factory():
+        raise RuntimeError(f"constructed error with key {secret}")
+
+    registry.register_provider("leaky_gemini_test", _factory)
+    monkeypatch.setenv("GOOGLE_API_KEY", secret)
+
+    with caplog.at_level(logging.WARNING):
+        provider = registry.resolve_provider("leaky_gemini_test")
+
+    assert provider.name == "no_ai"
+    assert secret not in caplog.text
+    assert "[redacted]" in caplog.text
+
+
 def test_importing_ai_package_does_not_import_gemini_sdk():
     # The REST provider must never pull the heavy SDK, even transitively.
     code = """
@@ -212,6 +230,39 @@ def test_fake_gemini_output_passes_guardrails(monkeypatch):
     assert "test-key" not in captured["url"]
     assert captured["headers"].get("x-goog-api-key") == "test-key"
     assert "gemini-2.0-flash" in captured["url"]
+
+
+@pytest.mark.parametrize(
+    "bad_output",
+    [
+        {
+            "claims": [],
+            "short_brief": "Leitura com número inventado de 9,99%.",
+            "monetary_policy_tone": "cautious",
+            "investment_advice": False,
+        },
+        {
+            "claims": [],
+            "short_brief": "O Copom deve cortar a Selic.",
+            "monetary_policy_tone": "cautious",
+            "investment_advice": False,
+        },
+    ],
+)
+def test_fake_gemini_output_still_goes_through_cp6_guardrails(monkeypatch, bad_output):
+    monkeypatch.setattr(
+        "ipca_dashboard.ai.providers.gemini_provider.requests.post",
+        _capture_post({}, json.dumps(bad_output)),
+    )
+    monkeypatch.setenv("OPENIPCA_AI_ENABLED", "true")
+    monkeypatch.setenv("OPENIPCA_AI_PROVIDER", "gemini")
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "gemini-2.0-flash")
+
+    result = generate_brief(_bcb(), _items(), pd.DataFrame(), pd.DataFrame())
+
+    assert result.used_fallback is True
+    assert result.provider_name == "no_ai"
 
 
 def test_no_candidates_raises_runtimeerror(monkeypatch):

@@ -10,6 +10,7 @@ the AI layer model-upgradable without touching brief.py (§3.5).
 from __future__ import annotations
 
 import logging
+import os
 from collections.abc import Callable
 
 from ipca_dashboard.ai.providers.base import LLMProvider
@@ -19,6 +20,17 @@ LOGGER = logging.getLogger(__name__)
 
 # name -> factory returning an LLMProvider (or raising if unavailable).
 _REGISTRY: dict[str, Callable[[], LLMProvider]] = {}
+
+
+def _redact_env_secrets(text: str) -> str:
+    redacted = text
+    for name, value in os.environ.items():
+        if not name.upper().endswith(("API_KEY", "TOKEN", "SECRET")):
+            continue
+        value = value.strip()
+        if len(value) >= 4:
+            redacted = redacted.replace(value, "[redacted]")
+    return redacted
 
 
 def register_provider(name: str, factory: Callable[[], LLMProvider]) -> None:
@@ -41,14 +53,12 @@ def resolve_provider(name: str | None) -> LLMProvider:
     try:
         return factory()
     except Exception as exc:  # missing key / SDK / init error -> deterministic floor
-        # The build error (e.g. "GOOGLE_API_KEY is not set") never contains the key
-        # itself, so it is safe to log — and it is the only way to see, on a deploy,
-        # WHY the live AI silently fell back instead of answering.
+        # Keep the deploy diagnostic, but never trust exception text with secrets.
         LOGGER.warning(
             "AI provider %r unavailable (%s: %s); using the deterministic floor.",
             key,
             type(exc).__name__,
-            exc,
+            _redact_env_secrets(str(exc)),
         )
         return NoAIProvider()
 
