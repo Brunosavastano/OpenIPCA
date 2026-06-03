@@ -22,10 +22,7 @@ data/raw/*
 data/processed/*
 data/processed_staging/*
 outputs/*
-!data/raw/.gitkeep
-!data/processed/.gitkeep
 !data/processed/*.parquet
-!outputs/.gitkeep
 !outputs/validation_report.csv
 !outputs/diagnostic_latest.json
 
