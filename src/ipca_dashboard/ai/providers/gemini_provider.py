@@ -1,15 +1,15 @@
-"""Google Gemini provider (optional, BYOK). One drop-in behind the registry.
+"""Google Gemini provider via the REST API (BYOK). One drop-in behind the registry.
 
-Mirror of the OpenAI/Anthropic providers for Gemini (a free-tier option used by
-the public Ask-the-IPCA demo). The app stays model-agnostic: nothing imports
-this module except the registry factory, and the google-generativeai SDK is
-imported lazily inside the constructor — so importing the ai package (or running
-CI) never requires the SDK or a key. The key is read from the environment and
-never logged or serialised.
+Talks to the Gemini `generateContent` REST endpoint with `requests` ONLY — not the
+google-generativeai SDK, whose heavy dependency tree (grpc, protobuf,
+google-api-core) is slow and fragile to install on hosts like Streamlit Community
+Cloud and broke a fresh Python-3.14 deploy. `requests` is already a core
+dependency, so the public deploy stays light and Python-version-proof. The key is
+read from the environment, sent in a header (never in the URL), and never logged.
 
 Output is still subject to the same CP6 guardrails, so a hosted model cannot
-bypass grounding. Gemini has no native JSON mode like OpenAI's, so we instruct
-JSON output and parse it tolerantly (a ```json fence / stray prose is handled).
+bypass grounding. Gemini has no native JSON mode like OpenAI's; we request JSON
+via responseMimeType and parse tolerantly (a ```json fence / stray prose is handled).
 """
 
 from __future__ import annotations
@@ -18,8 +18,12 @@ import json
 import os
 import re
 
+import requests
+
 from ipca_dashboard.ai.providers.base import resolve_directives
 from ipca_dashboard.ai.schemas import BRIEF_SCHEMA
+
+_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
 _SYSTEM = (
     "Você é um analista macro de inflação brasileira (IPCA). "
@@ -68,7 +72,7 @@ def _extract_json(text: str) -> dict:
 
 
 class GeminiProvider:
-    """Generates grounded output via the Google Gemini API."""
+    """Generates grounded output via the Gemini generateContent REST API."""
 
     name = "gemini"
     capabilities = {"text", "structured"}
@@ -82,18 +86,8 @@ class GeminiProvider:
         )
         if not selected_model:
             raise RuntimeError("OPENIPCA_AI_MODEL is not set.")
-        # Lazy import: the SDK is only needed when this provider is constructed.
-        try:
-            import google.generativeai as genai  # type: ignore
-        except ImportError as exc:  # pragma: no cover - exercised only without SDK
-            raise RuntimeError(
-                "Gemini provider requires the optional dependency: pip install '.[ai]'"
-            ) from exc
-        genai.configure(api_key=api_key)
-        self._model_name = selected_model
-        self._genai = genai
-        # The model is built per call so the system prompt can vary by task
-        # (brief default vs Q&A analyst), resolved from the messages.
+        self._api_key = api_key
+        self._model = selected_model
 
     def generate_structured(
         self,
@@ -111,12 +105,29 @@ class GeminiProvider:
             + "\n\nSchema de saída (JSON):\n"
             + json.dumps(schema or BRIEF_SCHEMA, ensure_ascii=False)
         )
-        client = self._genai.GenerativeModel(self._model_name, system_instruction=system)
-        response = client.generate_content(
-            prompt,
-            generation_config={"temperature": temperature, "response_mime_type": "application/json"},
+        body = {
+            "systemInstruction": {"parts": [{"text": system}]},
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "temperature": temperature,
+                "responseMimeType": "application/json",
+            },
+        }
+        response = requests.post(
+            _ENDPOINT.format(model=self._model),
+            headers={"x-goog-api-key": self._api_key, "Content-Type": "application/json"},
+            json=body,
+            timeout=60,
         )
-        return _extract_json(response.text)
+        response.raise_for_status()
+        data = response.json()
+        candidates = data.get("candidates") or []
+        if not candidates:
+            # No completion (e.g. safety block) — surface why, without the key.
+            raise RuntimeError(f"Gemini returned no candidates: {data.get('promptFeedback', {})}")
+        parts = candidates[0].get("content", {}).get("parts", [])
+        text = "".join(part.get("text", "") for part in parts)
+        return _extract_json(text)
 
 
 def _factory() -> GeminiProvider:

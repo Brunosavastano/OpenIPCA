@@ -29,7 +29,7 @@ dev = [
 ai = [
   "openai>=1.0",
   "anthropic>=0.39",
-  "google-generativeai>=0.8",
+  # Gemini is called over its REST API with `requests` (a core dep) — no SDK.
   "python-dotenv>=1.0",
 ]
 # Static PNG export for the shareable report. Local/manual only — NOT in CI

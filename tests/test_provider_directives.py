@@ -19,7 +19,12 @@ pytestmark = pytest.mark.ai_contract
 
 SYS = "ANALISTA_MARK"
 Q = "PERGUNTA_MARK guerra do Irã"
-_GROUNDED = {"answer": "ok", "claims": [], "monetary_policy_tone": "cautious", "investment_advice": False}
+_GROUNDED = {
+    "answer": "ok",
+    "claims": [],
+    "monetary_policy_tone": "cautious",
+    "investment_advice": False,
+}
 
 
 def _qa_messages():
@@ -42,8 +47,12 @@ def _brief_messages_with_sentinel():
 
 # --- the helper in isolation ------------------------------------------------
 
+
 def test_resolve_uses_default_for_version_sentinel():
-    msgs = [{"role": "system", "content": "prompt_version=ask_ipca_v2"}, {"role": "evidence", "content": []}]
+    msgs = [
+        {"role": "system", "content": "prompt_version=ask_ipca_v2"},
+        {"role": "evidence", "content": []},
+    ]
     system, question = resolve_directives(msgs, "DEFAULT")
     assert system == "DEFAULT"  # sentinel is metadata, not a prompt
     assert question == ""
@@ -82,6 +91,7 @@ def test_resolve_ignores_non_string_content():
 
 
 # --- OpenAI sends the question and the caller's system ----------------------
+
 
 def test_openai_sends_question_and_system(monkeypatch):
     captured = {}
@@ -136,7 +146,9 @@ def test_openai_brief_sentinel_uses_default_system(monkeypatch):
 
     from ipca_dashboard.ai.providers.openai_provider import OpenAIProvider
 
-    OpenAIProvider().generate_structured(_brief_messages_with_sentinel(), schema={}, temperature=0.0)
+    OpenAIProvider().generate_structured(
+        _brief_messages_with_sentinel(), schema={}, temperature=0.0
+    )
     system = captured["messages"][0]["content"]
     user = captured["messages"][1]["content"]
     assert "prompt_version=" not in system
@@ -145,6 +157,7 @@ def test_openai_brief_sentinel_uses_default_system(monkeypatch):
 
 
 # --- Anthropic sends the question and the caller's system -------------------
+
 
 def test_anthropic_sends_question_and_system(monkeypatch):
     captured = {}
@@ -156,7 +169,9 @@ def test_anthropic_sends_question_and_system(monkeypatch):
 
         def _create(self, **kw):
             captured.update(kw)
-            return types.SimpleNamespace(content=[types.SimpleNamespace(text=json.dumps(_GROUNDED))])
+            return types.SimpleNamespace(
+                content=[types.SimpleNamespace(text=json.dumps(_GROUNDED))]
+            )
 
     fake.Anthropic = _Client
     monkeypatch.setitem(sys.modules, "anthropic", fake)
@@ -172,53 +187,57 @@ def test_anthropic_sends_question_and_system(monkeypatch):
 
 
 # --- Gemini sends the question and the caller's system ----------------------
+# The provider calls the generateContent REST endpoint with `requests`; these
+# mocks capture the JSON body so we can assert where system/question land.
+
+
+def _gemini_envelope(text: str) -> dict:
+    return {"candidates": [{"content": {"parts": [{"text": text}]}}]}
+
+
+class _FakeRESTResponse:
+    def __init__(self, payload):
+        self._payload = payload
+
+    def raise_for_status(self):
+        return None
+
+    def json(self):
+        return self._payload
+
 
 def test_gemini_sends_question_and_system(monkeypatch):
     captured = {}
-    fake = types.ModuleType("google.generativeai")
+    grounded_text = json.dumps(_GROUNDED)
 
-    class _Resp:
-        text = json.dumps(_GROUNDED)
+    def _post(url, headers=None, json=None, timeout=None):
+        captured["body"] = json  # the request body, not the json module
+        return _FakeRESTResponse(_gemini_envelope(grounded_text))
 
-    class _Model:
-        def __init__(self, model, system_instruction=None):
-            captured["system_instruction"] = system_instruction
-
-        def generate_content(self, prompt, generation_config=None):
-            captured["prompt"] = prompt
-            return _Resp()
-
-    fake.configure = lambda **kw: None
-    fake.GenerativeModel = _Model
-    monkeypatch.setitem(sys.modules, "google.generativeai", fake)
+    monkeypatch.setattr("ipca_dashboard.ai.providers.gemini_provider.requests.post", _post)
     monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
     monkeypatch.setenv("OPENIPCA_AI_MODEL", "test-model")
 
     from ipca_dashboard.ai.providers.gemini_provider import GeminiProvider
 
     GeminiProvider().generate_structured(_qa_messages(), schema={}, temperature=0.0)
-    assert captured["system_instruction"] == SYS  # built per call with the analyst prompt
-    assert Q not in captured["system_instruction"]
-    assert Q in captured["prompt"]
+    body = captured["body"]
+    system_text = body["systemInstruction"]["parts"][0]["text"]
+    prompt_text = body["contents"][0]["parts"][0]["text"]
+    assert system_text == SYS  # caller's analyst prompt drives systemInstruction
+    assert Q not in system_text
+    assert Q in prompt_text  # the question reached the model
 
 
-def test_gemini_builds_model_per_call_without_system_leak(monkeypatch):
+def test_gemini_builds_request_per_call_without_system_leak(monkeypatch):
     captured = []
-    fake = types.ModuleType("google.generativeai")
+    grounded_text = json.dumps(_GROUNDED)
 
-    class _Resp:
-        text = json.dumps(_GROUNDED)
+    def _post(url, headers=None, json=None, timeout=None):
+        captured.append(json["systemInstruction"]["parts"][0]["text"])
+        return _FakeRESTResponse(_gemini_envelope(grounded_text))
 
-    class _Model:
-        def __init__(self, model, system_instruction=None):
-            captured.append(system_instruction)
-
-        def generate_content(self, prompt, generation_config=None):
-            return _Resp()
-
-    fake.configure = lambda **kw: None
-    fake.GenerativeModel = _Model
-    monkeypatch.setitem(sys.modules, "google.generativeai", fake)
+    monkeypatch.setattr("ipca_dashboard.ai.providers.gemini_provider.requests.post", _post)
     monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
     monkeypatch.setenv("OPENIPCA_AI_MODEL", "test-model")
 
