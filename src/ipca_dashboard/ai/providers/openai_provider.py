@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import os
 
+from ipca_dashboard.ai.providers.base import resolve_directives
 from ipca_dashboard.ai.schemas import BRIEF_SCHEMA
 
 _SYSTEM = (
@@ -84,9 +85,11 @@ class OpenAIProvider:
         *,
         temperature: float = 0.0,
     ) -> dict:
+        system, question = resolve_directives(messages, _SYSTEM)
         evidence = next((m["content"] for m in messages if m.get("role") == "evidence"), [])
         user = (
-            "Tabela de evidências (JSON):\n"
+            (f"Pergunta do usuário:\n{question}\n\n" if question else "")
+            + "Tabela de evidências (JSON):\n"
             + json.dumps(evidence, ensure_ascii=False)
             + "\n\nSchema de saída (JSON):\n"
             + json.dumps(schema or BRIEF_SCHEMA, ensure_ascii=False)
@@ -96,7 +99,7 @@ class OpenAIProvider:
             "temperature": temperature,
             "response_format": {"type": "json_object"},
             "messages": [
-                {"role": "system", "content": _SYSTEM},
+                {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
         }
