@@ -29,6 +29,27 @@ _INFO = "#4A8FE0"  # metric identity / informational line, not value direction
 _MONO = "IBM Plex Mono"
 _MUTED = "#8A93A3"  # axis ticks / secondary text
 
+# Categorical sequence for series that are colored by category but NOT covered by
+# an explicit map. Without this, Plotly Express falls back to its bright default
+# colorway (the generic blue/red/green/purple), which clashes with the
+# institutional palette. Passed as color_discrete_sequence to every px.* call.
+_SEQ = [
+    "#E6EAF1",
+    "#4A8FE0",
+    "#9B7FE0",
+    "#E8943A",
+    "#35B07D",
+    "#5FB7C4",
+    "#DD6B5C",
+    "#E6C84A",
+    "#C77FB0",
+    "#7E8896",
+]
+# Núcleos: reserve white/bold for the "Média" line (applied after the figure is
+# built), so the individual cores read as distinct mid-tones, not a pure-white
+# line fighting the mean for attention.
+_CORE_SEQ = ["#4A8FE0", "#9B7FE0", "#E8943A", "#35B07D", "#5FB7C4", "#DD6B5C", "#E6C84A"]
+
 # Fallback theme if config/chart_theme.yaml is missing — keeps charts working.
 _DEFAULT_TEMPLATE = {
     "paper_bgcolor": "#0A0E14",
@@ -72,6 +93,9 @@ def apply_layout(
         paper_bgcolor=tpl["paper_bgcolor"],
         plot_bgcolor=tpl["plot_bgcolor"],
         font=dict(family=tpl["font_family"], size=12, color=_MUTED),
+        # Institutional colorway for any trace without an explicit color (belt-and-
+        # suspenders; px.* charts also pass color_discrete_sequence directly).
+        colorway=_SEQ,
         # Generous bottom margin so the horizontal legend never overlaps x labels.
         margin=dict(l=32, r=24, t=70, b=96),
         legend=dict(
@@ -116,6 +140,7 @@ def stacked_contribution(ipca_items: pd.DataFrame, months: int = 24) -> go.Figur
         y="contribution_mom",
         color="item_name",
         color_discrete_map=GROUP_COLORS,
+        color_discrete_sequence=_SEQ,  # fallback for any group missing from the map
         labels={"date": "Mês", "contribution_mom": "Contribuição (p.p.)", "item_name": "Grupo"},
     )
     # Quarterly ticks + angled short dates so labels fit on narrow screens.
@@ -233,8 +258,17 @@ def core_lines(
         x="date",
         y=metric,
         color="core_name_display",
+        color_discrete_sequence=_CORE_SEQ,
         labels={"date": "Mês", metric: "%", "core_name_display": "Núcleo"},
     )
+    # Make the mean the hero line (thick, near-white) and thin the individual
+    # cores, matching the institutional terminal mockup.
+    for trace in fig.data:
+        if trace.name in ("Média", "Media"):
+            trace.line.color = _TEXT_COLOR
+            trace.line.width = 2.6
+        else:
+            trace.line.width = 1.3
     return apply_layout(
         fig, f"Núcleos — {metric_label(metric)}", yaxis_title="%", xaxis_title="Mês"
     )
@@ -326,6 +360,7 @@ def ipca_diffusion_scatter(bcb: pd.DataFrame) -> go.Figure:
         x="ipca_mom",
         y="diffusion_mm3",
         color=data["date"].dt.year.astype(str),
+        color_discrete_sequence=_SEQ,
         labels={"ipca_mom": "IPCA m/m (%)", "diffusion_mm3": "Difusão MM3M (%)", "color": "Ano"},
     )
     if not data.empty:
