@@ -127,7 +127,6 @@ def normalize_sidra_7060(raw: pd.DataFrame, config: dict[str, Any]) -> pd.DataFr
         "level",
         "parent_classification_code",
         "group_classification_code",
-        "fetched_at",
     ]
     wide = (
         df.dropna(subset=["date", "metric"])

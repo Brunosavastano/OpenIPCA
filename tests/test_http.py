@@ -25,3 +25,16 @@ def test_retry_covers_transient_statuses_and_timeouts():
     assert retry.total >= 3  # rides out a flaky upstream
     for status in (429, 500, 502, 503, 504):
         assert status in retry.status_forcelist
+
+
+def test_retry_does_not_retry_non_transient_statuses_or_non_get_methods():
+    retry = session_with_retries().get_adapter("https://x/").max_retries
+    for status in (400, 401, 403, 404, 422):
+        assert not retry.is_retry("GET", status)
+    assert not retry.is_retry("POST", 500)
+
+
+def test_retry_backoff_is_explicitly_bounded():
+    retry = session_with_retries().get_adapter("https://x/").max_retries
+    assert retry.backoff_max <= 20.0
+    assert retry.respect_retry_after_header is False
