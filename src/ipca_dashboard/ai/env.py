@@ -12,11 +12,26 @@ shell juggling. This is best-effort and safe:
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 # project root = .../src/ipca_dashboard/ai/env.py -> parents[3]
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 _loaded = False
+
+# The env vars the os.environ-based AI config reads. On a Streamlit deploy the
+# operator sets these as *secrets* (st.secrets), but Streamlit does not reliably
+# export secrets as environment variables — so bridge_secrets_to_env copies them,
+# making the deploy key actually activate the AI. Real env vars always win.
+_AI_ENV_KEYS = (
+    "OPENIPCA_AI_ENABLED",
+    "OPENIPCA_AI_PROVIDER",
+    "OPENIPCA_AI_MODEL",
+    "GEMINI_MODEL",
+    "GOOGLE_API_KEY",
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+)
 
 
 def load_env_once() -> bool:
@@ -41,3 +56,47 @@ def load_env_once() -> bool:
         return bool(load_dotenv(dotenv_path=env_path, override=False))
     except Exception:
         return False
+
+
+def bridge_secrets_to_env(secrets: object) -> int:
+    """Copy known AI keys from a Streamlit-secrets-like mapping into os.environ.
+
+    Needed on deploys (e.g. Streamlit Community Cloud) where the key is set as a
+    *secret*: the app reads os.environ, so without this the deploy key would be
+    invisible and the AI would never activate. Real environment variables win
+    (os.environ.setdefault), so a .env or shell value is never clobbered. String
+    secrets are stripped; boolean secrets (TOML `true`/`false`) are normalized.
+    Other TOML types are ignored so a numeric/list value cannot accidentally
+    activate AI or become a bogus key/model.
+
+    Best-effort and never raises: a missing secrets store (no secrets.toml) or an
+    odd value is ignored. Returns the number of keys bridged.
+    """
+    if secrets is None:
+        return 0
+    bridged = 0
+    for key in _AI_ENV_KEYS:
+        try:
+            if key not in secrets:
+                continue
+            text = _secret_to_env_text(secrets[key])
+            if text is None:
+                continue
+            before = os.environ.get(key)
+            os.environ.setdefault(key, text)
+            if before is None:
+                bridged += 1
+        except Exception:
+            continue
+    return bridged
+
+
+def _secret_to_env_text(value: object) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    return text or None

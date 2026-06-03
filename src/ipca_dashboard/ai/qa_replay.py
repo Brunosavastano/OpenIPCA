@@ -158,7 +158,7 @@ def generate_replay(
         result = answer_question(
             question, bcb, ipca_items, core_metrics, alerts, provider=provider
         )
-        if result.mode != "ai":
+        if not _is_grounded_replay_result(result):
             skipped.append((question, f"{result.mode}: {result.error or 'not grounded'}"))
             continue
         pairs.append(
@@ -179,6 +179,17 @@ def generate_replay(
         "pairs": pairs,
         "skipped": [{"question": q, "reason": r} for q, r in skipped],
     }
+
+
+def _is_grounded_replay_result(result: QAResult) -> bool:
+    if result.mode != "ai" or not result.claims:
+        return False
+    evidence_ids = {ev.get("evidence_id") for ev in result.evidence}
+    for claim in result.claims:
+        ids = claim.get("evidence_ids", []) or []
+        if ids and all(evidence_id in evidence_ids for evidence_id in ids):
+            return True
+    return False
 
 
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover - BYOK entry point
@@ -220,9 +231,25 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - BYOK entr
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(artifact, ensure_ascii=False, indent=2), encoding="utf-8")
-    logger.info("Wrote %d replay pair(s) -> %s", len(artifact["pairs"]), out_path)
+
+    grounded = len(artifact["pairs"])
+    skipped = len(artifact["skipped"])
+    total = grounded + skipped
     for skip in artifact["skipped"]:
         logger.warning("Skipped (not grounded): %s — %s", skip["question"], skip["reason"])
+    logger.info("Wrote %d/%d grounded replay pair(s) -> %s", grounded, total, out_path)
+    if grounded == 0:
+        logger.error(
+            "NO replay pairs were grounded. The public demo will have NO safety net: "
+            "without a live key (or when the free quota runs out) visitors see only the "
+            "'AI unavailable' fallback. Configure a provider key (a STRONGER model like "
+            "openai/anthropic is recommended for the one-off replay) and re-run."
+        )
+    elif skipped:
+        logger.warning(
+            "%d/%d question(s) did not ground. Consider a stronger provider/model for the "
+            "replay, or revise those questions, then re-run.", skipped, total,
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover
