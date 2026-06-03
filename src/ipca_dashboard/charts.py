@@ -10,24 +10,30 @@ from ipca_dashboard.config import load_yaml
 from ipca_dashboard.glossary import metric_label
 
 GROUP_COLORS = {
-    "Alimentação e bebidas": "#B45309",
-    "Habitação": "#7C3AED",
-    "Artigos de residência": "#64748B",
-    "Vestuário": "#DB2777",
-    "Transportes": "#2563EB",
-    "Saúde e cuidados pessoais": "#059669",
-    "Despesas pessoais": "#B91C1C",
-    "Educação": "#D97706",
-    "Comunicação": "#4B5563",
+    "Alimentação e bebidas": "#E8943A",
+    "Habitação": "#9B7FE0",
+    "Artigos de residência": "#5FB7C4",
+    "Vestuário": "#DD6B5C",
+    "Transportes": "#4A8FE0",
+    "Saúde e cuidados pessoais": "#35B07D",
+    "Despesas pessoais": "#C77FB0",
+    "Educação": "#E6C84A",
+    "Comunicação": "#7E8896",
 }
 
+# Institutional terminal palette (Bloomberg/Aladdin direction). Inflation
+# semantics: up = bad = red, down = good = green.
+_UP = "#E5484D"  # inflation accelerates / upward contribution
+_DOWN = "#35B07D"  # decelerates / downward contribution
+_MONO = "IBM Plex Mono"
+_MUTED = "#8A93A3"  # axis ticks / secondary text
+
 # Fallback theme if config/chart_theme.yaml is missing — keeps charts working.
-# Dark by default, coherent with .streamlit/config.toml (base="dark").
 _DEFAULT_TEMPLATE = {
-    "paper_bgcolor": "#0E1117",
-    "plot_bgcolor": "#0E1117",
-    "font_family": "sans-serif",
-    "gridcolor": "#2A2F3A",
+    "paper_bgcolor": "#0A0E14",
+    "plot_bgcolor": "#0A0E14",
+    "font_family": "IBM Plex Sans, sans-serif",
+    "gridcolor": "#1A222D",
 }
 _TEXT_COLOR = "#E6EAF1"  # light text, visible on the dark chart background
 
@@ -56,17 +62,43 @@ def apply_layout(
     # Optional subtitle rendered under the title (used to explain the heatmap colors).
     title_text = title if not subtitle else f"{title}<br><sub>{subtitle}</sub>"
     fig.update_layout(
-        title=dict(text=title_text, x=0, xanchor="left", font=dict(size=18, color=_TEXT_COLOR)),
+        title=dict(
+            text=title_text,
+            x=0,
+            xanchor="left",
+            font=dict(family=tpl["font_family"], size=15, color=_TEXT_COLOR),
+        ),
         paper_bgcolor=tpl["paper_bgcolor"],
         plot_bgcolor=tpl["plot_bgcolor"],
-        font=dict(family=tpl["font_family"], size=13, color=_TEXT_COLOR),
+        font=dict(family=tpl["font_family"], size=12, color=_MUTED),
         # Generous bottom margin so the horizontal legend never overlaps x labels.
-        margin=dict(l=32, r=24, t=72, b=96),
-        legend=dict(orientation="h", yanchor="top", y=-0.32, xanchor="left", x=0),
+        margin=dict(l=32, r=24, t=70, b=96),
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.32,
+            xanchor="left",
+            x=0,
+            font=dict(size=11, color="#B7BECB"),
+        ),
         hovermode="x unified",
+        hoverlabel=dict(
+            font=dict(family=_MONO, color=_TEXT_COLOR), bgcolor="#11161F", bordercolor="#2E3845"
+        ),
     )
-    fig.update_xaxes(showgrid=False, automargin=True)
-    fig.update_yaxes(gridcolor=tpl["gridcolor"], zerolinecolor="#9CA3AF", automargin=True)
+    # Numbers in a mono, tabular face — the "terminal" feel.
+    fig.update_xaxes(
+        showgrid=False,
+        automargin=True,
+        linecolor="#222A36",
+        tickfont=dict(family=_MONO, size=11, color=_MUTED),
+    )
+    fig.update_yaxes(
+        gridcolor=tpl["gridcolor"],
+        zerolinecolor="#2E3845",
+        automargin=True,
+        tickfont=dict(family=_MONO, size=11, color=_MUTED),
+    )
     if yaxis_title:
         fig.update_yaxes(title=yaxis_title)
     if xaxis_title:
@@ -100,7 +132,9 @@ def waterfall_latest(ipca_items: pd.DataFrame, date: pd.Timestamp) -> go.Figure:
     groups = ipca_items[(ipca_items["level"] == "group") & (ipca_items["date"] == date)].copy()
     groups = groups.sort_values("contribution_mom", ascending=False)
     headline = ipca_items[(ipca_items["level"] == "headline") & (ipca_items["date"] == date)]
-    headline_value = float(headline["mom"].iloc[0]) if not headline.empty else groups["contribution_mom"].sum()
+    headline_value = (
+        float(headline["mom"].iloc[0]) if not headline.empty else groups["contribution_mom"].sum()
+    )
     x = groups["item_name"].tolist() + ["IPCA"]
     y = groups["contribution_mom"].tolist() + [headline_value]
     measure = ["relative"] * len(groups) + ["total"]
@@ -109,16 +143,18 @@ def waterfall_latest(ipca_items: pd.DataFrame, date: pd.Timestamp) -> go.Figure:
             x=x,
             y=y,
             measure=measure,
-            connector={"line": {"color": "#9CA3AF"}},
-            increasing={"marker": {"color": "#B91C1C"}},
-            decreasing={"marker": {"color": "#2563EB"}},
-            totals={"marker": {"color": "#E6EAF1"}},
+            connector={"line": {"color": _MUTED}},
+            increasing={"marker": {"color": _UP}},
+            decreasing={"marker": {"color": _DOWN}},
+            totals={"marker": {"color": _TEXT_COLOR}},
         )
     )
     return apply_layout(fig, f"Waterfall do IPCA - {date:%Y-%m}", "p.p.")
 
 
-def contribution_ranking(ipca_items: pd.DataFrame, date: pd.Timestamp, level: str, top_n: int = 10) -> go.Figure:
+def contribution_ranking(
+    ipca_items: pd.DataFrame, date: pd.Timestamp, level: str, top_n: int = 10
+) -> go.Figure:
     data = ipca_items[(ipca_items["date"] == date) & (ipca_items["level"] == level)].copy()
     data = data.dropna(subset=["contribution_mom"])
     if len(data) <= 2 * top_n:
@@ -135,7 +171,7 @@ def contribution_ranking(ipca_items: pd.DataFrame, date: pd.Timestamp, level: st
             .drop_duplicates(subset=["date", "classification_code"])
             .sort_values("contribution_mom")
         )
-    colors = ranking["contribution_mom"].map(lambda value: "#B91C1C" if value > 0 else "#2563EB")
+    colors = ranking["contribution_mom"].map(lambda value: _UP if value > 0 else _DOWN)
     fig = go.Figure(
         go.Bar(
             x=ranking["contribution_mom"],
@@ -157,7 +193,9 @@ def contribution_ranking(ipca_items: pd.DataFrame, date: pd.Timestamp, level: st
 def heatmap_groups(ipca_items: pd.DataFrame, months: int = 24) -> go.Figure:
     groups = ipca_items[ipca_items["level"] == "group"].sort_values("date")
     groups = groups[groups["date"] >= groups["date"].max() - pd.DateOffset(months=months - 1)]
-    pivot = groups.pivot_table(index="item_name", columns="date", values="contribution_mom", aggfunc="first")
+    pivot = groups.pivot_table(
+        index="item_name", columns="date", values="contribution_mom", aggfunc="first"
+    )
     # Order rows so the groups that pushed inflation the most sit on top.
     pivot = pivot.reindex(pivot.mean(axis=1).sort_values(ascending=True).index)
     x_labels = [d.strftime("%b/%y") for d in pivot.columns]
@@ -184,7 +222,9 @@ def heatmap_groups(ipca_items: pd.DataFrame, months: int = 24) -> go.Figure:
     )
 
 
-def core_lines(core_metrics: pd.DataFrame, core_set_name: str, metric: str = "rolling_12m") -> go.Figure:
+def core_lines(
+    core_metrics: pd.DataFrame, core_set_name: str, metric: str = "rolling_12m"
+) -> go.Figure:
     data = core_metrics[core_metrics["core_set_name"] == core_set_name].copy()
     data["core_name_display"] = data["core_name"].replace({"Media": "Média"})
     fig = px.line(
@@ -194,12 +234,17 @@ def core_lines(core_metrics: pd.DataFrame, core_set_name: str, metric: str = "ro
         color="core_name_display",
         labels={"date": "Mês", metric: "%", "core_name_display": "Núcleo"},
     )
-    return apply_layout(fig, f"Núcleos — {metric_label(metric)}", yaxis_title="%", xaxis_title="Mês")
+    return apply_layout(
+        fig, f"Núcleos — {metric_label(metric)}", yaxis_title="%", xaxis_title="Mês"
+    )
 
 
-def core_fan(core_metrics: pd.DataFrame, core_set_name: str, metric: str = "rolling_12m") -> go.Figure:
+def core_fan(
+    core_metrics: pd.DataFrame, core_set_name: str, metric: str = "rolling_12m"
+) -> go.Figure:
     data = core_metrics[
-        (core_metrics["core_set_name"] == core_set_name) & (~core_metrics["core_name"].isin(["Media", "Média"]))
+        (core_metrics["core_set_name"] == core_set_name)
+        & (~core_metrics["core_name"].isin(["Media", "Média"]))
     ]
     pivot = data.pivot_table(index="date", columns="core_name", values=metric)
     summary = pd.DataFrame(
@@ -224,13 +269,18 @@ def core_fan(core_metrics: pd.DataFrame, core_set_name: str, metric: str = "roll
             x=summary.index,
             y=summary["min"],
             fill="tonexty",
-            fillcolor="rgba(37,99,235,0.18)",
+            fillcolor="rgba(74,143,224,0.14)",
             line=dict(width=0),
             name="faixa min-max",
         )
     )
     fig.add_trace(
-        go.Scatter(x=summary.index, y=summary["mean"], name="média", line=dict(color="#E6EAF1", width=2))
+        go.Scatter(
+            x=summary.index,
+            y=summary["mean"],
+            name="média",
+            line=dict(color=_TEXT_COLOR, width=2.4),
+        )
     )
     return apply_layout(
         fig,
@@ -244,19 +294,28 @@ def core_fan(core_metrics: pd.DataFrame, core_set_name: str, metric: str = "roll
 def diffusion_line(bcb: pd.DataFrame) -> go.Figure:
     data = bcb[bcb["series_short_name"] == "Difusao"].sort_values("date")
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=data["date"], y=data["mom"], name="mensal", line=dict(color="#047857", width=1.5)))
     fig.add_trace(
-        go.Scatter(x=data["date"], y=data["moving_average_3m"], name="MM3M", line=dict(color="#E6EAF1", width=2.5))
+        go.Scatter(x=data["date"], y=data["mom"], name="mensal", line=dict(color=_DOWN, width=1.3))
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=data["date"],
+            y=data["moving_average_3m"],
+            name="MM3M",
+            line=dict(color=_TEXT_COLOR, width=2.4),
+        )
     )
     if not data.empty:
-        for p, color in [(20, "#D1D5DB"), (50, "#9CA3AF"), (80, "#F59E0B"), (90, "#DC2626")]:
+        for p, color in [(20, "#5A6373"), (50, _MUTED), (80, "#E0A046"), (90, _UP)]:
             value = data["mom"].quantile(p / 100)
             fig.add_hline(y=value, line_dash="dot", line_color=color, annotation_text=f"p{p}")
     return apply_layout(fig, "Difusão do IPCA: mensal, MM3M e percentis", "% de subitens")
 
 
 def ipca_diffusion_scatter(bcb: pd.DataFrame) -> go.Figure:
-    ipca = bcb[bcb["series_short_name"] == "IPCA"][["date", "mom"]].rename(columns={"mom": "ipca_mom"})
+    ipca = bcb[bcb["series_short_name"] == "IPCA"][["date", "mom"]].rename(
+        columns={"mom": "ipca_mom"}
+    )
     diff = bcb[bcb["series_short_name"] == "Difusao"][["date", "moving_average_3m"]].rename(
         columns={"moving_average_3m": "diffusion_mm3"}
     )
@@ -269,6 +328,6 @@ def ipca_diffusion_scatter(bcb: pd.DataFrame) -> go.Figure:
         labels={"ipca_mom": "IPCA m/m (%)", "diffusion_mm3": "Difusão MM3M (%)", "color": "Ano"},
     )
     if not data.empty:
-        fig.add_vline(x=data["ipca_mom"].median(), line_dash="dot", line_color="#9CA3AF")
-        fig.add_hline(y=data["diffusion_mm3"].median(), line_dash="dot", line_color="#9CA3AF")
+        fig.add_vline(x=data["ipca_mom"].median(), line_dash="dot", line_color=_MUTED)
+        fig.add_hline(y=data["diffusion_mm3"].median(), line_dash="dot", line_color=_MUTED)
     return apply_layout(fig, "Quadrantes IPCA x difusão", "Difusão MM3M (%)")

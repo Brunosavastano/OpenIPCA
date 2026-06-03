@@ -58,39 +58,75 @@ st.set_page_config(page_title="IPCA Macro Dashboard", layout="wide")
 
 CSS = """
 <style>
-  /* Dark theme, coherent with .streamlit/config.toml (base="dark"). */
-  .main .block-container { padding-top: 1.5rem; max-width: 1400px; }
-  h1, h2, h3 { color: #E6EAF1; letter-spacing: 0; }
+  /* Institutional "terminal" theme (Bloomberg/Aladdin direction). IBM Plex Sans
+     for UI, IBM Plex Mono (tabular) for numbers. Coherent with config.toml. */
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  html, body, [class*="css"], .stApp { font-family: 'IBM Plex Sans', sans-serif; }
+  .main .block-container { padding-top: 1.4rem; max-width: 1400px; }
+  h1 { font-size: 1.55rem; font-weight: 600; letter-spacing: -.005em; color: #E6EAF1; }
+  h2, h3 { font-weight: 600; color: #E6EAF1; letter-spacing: 0; }
+  [data-testid="stCaptionContainer"], .small-note { color: #8A93A3; }
+
+  /* sidebar */
+  [data-testid="stSidebar"] { background: #11161F; border-right: 1px solid #222A36; }
+
+  /* KPI tiles — st.metric */
   [data-testid="stMetric"] {
-    background: #1A1F2B;
-    border: 1px solid #2A2F3A;
-    border-radius: 8px;
-    padding: 14px 16px;
+    background: #11161F; border: 1px solid #222A36;
+    border-radius: 6px; padding: 13px 14px;
   }
-  [data-testid="stMetricLabel"] { color: #9CA3AF; }
-  [data-testid="stMetricValue"] { color: #E6EAF1; font-size: 1.55rem; }
+  [data-testid="stMetricLabel"] {
+    color: #8A93A3; font-family: 'IBM Plex Mono', monospace;
+    font-size: .66rem; letter-spacing: .1em; text-transform: uppercase;
+  }
+  [data-testid="stMetricValue"] {
+    color: #E6EAF1; font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums; font-size: 1.7rem; font-weight: 500;
+  }
+  [data-testid="stMetricDelta"] { font-family: 'IBM Plex Mono', monospace; font-size: .8rem; }
+
+  /* buttons & input */
+  .stButton > button {
+    background: #E8943A; color: #0A0E14; font-weight: 600; border: 0; border-radius: 5px;
+  }
+  .stButton > button:hover { background: #F4A94E; color: #0A0E14; }
+  [data-testid="stTextInput"] input {
+    background: #161D28; border: 1px solid #2E3845; color: #E6EAF1; border-radius: 5px;
+  }
+
+  /* callout boxes */
   .diagnostic {
-    border-left: 4px solid #4DA3FF;
-    background: #1A1F2B;
-    color: #E6EAF1;
-    padding: 16px 18px;
-    border-radius: 6px;
-    font-size: 1.02rem;
-    line-height: 1.55;
+    background: #11161F; border: 1px solid #222A36;
+    border-left: 3px solid #4A8FE0;          /* reading = info blue */
+    color: #E6EAF1; padding: 15px 18px; border-radius: 6px; line-height: 1.55;
   }
   .diagnostic strong { color: #FFFFFF; }
-  .small-note { color: #9CA3AF; font-size: 0.9rem; }
   .ask-teaser {
-    border-left: 4px solid #34D399;
-    background: #14241F;
-    color: #E6EAF1;
-    padding: 14px 18px;
-    border-radius: 6px;
-    font-size: 1.02rem;
-    line-height: 1.5;
-    margin-bottom: 8px;
+    background: linear-gradient(90deg, rgba(53,176,125,.10), rgba(0,0,0,0) 70%), #11161F;
+    border: 1px solid #2E3845; border-left: 3px solid #35B07D;  /* CTA = green */
+    color: #E6EAF1; padding: 15px 18px; border-radius: 6px; margin-bottom: 8px;
   }
-  .ask-teaser strong { color: #34D399; }
+  .ask-teaser strong, .ask-teaser a { color: #35B07D; }
+
+  /* alert badges */
+  .badge {
+    font-family: 'IBM Plex Mono', monospace; font-size: .62rem; letter-spacing: .1em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 3px;
+  }
+  .badge.crit { color: #E5484D; border: 1px solid rgba(229,72,77,.4); background: rgba(229,72,77,.12); }
+  .badge.high { color: #EC7A3D; border: 1px solid rgba(236,122,61,.4); background: rgba(236,122,61,.12); }
+  .badge.low  { color: #E0A046; border: 1px solid rgba(224,160,70,.4); background: rgba(224,160,70,.12); }
+  .badge.info { color: #4A8FE0; border: 1px solid rgba(74,143,224,.4); background: rgba(74,143,224,.12); }
+
+  /* Q&A answer mode seal — sober mono pill instead of an emoji */
+  .mode-seal {
+    font-family: 'IBM Plex Mono', monospace; font-size: .64rem; letter-spacing: .08em;
+    text-transform: uppercase; padding: 3px 9px; border-radius: 3px;
+    border: 1px solid #2E3845; color: #8A93A3;
+  }
+  .mode-seal.live { color: #35B07D; border-color: rgba(53,176,125,.45); }
+  .mode-seal.refused { color: #E5484D; border-color: rgba(229,72,77,.45); }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
@@ -125,7 +161,9 @@ def load_diagnostic() -> str:
     path = OUTPUTS_DIR / "diagnostic_latest.json"
     if not path.exists():
         return "Diagnóstico ainda não gerado."
-    return json.loads(path.read_text(encoding="utf-8")).get("diagnostic", "Diagnóstico indisponível.")
+    return json.loads(path.read_text(encoding="utf-8")).get(
+        "diagnostic", "Diagnóstico indisponível."
+    )
 
 
 REPORTS_LATEST = ROOT / "reports" / "latest"
@@ -178,13 +216,23 @@ def render_active_alerts(alerts: pd.DataFrame) -> None:
         st.info("Nenhum alerta ativo neste mês.")
         return
     messages = _alert_messages()
-    badge = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🔵", "info": "⚪"}
+    badge_class = {
+        "critical": "crit",
+        "high": "high",
+        "medium": "low",
+        "low": "info",
+        "info": "info",
+    }
     for _, row in alerts.iterrows():
         alert_id = str(row.get("alert_id", ""))
         sev = str(row.get("severity", "info"))
         text = messages.get(alert_id, "Alerta ativo sem descrição configurada.")
         sev_pt = SEVERITY_PT.get(sev, sev)
-        st.markdown(f"{badge.get(sev, '⚪')} **[{sev_pt}]** {text}")
+        cls = badge_class.get(sev, "info")
+        # Alert text comes from our config (alert_rules.yaml), not user input.
+        st.markdown(
+            f"<span class='badge {cls}'>{sev_pt}</span> &nbsp;{text}", unsafe_allow_html=True
+        )
 
 
 def render_glossary() -> None:
@@ -247,11 +295,29 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
 
     # Each card carries a plain-language tooltip ("(i)") via st.metric(help=...).
     cols = st.columns(6)
-    cols[0].metric("IPCA m/m", fmt(ipca["mom"] if ipca is not None else None), help=describe("IPCA m/m"))
-    cols[1].metric("IPCA 12m", fmt(ipca["rolling_12m"] if ipca is not None else None), help=describe("IPCA 12m"))
-    cols[2].metric("IPCA MM3M", fmt(ipca["moving_average_3m"] if ipca is not None else None), help=describe("IPCA MM3M"))
-    cols[3].metric("Média núcleos MM3M", fmt(core_row["moving_average_3m"] if core_row is not None else None), help=describe("Média núcleos MM3M"))
-    cols[4].metric("Difusão MM3M", fmt(diffusion["moving_average_3m"] if diffusion is not None else None), help=describe("Difusão MM3M"))
+    cols[0].metric(
+        "IPCA m/m", fmt(ipca["mom"] if ipca is not None else None), help=describe("IPCA m/m")
+    )
+    cols[1].metric(
+        "IPCA 12m",
+        fmt(ipca["rolling_12m"] if ipca is not None else None),
+        help=describe("IPCA 12m"),
+    )
+    cols[2].metric(
+        "IPCA MM3M",
+        fmt(ipca["moving_average_3m"] if ipca is not None else None),
+        help=describe("IPCA MM3M"),
+    )
+    cols[3].metric(
+        "Média núcleos MM3M",
+        fmt(core_row["moving_average_3m"] if core_row is not None else None),
+        help=describe("Média núcleos MM3M"),
+    )
+    cols[4].metric(
+        "Difusão MM3M",
+        fmt(diffusion["moving_average_3m"] if diffusion is not None else None),
+        help=describe("Difusão MM3M"),
+    )
     cols[5].metric("Alertas ativos", len(alerts), help=describe("Alertas ativos"))
 
     regime = classify_latest_regime(bcb)
@@ -530,12 +596,22 @@ def page_methodology(data: dict[str, pd.DataFrame]) -> None:
         )
 
 
+# (css class, short uppercase label, explanation) for the answer's mode seal —
+# a sober mono pill with a colored dot instead of an emoji.
 _ASK_SEAL = {
-    "ai": "🟢 Resposta gerada ao vivo, aterrada nos dados oficiais.",
-    "replay": "🗂️ Resposta pré-gerada e auditada (IA ao vivo indisponível agora).",
-    "fallback": "⚪ A IA está indisponível no momento — use o painel e o brief para os números oficiais.",
-    "deterministic": "⚪ A IA está indisponível no momento — use o painel e o brief para os números oficiais.",
-    "refused": "🚫 Pergunta fora do escopo (apenas inflação/IPCA) ou recusada por segurança.",
+    "ai": ("live", "AO VIVO", "Resposta gerada ao vivo, aterrada nos dados oficiais."),
+    "replay": ("", "PRÉ-GERADA", "Resposta pré-gerada e auditada (IA ao vivo indisponível agora)."),
+    "fallback": ("", "INDISPONÍVEL", "A IA está indisponível no momento — use o painel e o brief."),
+    "deterministic": (
+        "",
+        "INDISPONÍVEL",
+        "A IA está indisponível no momento — use o painel e o brief.",
+    ),
+    "refused": (
+        "refused",
+        "RECUSADA",
+        "Fora do escopo (apenas inflação/IPCA) ou recusada por segurança.",
+    ),
 }
 
 
@@ -580,7 +656,13 @@ def page_ask(data: dict[str, pd.DataFrame]) -> None:
     result = st.session_state["qa_cache"]["result"]
 
     st.markdown(f"**Você perguntou:** {question}")
-    st.caption(_ASK_SEAL.get(result.mode, ""))
+    seal_cls, seal_label, seal_note = _ASK_SEAL.get(result.mode, ("", "", ""))
+    if seal_label:
+        st.markdown(
+            f"<span class='mode-seal {seal_cls}'>● {seal_label}</span> "
+            f"&nbsp;<span class='small-note'>{seal_note}</span>",
+            unsafe_allow_html=True,
+        )
     # No unsafe_allow_html here: the model's prose is rendered as inert text so a
     # crafted answer can never inject HTML into the public page.
     st.markdown(result.answer)
@@ -599,13 +681,23 @@ def main() -> None:
     except FileNotFoundError as exc:
         st.title("IPCA Macro Dashboard")
         st.error("Dados processados não encontrados.")
-        st.code("python -m ipca_dashboard.pipeline run --start 2020-01\nstreamlit run dashboard/app.py")
+        st.code(
+            "python -m ipca_dashboard.pipeline run --start 2020-01\nstreamlit run dashboard/app.py"
+        )
         st.caption(str(exc))
         return
 
     page = st.sidebar.radio(
         "Navegação",
-        ["Painel executivo", "Pergunte ao IPCA", "Decomposição", "Núcleos", "Difusão", "Alertas", "Metodologia"],
+        [
+            "Painel executivo",
+            "Pergunte ao IPCA",
+            "Decomposição",
+            "Núcleos",
+            "Difusão",
+            "Alertas",
+            "Metodologia",
+        ],
     )
     if page == "Painel executivo":
         page_executive(data)

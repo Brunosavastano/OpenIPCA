@@ -3,8 +3,8 @@
 # app CSS and the Plotly charts (spec_V3 §14.4 — consistent look).
 [theme]
 base = "dark"
-primaryColor = "#4DA3FF"
-backgroundColor = "#0E1117"
-secondaryBackgroundColor = "#1A1F2B"
+primaryColor = "#E8943A"             # amber institutional accent (action/focus)
+backgroundColor = "#0A0E14"          # canvas
+secondaryBackgroundColor = "#11161F" # sidebar, tiles, inputs
 textColor = "#E6EAF1"
-font = "sans serif"
+font = "sans serif"                  # IBM Plex Sans applied via CSS @import
