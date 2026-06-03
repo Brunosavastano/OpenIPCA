@@ -7,8 +7,10 @@ from ipca_dashboard.charts import (
     contribution_ranking,
     core_fan,
     core_lines,
+    diffusion_line,
     load_chart_theme,
     stacked_contribution,
+    waterfall_latest,
 )
 
 
@@ -102,3 +104,47 @@ def test_ranking_boundary_exactly_two_top_n():
     # len(data) == 2*top_n -> show all, no duplication.
     fig = contribution_ranking(_items(20), pd.Timestamp("2024-01-01"), "group", top_n=10)
     assert _bar_count(fig) == 20
+
+
+def test_directional_colors_are_consistent_across_inflation_charts():
+    items = _items(4)
+    items = pd.concat(
+        [
+            items,
+            pd.DataFrame(
+                [
+                    {
+                        "date": pd.Timestamp("2024-01-01"),
+                        "level": "headline",
+                        "classification_code": "headline",
+                        "item_name": "IPCA",
+                        "contribution_mom": 0.0,
+                        "mom": 1.0,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+
+    waterfall = waterfall_latest(items, pd.Timestamp("2024-01-01"))
+    assert waterfall.data[0].increasing.marker.color == charts._UP
+    assert waterfall.data[0].decreasing.marker.color == charts._DOWN
+
+    ranking = contribution_ranking(items, pd.Timestamp("2024-01-01"), "group", top_n=10)
+    colors = dict(zip(ranking.data[0].y, ranking.data[0].marker.color, strict=False))
+    assert colors["Grupo 3"] == charts._UP
+    assert colors["Grupo 0"] == charts._DOWN
+
+    bcb = pd.DataFrame(
+        {
+            "date": pd.date_range("2024-01-01", periods=5, freq="MS"),
+            "series_short_name": ["Difusao"] * 5,
+            "mom": [20.0, 40.0, 60.0, 80.0, 90.0],
+            "moving_average_3m": [None, None, 40.0, 60.0, 75.0],
+        }
+    )
+    diffusion = diffusion_line(bcb)
+    assert diffusion.data[0].line.color != charts._DOWN
+    assert diffusion.layout.shapes[0].line.color == charts._DOWN
+    assert diffusion.layout.shapes[-1].line.color == charts._UP
