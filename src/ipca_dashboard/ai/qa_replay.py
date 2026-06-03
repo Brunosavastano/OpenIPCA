@@ -33,6 +33,7 @@ from ipca_dashboard.ai.qa import QA_PROMPT_VERSION, QAResult, answer_question
 from ipca_dashboard.config import PROJECT_ROOT
 
 REPLAY_PATH = PROJECT_ROOT / "reports" / "qa" / "replay.json"
+MAX_REPLAY_BYTES = 2_000_000
 
 # The curated set the box advertises (the "face" of the product). These are the
 # buttons shown in the UI and the questions the replay is generated for. All are
@@ -60,8 +61,10 @@ def load_replay(path: Path | None = None) -> dict[str, dict]:
     """
     path = path or REPLAY_PATH
     try:
+        if path.stat().st_size > MAX_REPLAY_BYTES:
+            return {}
         raw = json.loads(path.read_text(encoding="utf-8"))
-    except (FileNotFoundError, ValueError, OSError):
+    except (FileNotFoundError, ValueError, OSError, RecursionError):
         return {}
     pairs = raw.get("pairs", []) if isinstance(raw, dict) else raw
     out: dict[str, dict] = {}

@@ -4,10 +4,13 @@ AppTest renders pages, not just imports the app. This catches runtime-only UI
 errors such as nested expanders when reports/latest artifacts are present.
 """
 
+import ast
 from pathlib import Path
 
 import pandas as pd
 from streamlit.testing.v1 import AppTest
+
+from ipca_dashboard.ai.qa import QAResult
 
 ROOT = Path(__file__).resolve().parents[1]
 PROCESSED = ROOT / "data" / "processed"
@@ -203,3 +206,110 @@ def test_ask_page_renders_an_answer_without_network(monkeypatch):
     finally:
         for path in created:
             path.unlink(missing_ok=True)
+
+
+def test_ask_page_cache_is_keyed_by_question(monkeypatch):
+    calls = []
+
+    def fake_answer(question, *args, **kwargs):
+        calls.append(question)
+        return QAResult(
+            answer=f"ANSWER::{question}",
+            claims=[],
+            evidence=[],
+            trace={},
+            metadata={},
+            mode="ai",
+            provider_name="fake",
+        )
+
+    monkeypatch.setattr("ipca_dashboard.ai.qa_replay.answer_with_replay", fake_answer)
+    created = _ensure_processed_fixtures()
+    try:
+        app = AppTest.from_file("dashboard/app.py")
+        app.run(timeout=60)
+        app.sidebar.radio[0].set_value("Pergunte ao IPCA")
+
+        app.session_state["qa_last_q"] = "Como está a difusão do IPCA?"
+        app.run(timeout=60)
+        assert not app.exception
+        assert calls == ["Como está a difusão do IPCA?"]
+        assert any("ANSWER::Como está a difusão do IPCA?" in md.value for md in app.markdown)
+
+        app.session_state["qa_last_q"] = "Como está o IPCA acumulado em 12 meses?"
+        app.run(timeout=60)
+        assert not app.exception
+        assert calls == [
+            "Como está a difusão do IPCA?",
+            "Como está o IPCA acumulado em 12 meses?",
+        ]
+        values = "\n".join(md.value for md in app.markdown)
+        assert "ANSWER::Como está o IPCA acumulado em 12 meses?" in values
+        assert "ANSWER::Como está a difusão do IPCA?" not in values
+
+        app.run(timeout=60)
+        assert calls == [
+            "Como está a difusão do IPCA?",
+            "Como está o IPCA acumulado em 12 meses?",
+        ]
+    finally:
+        for path in created:
+            path.unlink(missing_ok=True)
+
+
+def test_ask_page_renders_model_html_as_safe_markdown(monkeypatch):
+    payload = "<script>alert('xss')</script>\n[clique](javascript:alert(1))"
+
+    def fake_answer(question, *args, **kwargs):
+        return QAResult(
+            answer=payload,
+            claims=[
+                {
+                    "text": "<img src=x onerror=alert(1)>",
+                    "type": "interpretation",
+                    "evidence_ids": ["ev_diffusion_mm3"],
+                }
+            ],
+            evidence=[],
+            trace={},
+            metadata={},
+            mode="ai",
+            provider_name="fake",
+        )
+
+    monkeypatch.setattr("ipca_dashboard.ai.qa_replay.answer_with_replay", fake_answer)
+    created = _ensure_processed_fixtures()
+    try:
+        app = AppTest.from_file("dashboard/app.py")
+        app.run(timeout=60)
+        app.sidebar.radio[0].set_value("Pergunte ao IPCA")
+        app.session_state["qa_last_q"] = "Como está a difusão do IPCA?"
+        app.run(timeout=60)
+        assert not app.exception
+        assert any("<script>alert" in md.value for md in app.markdown)
+        html_values = [getattr(el, "value", "") for el in getattr(app, "html", [])]
+        assert not any("<script>alert" in value for value in html_values)
+    finally:
+        for path in created:
+            path.unlink(missing_ok=True)
+
+
+def test_page_ask_does_not_enable_unsafe_html_for_user_or_model_text():
+    source = (ROOT / "dashboard" / "app.py").read_text(encoding="utf-8")
+    module = ast.parse(source)
+    page_ask = next(
+        node for node in module.body if isinstance(node, ast.FunctionDef) and node.name == "page_ask"
+    )
+    for call in [node for node in ast.walk(page_ask) if isinstance(node, ast.Call)]:
+        if not (
+            isinstance(call.func, ast.Attribute)
+            and call.func.attr == "markdown"
+            and isinstance(call.func.value, ast.Name)
+            and call.func.value.id == "st"
+        ):
+            continue
+        unsafe = [
+            kw.value for kw in call.keywords
+            if kw.arg == "unsafe_allow_html" and isinstance(kw.value, ast.Constant)
+        ]
+        assert unsafe != [True]
