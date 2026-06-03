@@ -7,8 +7,11 @@ name: refresh-data
 on:
   workflow_dispatch: {}
   schedule:
-    # 15:00 UTC (12:00 BRT), days 9-15 — covers the release window and any delay.
-    - cron: "0 15 9-15 * *"
+    # Twice a day (12:00 and 20:00 UTC = 09:00 and 17:00 BRT) across days 9-16.
+    # The IBGE/SIDRA API is flaky from GitHub runners, so the commit-only-when-changed
+    # guard makes the extra runs cheap: spreading ~16 attempts over the release window
+    # makes it very likely at least one lands the new IPCA. Public repo => Actions are free.
+    - cron: "0 12,20 9-16 * *"
 
 # Allow the job to push the refreshed data back to the repository.
 permissions:
