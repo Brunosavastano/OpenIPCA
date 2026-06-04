@@ -239,12 +239,15 @@ CSS = """
   }
 
   /* chart cards — frame each chart directly (one stPlotlyChart per chart, so this
-     never touches expanders/sidebar). The Plotly interior stays #0A0E14, so the
-     #11161F frame + border reads as a contour that groups the chart. */
+     never touches expanders/sidebar). */
   [data-testid="stPlotlyChart"] {
     background: #11161F; border: 1px solid #222A36;
     border-radius: 8px; padding: 8px 10px;
   }
+  /* Streamlit paints the chart SVG with the app background (#0A0E14); clear it so
+     the chart shows its #11161F card, not a darker inner rectangle. (Paper/plot are
+     already transparent via chart_theme.yaml.) */
+  [data-testid="stPlotlyChart"] .main-svg { background: transparent !important; }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
