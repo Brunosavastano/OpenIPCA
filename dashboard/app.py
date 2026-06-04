@@ -138,12 +138,14 @@ CSS = """
     margin-bottom: 16px;                     /* breathing room before the CTA box */
   }
   .diagnostic strong { color: #FFFFFF; }
-  .ask-teaser {
+  .ask-cta { display: none; }
+  /* "Pergunte ao IPCA" CTA: a bordered container (so the button sits inside the box),
+     scoped by its .ask-cta marker to the innermost wrapper (not the page/sidebar). */
+  [data-testid="stVerticalBlockBorderWrapper"]:has(.ask-cta):not(:has([data-testid="stVerticalBlockBorderWrapper"] .ask-cta)) {
     background: linear-gradient(90deg, rgba(53,176,125,.10), rgba(0,0,0,0) 70%), #11161F;
-    border: 1px solid #2E3845; border-left: 3px solid #35B07D;  /* CTA = green */
-    color: #E6EAF1; padding: 15px 18px; border-radius: 6px; margin-bottom: 8px;
+    border: 1px solid #2E3845 !important; border-left: 3px solid #35B07D !important;
+    border-radius: 8px;
   }
-  .ask-teaser strong, .ask-teaser a { color: #35B07D; }
   .callout-title {
     font-family: 'IBM Plex Mono', monospace; font-size: .62rem; font-weight: 600;
     letter-spacing: .14em; text-transform: uppercase; margin: 0 0 7px;
@@ -204,7 +206,8 @@ CSS = """
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:hover { background: #161D28; }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"] > div:first-child { display: none; }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]::before {
-    content: "\\25CF"; font-size: .42rem; color: #5A6373; flex: none;
+    content: "\\25CF"; font-size: .58rem; color: #6B7585; flex: none;
+    text-shadow: 0 0 5px rgba(122,136,150,.4);
   }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"] div[data-testid="stMarkdownContainer"] p {
     color: #B7BECB; font-size: .92rem; margin: 0;
@@ -212,7 +215,7 @@ CSS = """
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) {
     background: #161D28; border-left-color: #E8943A;
   }
-  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked)::before { color: #E8943A; font-size: .62rem; }
+  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked)::before { color: #E8943A; font-size: .72rem; text-shadow: 0 0 7px rgba(232,148,58,.7); }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) div[data-testid="stMarkdownContainer"] p {
     color: #E8943A; font-weight: 600;
   }
@@ -248,6 +251,11 @@ CSS = """
      the chart shows its #11161F card, not a darker inner rectangle. (Paper/plot are
      already transparent via chart_theme.yaml.) */
   [data-testid="stPlotlyChart"] .main-svg { background: transparent !important; }
+
+  /* expanders ("Briefing IPCA", "Glossário", "Evidências"…) framed like the cards */
+  [data-testid="stExpander"] details {
+    background: #11161F; border: 1px solid #222A36 !important; border-radius: 8px;
+  }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
@@ -291,33 +299,16 @@ REPORTS_LATEST = ROOT / "reports" / "latest"
 
 
 def render_ai_replay() -> None:
-    """Show the pre-generated, auditable AI brief + orchestration trace.
+    """Show the pre-generated, auditable AI brief (the "Briefing IPCA").
 
-    "AI Replay Mode": the public demo replays an artifact generated offline
-    (BYOK). If no artifact exists yet, the deterministic brief above is the
-    floor and this stays quiet.
+    The public demo replays an artifact generated offline (BYOK). If none exists
+    yet, the deterministic reading above is the floor and this stays quiet.
     """
     brief_path = REPORTS_LATEST / "ai_brief.md"
-    trace_path = REPORTS_LATEST / "ai_trace.json"
     if not brief_path.exists():
         return
-    with st.expander("Resumo Gerado por IA", expanded=False):
-        st.caption(
-            "Brief pré-gerado e auditável. Sem chamada de IA ao vivo na demo; "
-            "toda afirmação é rastreável a uma evidência. Rode localmente com sua "
-            "própria chave para gerar novas leituras."
-        )
+    with st.expander("Briefing IPCA", expanded=False):
         st.markdown(brief_path.read_text(encoding="utf-8"))
-        if trace_path.exists():
-            trace = json.loads(trace_path.read_text(encoding="utf-8"))
-            # NOTE: no nested expander here — Streamlit forbids expander-in-expander.
-            # The trace is a labelled section inside this expander instead.
-            st.markdown("**🔎 Bastidores (como a IA chegou a isto)**")
-            st.caption(
-                "Passo a passo do que a IA consultou (somente dados oficiais já "
-                "calculados) antes de escrever — para quem quiser auditar a leitura."
-            )
-            st.json(trace, expanded=False)
 
 
 def _alert_messages() -> dict[str, str]:
@@ -553,15 +544,17 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
         unsafe_allow_html=True,
     )
 
-    st.markdown(
-        "<div class='ask-teaser'><div class='callout-title cta'>Pergunte ao IPCA</div>"
-        "Faça uma pergunta em português sobre a inflação e receba uma resposta "
-        "aterrada nos dados oficiais — cada número rastreável a uma evidência.</div>",
-        unsafe_allow_html=True,
-    )
-    if st.button("Abrir Pergunte ao IPCA", key="open_ask"):
-        st.session_state["goto_ask"] = True
-        st.rerun()
+    with st.container(border=True):
+        st.markdown(
+            "<span class='ask-cta'></span>"
+            "<div class='callout-title cta'>Pergunte ao IPCA</div>"
+            "Faça uma pergunta em português sobre a inflação e receba uma resposta "
+            "aterrada nos dados oficiais — cada número rastreável a uma evidência.",
+            unsafe_allow_html=True,
+        )
+        if st.button("Abrir Pergunte ao IPCA", key="open_ask"):
+            st.session_state["goto_ask"] = True
+            st.rerun()
 
     render_ai_replay()
     render_glossary()
