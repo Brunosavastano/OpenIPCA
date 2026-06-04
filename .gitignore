@@ -32,3 +32,8 @@ outputs/*
 .idea/
 .vscode/
 *.log
+
+# local-only dev helpers (machine-specific paths / personal context — never tracked)
+.claude/
+DESIGN_BUNDLE.md
+INICIAR_APP.bat
