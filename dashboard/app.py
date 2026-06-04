@@ -206,8 +206,8 @@ CSS = """
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:hover { background: #161D28; }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"] > div:first-child { display: none; }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]::before {
-    content: "\\25CF"; font-size: .58rem; color: #6B7585; flex: none;
-    text-shadow: 0 0 5px rgba(122,136,150,.4);
+    content: ""; width: 8px; height: 8px; border-radius: 50%; background: #6B7585; flex: none;
+    box-shadow: 0 0 6px rgba(122,136,150,.55);
   }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"] div[data-testid="stMarkdownContainer"] p {
     color: #B7BECB; font-size: .92rem; margin: 0;
@@ -215,7 +215,7 @@ CSS = """
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) {
     background: #161D28; border-left-color: #E8943A;
   }
-  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked)::before { color: #E8943A; font-size: .72rem; text-shadow: 0 0 7px rgba(232,148,58,.7); }
+  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked)::before { background: #E8943A; width: 9px; height: 9px; box-shadow: 0 0 9px rgba(232,148,58,.9); }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) div[data-testid="stMarkdownContainer"] p {
     color: #E8943A; font-weight: 600;
   }
@@ -256,6 +256,14 @@ CSS = """
   [data-testid="stExpander"] details {
     background: #11161F; border: 1px solid #222A36 !important; border-radius: 8px;
   }
+  /* popovers ("O que é cada núcleo"…) framed like the cards, with an amber info icon
+     (the blue ℹ️ emoji can't be recolored via CSS, so it's drawn here instead). */
+  [data-testid="stPopover"] button {
+    background: #11161F !important; border: 1px solid #222A36 !important;
+    border-radius: 8px; color: #E6EAF1;
+  }
+  [data-testid="stPopover"] button:hover { background: #161D28 !important; border-color: #2E3845 !important; }
+  [data-testid="stPopover"] button::before { content: "\\24D8"; color: #E8943A; margin-right: 7px; font-weight: 600; }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
@@ -678,7 +686,9 @@ def page_cores(data: dict[str, pd.DataFrame]) -> None:
     cores = data["cores"]
     core_sets = load_yaml("core_sets.yaml").get("core_sets", {})
     labels = {key: value.get("label", key) for key, value in core_sets.items()}
-    selected = st.selectbox("Preset de núcleos", list(labels), format_func=lambda key: labels[key])
+    selected = st.selectbox(
+        "Conjunto de núcleos", list(labels), format_func=lambda key: labels[key]
+    )
 
     # Completeness warning (only if the column exists in the processed data).
     complete_col = "is_complete" if "is_complete" in cores.columns else "is_complete_core_set"
@@ -693,18 +703,18 @@ def page_cores(data: dict[str, pd.DataFrame]) -> None:
                 exp = int(latest_mean.get("n_members_expected", 0))
                 missing = latest_mean.get("missing_members", "")
                 st.warning(
-                    f"Preset incompleto no mês mais recente: {avail}/{exp} séries disponíveis. "
-                    f"Faltando: {missing}. A média é omitida quando o preset está incompleto."
+                    f"Conjunto incompleto no mês mais recente: {avail}/{exp} séries disponíveis. "
+                    f"Faltando: {missing}. A média é omitida quando o conjunto está incompleto."
                 )
 
     st.header("Monitor de núcleos")
-    # What "núcleos" are, then a legend for the cores in the selected preset.
+    # What "núcleos" are, then a legend for the cores in the selected conjunto.
     st.caption(describe("nucleos"))
     members = core_sets.get(selected, {}).get("members", [])
     if members:
         legend = "  \n".join(f"- {describe(m)}" for m in members if describe(m))
         if legend:
-            with st.popover("ℹ️ O que é cada núcleo deste preset"):
+            with st.popover("O que é cada núcleo"):
                 st.markdown(legend)
 
     # Metric selector reuses the single-source METRIC_LABELS (same labels the
@@ -722,7 +732,7 @@ def page_cores(data: dict[str, pd.DataFrame]) -> None:
 
     # Numeric detail behind a toggle: clean headers, useful columns only.
     with st.expander("Ver tabela de núcleos (detalhe)", expanded=False):
-        st.caption("Valores mais recentes de cada núcleo do preset.")
+        st.caption("Valores mais recentes de cada núcleo do conjunto.")
         latest = (
             cores[cores["core_set_name"] == selected]
             .sort_values("date")
@@ -787,12 +797,12 @@ def page_methodology(data: dict[str, pd.DataFrame]) -> None:
         A coluna `three_month_saar` segue disponível para auditoria/exploração, mas deve
         ser lida como 3m anualizado NSA experimental, não como SAAR.
 
-        **Núcleos.** A média dos núcleos é calculada a partir do preset selecionado em `config/core_sets.yaml`.
+        **Núcleos.** A média dos núcleos é calculada a partir do conjunto selecionado em `config/core_sets.yaml`.
 
         **Alertas.** Regras declarativas em `config/alert_rules.yaml`; o dashboard exibe apenas os
         alertas disparados no último processamento.
 
-        **Validação.** O pipeline checa duplicidades, faixas plausíveis, disponibilidade do preset
+        **Validação.** O pipeline checa duplicidades, faixas plausíveis, disponibilidade do conjunto
         default e diferença entre soma das contribuições por grupo e headline.
         """
     )
