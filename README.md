@@ -2,7 +2,7 @@
 
 **Brazilian inflation beyond the headline.**
 
-[![tests](https://github.com/Brunosavastano/Decomp_IPCA/actions/workflows/tests.yml/badge.svg)](https://github.com/Brunosavastano/Decomp_IPCA/actions/workflows/tests.yml)
+[![tests](https://github.com/Brunosavastano/OpenIPCA/actions/workflows/tests.yml/badge.svg)](https://github.com/Brunosavastano/OpenIPCA/actions/workflows/tests.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 
@@ -10,8 +10,9 @@ OpenIPCA is an open-source macro research dashboard for Brazilian inflation. It 
 official data from **IBGE/SIDRA** and **BCB/SGS** into IPCA decomposition, core inflation,
 diffusion and auditable alerts. The numbers are deterministic; the AI is **grounded** — it
 *orchestrates* those numbers and every claim traces to an evidence item, never an invented
-figure. Its most visible piece is **Ask the IPCA**: a live Q&A box that reasons about the
-release and answers in plain Portuguese, with each number auditable.
+figure. Its most visible piece is **Ask the IPCA**: a grounded Q&A box that reasons about the
+release in plain Portuguese, where every number is auditable. The public demo serves
+pre-generated, audited answers (**AI Replay Mode**); your own key unlocks live Q&A locally.
 
 > 🇧🇷 Leia em português: [README.pt-BR.md](README.pt-BR.md)
 
@@ -37,10 +38,12 @@ methodology fully in the open.
 
 ## Features
 
-- **Ask the IPCA** — a live, grounded Q&A box. Ask in Portuguese and get an answer anchored
-  in the official data, where *every number traces to an evidence id*. It reasons about the
-  release, confronts external hypotheses ("did an oil shock cause this?") against the numbers,
-  refuses prompt-injection, and never gives investment advice or Copom/Selic forecasts.
+- **Ask the IPCA** — a grounded Q&A box. Ask in Portuguese and get an answer anchored
+  in the official data, where *every number traces to an evidence id*. The public demo serves
+  pre-generated, audited answers (**AI Replay Mode**); with your own key (BYOK) it answers live
+  locally. It reasons about the release, confronts external hypotheses ("did an oil shock cause
+  this?") against the numbers, refuses prompt-injection, and never gives investment advice or
+  Copom/Selic forecasts.
 - **Decomposition** of IPCA by group, subgroup, item and subitem (contributions in p.p.).
 - **Core inflation** monitor with configurable presets (`config/core_sets.yaml`).
 - **Diffusion** (official BCB series + a calculated breakdown by group).
@@ -87,9 +90,9 @@ for key handling.
 It is **model-agnostic** (OpenAI, Anthropic or Google Gemini behind one provider seam — the
 model is config, not code) and the safety floor is code: guardrails reject prompt-injection
 and off-scope questions *before* the model, and reject ungrounded numbers, monetary-policy
-forecasts and asset advice *after* it. The public **Ask the IPCA** demo runs on a free
-provider and degrades to pre-generated, audited answers if the live model is unavailable, so
-the AI is always visible without the AI ever blocking the product.
+forecasts and asset advice *after* it. The public **Ask the IPCA** demo keeps a pre-generated,
+audited floor (**AI Replay Mode**) so a grounded answer is always visible; full live Q&A is
+unlocked locally with BYOK. The AI is always visible without ever blocking the product.
 
 ## Contributing
 

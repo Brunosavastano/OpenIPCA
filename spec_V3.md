@@ -2,10 +2,10 @@
 
 **Projeto:** OpenIPCA — monitor open-source de inflação brasileira além do headline.
 **Tagline:** *Brazilian inflation beyond the headline.*
-**Base de código:** repo atual `Decomp_IPCA` (commit `e5a3fc5`), pacote `src/ipca_dashboard/`.
+**Base de código:** repo `OpenIPCA` (commit `e5a3fc5`), pacote `src/ipca_dashboard/`.
 **Versão-alvo:** `v0.1.0-public`.
 **Data:** 2026-05-28.
-**Natureza desta versão:** a V3 substitui a V2. Ela mantém o rigor de hardening da V2, mas reorienta o documento para o objetivo real — **lançar rápido um produto macro confiável que prove, em público, ethos de economista rigoroso E de founder AI-native** — e adiciona uma arquitetura de IA projetada para **melhorar sozinha conforme os modelos evoluem**.
+**Natureza desta versão:** a V3 substitui a V2. Ela mantém o rigor de hardening da V2, mas reorienta o documento para o objetivo real — **lançar rápido um produto macro confiável que prove, em público, ethos de economista rigoroso E de founder AI-native** — e adiciona uma arquitetura de IA **model-upgradable**: trocar por um modelo melhor é um processo testável (eval gate + guardrails), não reescrita.
 
 ---
 
@@ -19,14 +19,14 @@ Para quem vem da V2, os deltas materiais:
 4. **Bugs reclassificados em bloqueante × polish** (seção 5). Seis bloqueiam o lançamento; quatro vão para depois.
 5. **Correção de percentil centralizada** em `transforms.py` **e** `audit.py` (a V2 só corrigia o primeiro).
 6. **Escopo de lançamento enxuto.** Cinco releases viram um v0.1 focado + iteração. Governança institucional pesada (CITATION, múltiplos templates) adiada.
-7. **Distribuição como feature de primeira classe** (seção 8): detecção de divulgação, fluxo release-day via PR (human-in-the-loop), artefato estático compartilhável, bilinguismo.
+7. **Distribuição como feature de primeira classe** (seção 8): detecção de divulgação, fluxo release-day via PR (human-in-the-loop) **[alvo v0.2]**, artefato estático compartilhável, bilinguismo.
 8. **Decisões de produto fixadas:** nome `OpenIPCA` mantido; **sem expansão para outros índices** (IGP-M, PCE etc.); disclaimer de não-afiliação ao IBGE/BCB.
 
 ---
 
 ## 1. Tese e princípios
 
-> **OpenIPCA transforma dados oficiais do IBGE/SIDRA e do BCB/SGS em decomposição, núcleos, difusão e alertas auditáveis. Os números são determinísticos. A interpretação é orquestrada por IA aterrada na evidência. A metodologia é transparente. E a camada de IA foi construída para melhorar conforme os modelos evoluem.**
+> **OpenIPCA transforma dados oficiais do IBGE/SIDRA e do BCB/SGS em decomposição, núcleos, difusão e alertas auditáveis. Os números são determinísticos. A interpretação é orquestrada por IA aterrada na evidência. A metodologia é transparente. E a camada de IA é model-upgradable: absorve modelos melhores via evals e guardrails, sem reescrever o sistema.**
 
 ### 1.1 Princípios (decididos, não opcionais)
 
@@ -157,6 +157,8 @@ Action detecta IPCA novo ─▶ roda pipeline determinístico ─▶ monta evide
 
 Merge é a aprovação humana. A IA nunca fala em público sem revisão. (Detalhes de automação na seção 8.)
 
+> **Status (v0.1):** este fluxo automatizado de detecção→PR é **alvo da v0.2** (§12). Em v0.1, o refresh mensal de dados commita direto (`refresh-data.yml`) e o **brief de IA é regenerado manualmente (BYOK)** antes de publicar — a revisão humana acontece, mas ainda não via PR automático.
+
 ### 3.8 Features de IA por versão
 
 **v0.1 — IA visível, aterrada, em batch (sem live API na demo):**
@@ -275,8 +277,8 @@ Saídas por mês: `evidence.json`, `brief.md` (+ `ai_brief.md` quando houver), `
 ### 8.2 Onde os artefatos vivem *(decisão de engenharia)*
 **Não commitar PNGs mensais no `main`** (git guarda todas as versões → repo incha com o tempo). Publicar via Action em **GitHub Releases** ou **branch `gh-pages`/Pages**. `main` fica limpo; `reports/latest.*` pode ser um ponteiro sobrescrito para diffs limpos.
 
-### 8.3 Detecção de divulgação (não "cron mensal burro")
-O IPCA tem data específica. Action **diária** numa janela provável que **checa dado novo e só dispara ao detectar** (`daily_check_for_new_ipca_release.yml`). Ao detectar: roda pipeline → gera relatório → **abre PR** (HITL, seção 3.7).
+### 8.3 Detecção de divulgação (não "cron mensal burro") *(alvo v0.2)*
+O IPCA tem data específica. Action **diária** numa janela provável que **checa dado novo e só dispara ao detectar** (`daily_check_for_new_ipca_release.yml`). Ao detectar: roda pipeline → gera relatório → **abre PR** (HITL, seção 3.7). **Em v0.1**, o refresh é mensal e commita direto (`refresh-data.yml`); a detecção diária + PR automático ficam para a v0.2.
 
 ### 8.4 Bilinguismo (sem drift)
 - **README em inglês** como principal (alcance no GitHub) + **`README.pt-BR.md` curto** apontando para ele. Não espelhar 100% (espelho gera drift).
