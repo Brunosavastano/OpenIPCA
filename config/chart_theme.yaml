@@ -20,7 +20,9 @@ palette:
   high: "#EC7A3D"
   critical: "#E5484D"
 plotly_template:
-  paper_bgcolor: "#0A0E14"
-  plot_bgcolor: "#0A0E14"
+  # Transparent so each chart shows its card background (#11161F) seamlessly,
+  # instead of a darker inner rectangle inside the card.
+  paper_bgcolor: "rgba(0,0,0,0)"
+  plot_bgcolor: "rgba(0,0,0,0)"
   font_family: "IBM Plex Sans, sans-serif"
   gridcolor: "#1A222D"
