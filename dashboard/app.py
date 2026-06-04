@@ -74,20 +74,43 @@ CSS = """
   /* sidebar */
   [data-testid="stSidebar"] { background: #11161F; border-right: 1px solid #222A36; }
 
-  /* KPI tiles — st.metric */
-  [data-testid="stMetric"] {
-    background: #11161F; border: 1px solid #222A36;
-    border-radius: 6px; padding: 13px 14px;
+  /* KPI tiles — custom grid (st.markdown HTML). Equal height via the grid; each
+     tile = label + (?) tooltip, mono value, plain colored delta, muted note. */
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: 1fr; gap: 10px; margin: 2px 0 6px;
   }
-  [data-testid="stMetricLabel"] {
-    color: #8A93A3; font-family: 'IBM Plex Mono', monospace;
-    font-size: .66rem; letter-spacing: .1em; text-transform: uppercase;
+  @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 640px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  .kpi {
+    display: flex; flex-direction: column;
+    background: #11161F; border: 1px solid #222A36; border-radius: 6px;
+    padding: 13px 14px; min-width: 0;
   }
-  [data-testid="stMetricValue"] {
+  .kpi-head { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
+  .kpi-label {
+    color: #8A93A3; font-family: 'IBM Plex Mono', monospace; font-size: .66rem;
+    font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+  }
+  .kpi-info {
+    flex: none; cursor: help; color: #5A6373; font-size: .6rem; font-weight: 600; line-height: 1;
+    border: 1px solid #2E3845; border-radius: 50%;
+    width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .kpi-info:hover { color: #8A93A3; border-color: #3A4656; }
+  .kpi-value {
     color: #E6EAF1; font-family: 'IBM Plex Mono', monospace;
-    font-variant-numeric: tabular-nums; font-size: 1.7rem; font-weight: 500;
+    font-variant-numeric: tabular-nums; font-size: 1.7rem; font-weight: 500; line-height: 1.15;
   }
-  [data-testid="stMetricDelta"] { font-family: 'IBM Plex Mono', monospace; font-size: .8rem; }
+  .kpi-delta {
+    font-family: 'IBM Plex Mono', monospace; font-size: .8rem; font-weight: 500;
+    margin-top: 4px; min-height: 1.05rem;
+  }
+  .kpi-delta.up   { color: #E5484D; }   /* inverse: rising inflation = bad = red */
+  .kpi-delta.down { color: #35B07D; }   /* falling = good = green */
+  .kpi-delta.flat { color: #8A93A3; }
+  .kpi-note { color: #5A6373; font-size: .64rem; margin-top: 3px; }
 
   /* buttons & input */
   .stButton > button {
@@ -111,6 +134,12 @@ CSS = """
     color: #E6EAF1; padding: 15px 18px; border-radius: 6px; margin-bottom: 8px;
   }
   .ask-teaser strong, .ask-teaser a { color: #35B07D; }
+  .callout-title {
+    font-family: 'IBM Plex Mono', monospace; font-size: .62rem; font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase; margin: 0 0 7px;
+  }
+  .callout-title.info { color: #4A8FE0; }
+  .callout-title.cta  { color: #35B07D; }
 
   /* alert badges */
   .badge {
@@ -121,6 +150,19 @@ CSS = """
   .badge.high { color: #EC7A3D; border: 1px solid rgba(236,122,61,.4); background: rgba(236,122,61,.12); }
   .badge.low  { color: #E0A046; border: 1px solid rgba(224,160,70,.4); background: rgba(224,160,70,.12); }
   .badge.info { color: #4A8FE0; border: 1px solid rgba(74,143,224,.4); background: rgba(74,143,224,.12); }
+
+  /* active alerts as bordered cards with a severity left accent */
+  .alert-box {
+    display: flex; align-items: center; gap: 10px;
+    background: #11161F; border: 1px solid #222A36; border-left: 3px solid #2E3845;
+    border-radius: 6px; padding: 10px 13px; margin-bottom: 8px; color: #E6EAF1;
+  }
+  .alert-box.crit { border-left-color: #E5484D; }
+  .alert-box.high { border-left-color: #EC7A3D; }
+  .alert-box.low  { border-left-color: #E0A046; }
+  .alert-box.info { border-left-color: #4A8FE0; }
+  .alert-box .badge { flex: none; }
+  .alert-box .alert-text { line-height: 1.4; }
 
   /* Q&A answer mode seal — sober mono pill instead of an emoji */
   .mode-seal {
@@ -139,6 +181,7 @@ CSS = """
     font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: .95rem;
   }
   [data-testid="stSidebar"] .brand-name { font-weight: 600; font-size: 1.05rem; color: #E6EAF1; letter-spacing: -.01em; }
+  [data-testid="stSidebar"] .brand-accent { color: #E8943A; }  /* "IPCA" in the logo amber */
   [data-testid="stSidebar"] .nav-label {
     font-family: 'IBM Plex Mono', monospace; font-size: .6rem; letter-spacing: .18em;
     text-transform: uppercase; color: #5A6373; margin: 18px 4px 6px;
@@ -146,7 +189,7 @@ CSS = """
   [data-testid="stSidebar"] [role="radiogroup"] { gap: 1px; }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"] {
     display: flex; align-items: center; gap: 9px; width: 100%; margin: 0; padding: 7px 10px;
-    border-left: 2px solid transparent; border-radius: 0 5px 5px 0; cursor: pointer;
+    border-left: 3px solid transparent; border-radius: 6px; cursor: pointer;
   }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:hover { background: #161D28; }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"] > div:first-child { display: none; }
@@ -159,7 +202,7 @@ CSS = """
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) {
     background: #161D28; border-left-color: #E8943A;
   }
-  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked)::before { color: #E8943A; }
+  [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked)::before { color: #E8943A; font-size: .62rem; }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) div[data-testid="stMarkdownContainer"] p {
     color: #E8943A; font-weight: 600;
   }
@@ -183,6 +226,14 @@ CSS = """
     text-transform: uppercase; color: #E8943A;
     border: 1px solid rgba(232,148,58,.5); background: rgba(232,148,58,.08);
     padding: 4px 10px; border-radius: 4px;
+  }
+
+  /* chart cards — frame each chart directly (one stPlotlyChart per chart, so this
+     never touches expanders/sidebar). The Plotly interior stays #0A0E14, so the
+     #11161F frame + border reads as a contour that groups the chart. */
+  [data-testid="stPlotlyChart"] {
+    background: #11161F; border: 1px solid #222A36;
+    border-radius: 8px; padding: 8px 10px;
   }
 </style>
 """
@@ -237,7 +288,7 @@ def render_ai_replay() -> None:
     trace_path = REPORTS_LATEST / "ai_trace.json"
     if not brief_path.exists():
         return
-    with st.expander("🤖 AI Replay Mode — como a IA montou este brief", expanded=False):
+    with st.expander("Resumo Gerado por IA", expanded=False):
         st.caption(
             "Brief pré-gerado e auditável. Sem chamada de IA ao vivo na demo; "
             "toda afirmação é rastreável a uma evidência. Rode localmente com sua "
@@ -290,14 +341,16 @@ def render_active_alerts(alerts: pd.DataFrame) -> None:
         safe_text = escape(str(text))
         safe_sev_pt = escape(str(sev_pt))
         st.markdown(
-            f"<span class='badge {cls}'>{safe_sev_pt}</span> &nbsp;{safe_text}",
+            f"<div class='alert-box {cls}'>"
+            f"<span class='badge {cls}'>{safe_sev_pt}</span>"
+            f"<span class='alert-text'>{safe_text}</span></div>",
             unsafe_allow_html=True,
         )
 
 
 def render_glossary() -> None:
     """A persistent, plain-language glossary for readers without macro context."""
-    with st.expander("📖 O que significam estes termos?", expanded=False):
+    with st.expander("Glossário", expanded=False):
         for text in CONCEPTS.values():
             st.markdown(f"- {text}")
         st.markdown("**Núcleos do IPCA:**")
@@ -348,6 +401,54 @@ def delta_pp(curr: float | int | None, prev: float | int | None) -> str | None:
     return f"{curr - prev:+.2f} p.p."
 
 
+_KPI_NOTES = {
+    "IPCA m/m": "vs. mês anterior",
+    "IPCA 12m": "vs. mês anterior",
+    "IPCA MM3M": "vs. mês anterior",
+    "Média núcleos MM3M": "vs. mês anterior",
+    "Difusão MM3M": "vs. mês anterior",
+    "Alertas ativos": "",
+}
+
+
+def _delta_arrow(delta_text: str | None) -> tuple[str, str]:
+    """(css_class, label) for an inverted KPI delta: up = bad = red, down = green.
+
+    A change that rounds to 0.00 p.p. reads neutral (no arrow), not a red rise.
+    """
+    if not delta_text:
+        return "flat", ""
+    stripped = delta_text.lstrip()
+    if stripped.startswith(("+0.00", "-0.00")):
+        return "flat", ""
+    if stripped[:1] == "+":
+        return "up", "▲ " + delta_text
+    if stripped[:1] == "-":
+        return "down", "▼ " + delta_text
+    return "flat", delta_text
+
+
+def _kpi_tile(label_full: str, label_show: str, value: str, delta_text: str | None) -> str:
+    """One KPI tile as HTML: label + (?) tooltip, mono value, plain delta, muted note."""
+    cls, dlabel = _delta_arrow(delta_text)
+    tip = escape(describe(label_full))
+    info = f"<span class='kpi-info' title='{tip}'>?</span>" if tip else ""
+    delta_html = (
+        f"<div class='kpi-delta {cls}'>{escape(dlabel)}</div>"
+        if dlabel
+        else "<div class='kpi-delta flat'></div>"
+    )
+    note = escape(_KPI_NOTES.get(label_full, ""))
+    note_html = f"<div class='kpi-note'>{note}</div>" if note else ""
+    return (
+        "<div class='kpi'>"
+        f"<div class='kpi-head'><span class='kpi-label'>{escape(label_show)}</span>{info}</div>"
+        f"<div class='kpi-value'>{escape(value)}</div>"
+        f"{delta_html}{note_html}"
+        "</div>"
+    )
+
+
 def page_executive(data: dict[str, pd.DataFrame]) -> None:
     bcb, items, cores, alerts = data["bcb"], data["items"], data["cores"], data["alerts"]
     latest_date = pd.to_datetime(bcb["date"]).max()
@@ -376,58 +477,52 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
         severity, details = notice
         (st.error if severity == "block" else st.warning)(f"Freshness: {details}")
 
-    # Each card carries a plain-language tooltip ("(i)") via st.metric(help=...) and
-    # a month-over-month delta. delta_color="inverse" => up = bad = red, down = green
-    # (for diffusion too: a falling MM3M is good, so it reads green).
+    # KPI tiles as a custom HTML grid: st.metric can't carry the "vs. mês anterior"
+    # note nor keep the delta-less "Alertas" tile the same height. Inverted delta
+    # (up = bad = red, down = green) is reproduced by _delta_arrow.
     ipca_mom = ipca["mom"] if ipca is not None else None
     ipca_12m = ipca["rolling_12m"] if ipca is not None else None
     ipca_mm3m = ipca["moving_average_3m"] if ipca is not None else None
     core_mm3m = core_row["moving_average_3m"] if core_row is not None else None
     diff_mm3m = diffusion["moving_average_3m"] if diffusion is not None else None
 
-    cols = st.columns(6)
-    cols[0].metric(
-        "IPCA m/m",
-        fmt(ipca_mom),
-        delta=delta_pp(ipca_mom, ipca_prev["mom"] if ipca_prev is not None else None),
-        delta_color="inverse",
-        help=describe("IPCA m/m"),
-    )
-    cols[1].metric(
-        "IPCA 12m",
-        fmt(ipca_12m),
-        delta=delta_pp(ipca_12m, ipca_prev["rolling_12m"] if ipca_prev is not None else None),
-        delta_color="inverse",
-        help=describe("IPCA 12m"),
-    )
-    cols[2].metric(
-        "IPCA MM3M",
-        fmt(ipca_mm3m),
-        delta=delta_pp(
-            ipca_mm3m, ipca_prev["moving_average_3m"] if ipca_prev is not None else None
+    tiles = [
+        _kpi_tile(
+            "IPCA m/m",
+            "IPCA m/m",
+            fmt(ipca_mom),
+            delta_pp(ipca_mom, ipca_prev["mom"] if ipca_prev is not None else None),
         ),
-        delta_color="inverse",
-        help=describe("IPCA MM3M"),
-    )
-    cols[3].metric(
-        "Média núcleos MM3M",
-        fmt(core_mm3m),
-        delta=delta_pp(
-            core_mm3m, core_prev["moving_average_3m"] if core_prev is not None else None
+        _kpi_tile(
+            "IPCA 12m",
+            "IPCA 12m",
+            fmt(ipca_12m),
+            delta_pp(ipca_12m, ipca_prev["rolling_12m"] if ipca_prev is not None else None),
         ),
-        delta_color="inverse",
-        help=describe("Média núcleos MM3M"),
-    )
-    cols[4].metric(
-        "Difusão MM3M",
-        fmt(diff_mm3m),
-        delta=delta_pp(
-            diff_mm3m, diffusion_prev["moving_average_3m"] if diffusion_prev is not None else None
+        _kpi_tile(
+            "IPCA MM3M",
+            "IPCA MM3M",
+            fmt(ipca_mm3m),
+            delta_pp(ipca_mm3m, ipca_prev["moving_average_3m"] if ipca_prev is not None else None),
         ),
-        delta_color="inverse",
-        help=describe("Difusão MM3M"),
-    )
-    cols[5].metric("Alertas ativos", len(alerts), help=describe("Alertas ativos"))
+        _kpi_tile(
+            "Média núcleos MM3M",
+            "Núcleos MM3M",
+            fmt(core_mm3m),
+            delta_pp(core_mm3m, core_prev["moving_average_3m"] if core_prev is not None else None),
+        ),
+        _kpi_tile(
+            "Difusão MM3M",
+            "Difusão MM3M",
+            fmt(diff_mm3m),
+            delta_pp(
+                diff_mm3m,
+                diffusion_prev["moving_average_3m"] if diffusion_prev is not None else None,
+            ),
+        ),
+        _kpi_tile("Alertas ativos", "Alertas ativos", str(len(alerts)), None),
+    ]
+    st.markdown(f"<div class='kpi-grid'>{''.join(tiles)}</div>", unsafe_allow_html=True)
 
     regime = classify_latest_regime(bcb)
     st.markdown(
@@ -438,18 +533,15 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     regime_explanation = describe(regime.label_pt)
     if regime_explanation:
         st.caption(regime_explanation)
-    st.caption(
-        "Momentum em MM3M (média móvel de 3 meses, sem ajuste sazonal/NSA). "
-        "A versão anualizada com ajuste sazonal (SA) chega no v0.2. "
-        "Regime classificado por regra determinística (headline × difusão)."
+
+    st.markdown(
+        "<div class='diagnostic'><div class='callout-title info'>Leitura do mês</div>"
+        f"{escape(load_diagnostic())}</div>",
+        unsafe_allow_html=True,
     )
 
     st.markdown(
-        f"<div class='diagnostic'>{escape(load_diagnostic())}</div>", unsafe_allow_html=True
-    )
-
-    st.markdown(
-        "<div class='ask-teaser'>💬 <strong>Pergunte ao IPCA.</strong> "
+        "<div class='ask-teaser'><div class='callout-title cta'>Pergunte ao IPCA</div>"
         "Faça uma pergunta em português sobre a inflação e receba uma resposta "
         "aterrada nos dados oficiais — cada número rastreável a uma evidência. "
         "Abra <em>“Pergunte ao IPCA”</em> na barra lateral.</div>",
@@ -807,7 +899,7 @@ def main() -> None:
 
     st.sidebar.markdown(
         "<div class='brand'><span class='brand-mark'>I</span>"
-        "<span class='brand-name'>OpenIPCA</span></div>"
+        "<span class='brand-name'>Open<span class='brand-accent'>IPCA</span></span></div>"
         "<div class='nav-label'>Navegação</div>",
         unsafe_allow_html=True,
     )
