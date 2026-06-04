@@ -52,8 +52,9 @@ _CORE_SEQ = ["#4A8FE0", "#9B7FE0", "#E8943A", "#35B07D", "#5FB7C4", "#DD6B5C", "
 
 # Fallback theme if config/chart_theme.yaml is missing — keeps charts working.
 _DEFAULT_TEMPLATE = {
-    "paper_bgcolor": "#0A0E14",
-    "plot_bgcolor": "#0A0E14",
+    # Transparent so each chart shows its card background (#11161F) seamlessly.
+    "paper_bgcolor": "rgba(0,0,0,0)",
+    "plot_bgcolor": "rgba(0,0,0,0)",
     "font_family": "IBM Plex Sans, sans-serif",
     "gridcolor": "#1A222D",
 }

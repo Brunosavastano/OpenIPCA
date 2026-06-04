@@ -113,10 +113,19 @@ CSS = """
   .kpi-note { color: #5A6373; font-size: .64rem; margin-top: 3px; }
 
   /* buttons & input */
-  .stButton > button {
+  .stButton > button[kind="primary"] {
     background: #E8943A; color: #0A0E14; font-weight: 600; border: 0; border-radius: 5px;
   }
-  .stButton > button:hover { background: #F4A94E; color: #0A0E14; }
+  .stButton > button[kind="primary"]:hover { background: #F4A94E; color: #0A0E14; }
+  /* secondary = "card" buttons (suggested questions, CTA): dark box + amber arrow */
+  .stButton > button[kind="secondary"] {
+    background: #11161F; color: #E6EAF1; border: 1px solid #222A36; border-radius: 6px;
+    font-weight: 400; text-align: left; justify-content: flex-start; gap: 9px;
+  }
+  .stButton > button[kind="secondary"]:hover {
+    background: #161D28; border-color: #2E3845; color: #E6EAF1;
+  }
+  .stButton > button[kind="secondary"]::before { content: "\\203A"; color: #E8943A; font-weight: 700; }
   [data-testid="stTextInput"] input {
     background: #161D28; border: 1px solid #2E3845; color: #E6EAF1; border-radius: 5px;
   }
@@ -126,6 +135,7 @@ CSS = """
     background: #11161F; border: 1px solid #222A36;
     border-left: 3px solid #4A8FE0;          /* reading = info blue */
     color: #E6EAF1; padding: 15px 18px; border-radius: 6px; line-height: 1.55;
+    margin-bottom: 16px;                     /* breathing room before the CTA box */
   }
   .diagnostic strong { color: #FFFFFF; }
   .ask-teaser {
@@ -543,10 +553,12 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     st.markdown(
         "<div class='ask-teaser'><div class='callout-title cta'>Pergunte ao IPCA</div>"
         "Faça uma pergunta em português sobre a inflação e receba uma resposta "
-        "aterrada nos dados oficiais — cada número rastreável a uma evidência. "
-        "Abra <em>“Pergunte ao IPCA”</em> na barra lateral.</div>",
+        "aterrada nos dados oficiais — cada número rastreável a uma evidência.</div>",
         unsafe_allow_html=True,
     )
+    if st.button("Abrir Pergunte ao IPCA", key="open_ask"):
+        st.session_state["goto_ask"] = True
+        st.rerun()
 
     render_ai_replay()
     render_glossary()
@@ -897,6 +909,11 @@ def main() -> None:
         st.caption(str(exc))
         return
 
+    # "Abrir Pergunte ao IPCA" (a button on the panel) routes here: promote its flag to
+    # the nav radio's value BEFORE the radio is instantiated, so it renders pre-selected.
+    if st.session_state.pop("goto_ask", False):
+        st.session_state["nav_page"] = "Pergunte ao IPCA"
+
     st.sidebar.markdown(
         "<div class='brand'><span class='brand-mark'>I</span>"
         "<span class='brand-name'>Open<span class='brand-accent'>IPCA</span></span></div>"
@@ -914,6 +931,7 @@ def main() -> None:
             "Alertas",
             "Metodologia",
         ],
+        key="nav_page",
         label_visibility="collapsed",
     )
     st.markdown(
