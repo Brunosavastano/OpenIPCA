@@ -1,11 +1,11 @@
-# Deploy da demo pública — e como garantir que a IA apareça
+# Deploy da versão pública — e como garantir que a IA apareça
 
 Guia objetivo para publicar o OpenIPCA (Streamlit Community Cloud) com o
 **"Pergunte ao IPCA"** realmente respondendo. O app **funciona sem IA** (todos os
 números são determinísticos); esta página trata só de tornar a IA **visível** na
-demo pública.
+versão pública.
 
-## Como a demo decide a resposta
+## Como a versão pública decide a resposta
 
 | Selo na tela | Quando |
 |---|---|
@@ -26,7 +26,7 @@ estourar.
 O replay é o que aparece **sem chave/cota**. Como ele é gerado **uma vez**, na sua
 máquina, e fica auditável no repositório, **não precisa usar o Gemini**: use o
 provider mais forte que você tiver (gpt-5.x / Claude) para respostas de máxima
-qualidade. A demo *ao vivo* continua no Gemini grátis (para estranhos); o *replay*
+qualidade. O modo *ao vivo* continua no Gemini grátis (para estranhos); o *replay*
 pode ser premium. O app é model-agnostic — isto já é suportado.
 
 1. No seu `.env` local (nunca commitado), aponte para o provider forte, por ex.:
@@ -48,7 +48,7 @@ pode ser premium. O app é model-agnostic — isto já é suportado.
    - `Wrote N/M grounded replay pair(s)` — quantas perguntas aterraram.
    - Se **N < M**: algumas não aterraram (modelo fraco ou pergunta difícil). Troque
      de modelo ou revise as perguntas em `CURATED_QUESTIONS` e rode de novo.
-   - Se **N == 0**: a demo **não** terá rede de segurança — corrija antes de seguir.
+   - Se **N == 0**: o app **não** terá rede de segurança — corrija antes de seguir.
 5. Confira `reports/qa/replay.json` (respostas aterradas, **sem nenhuma chave dentro**)
    e faça commit dele.
 
@@ -74,7 +74,7 @@ GOOGLE_API_KEY = "sua-chave-google"
   (`bridge_secrets_to_env`), então a configuração acima **ativa** a IA — sem isso o
   app não enxergaria a chave (ele lê `os.environ`, e o Streamlit não exporta secrets
   como env vars automaticamente).
-- **Sem rate-limit, de propósito:** se a cota grátis do Gemini estourar, a demo cai
+- **Sem rate-limit, de propósito:** se a cota grátis do Gemini estourar, o app cai
   no replay (ou no fallback honesto) — não quebra. Trivial de adicionar depois.
 
 ---
@@ -93,7 +93,7 @@ Streamlit Community Cloud → **New app** → repositório → branch `main` →
 | ✅ | ✅ | **Ideal.** Ao vivo; cai no replay se a cota estourar. |
 | ❌ | ✅ | Sempre pré-gerada (auditada). IA visível, sem custo de chave. |
 | ✅ | ❌ | Ao vivo; **⚪ indisponível** quando a cota estourar. |
-| ❌ | ❌ | **⚪ indisponível** — IA invisível na demo. **Evite.** |
+| ❌ | ❌ | **⚪ indisponível** — IA invisível no app. **Evite.** |
 
 ---
 
