@@ -50,7 +50,7 @@ Para quem vem da V2, os deltas materiais:
 - Antes de brandear: checar disponibilidade de repo/org no GitHub, PyPI, domínio e handle social.
 
 ### 2.2 Fora de escopo (v0.1)
-Forecast de inflação; Next.js/FastAPI; outros índices; alertas push; consenso/Focus automático; live AI na demo pública; qualquer chave versionada.
+Forecast de inflação; Next.js/FastAPI; outros índices; alertas push; consenso/Focus automático; qualquer chave versionada.
 
 ---
 
@@ -125,7 +125,7 @@ O objetivo: o OpenIPCA é **model-upgradable by design** — quando surge um mod
 4. **Prompts versionados e hasheados** (`ai/prompts/release_brief_v1.md`). Permite A/B (modelo×prompt) e rollback.
 5. **Observabilidade de qualidade de IA.** Logar por chamada: `model_id`, taxa de aterramento, rejeições de guardrail, latência, custo, schema_version. Assim dá para **ver** que um modelo novo é melhor — não chutar.
 6. **Cadeia de fallback graciosa:** frontier → local → determinístico. Sempre há piso.
-7. **Custo/latência como flag.** Features de maior custo (ex.: Ask-the-IPCA ao vivo na demo pública) ficam isoladas atrás de flags, permitindo ativação futura sem re-arquitetura.
+7. **Custo/latência como flag.** Features de maior custo (ex.: Q&A agêntico multi-passo) ficam isoladas atrás de flags, permitindo ativação futura sem re-arquitetura.
 8. **Sem hard-code de premissas de modelo** (janela de contexto, formato de tool-call, limites de token): tudo atrás da abstração de provider.
 
 > Princípio operacional: **a inteligência é plugável; o aterramento e a segurança são fixos.** Atualizar o cérebro nunca toca a camada de evidência/guardrail.
@@ -161,16 +161,16 @@ Merge é a aprovação humana. A IA nunca fala em público sem revisão. (Detalh
 
 ### 3.8 Features de IA por versão
 
-**v0.1 — IA visível, aterrada, em batch (sem live API na demo):**
+**v0.1 — IA visível e aterrada (brief pré-gerado + Pergunte ao IPCA ao vivo com rede auditada):**
 - Brief **determinístico** sempre presente (piso).
 - Brief de **IA pré-gerado** como artefato versionado + `metadata.json`.
 - **Evidência clicável:** cada afirmação do brief é um chip que aponta para o número/gráfico que a sustenta (`evidence_id` → fonte). "Toda frase auditável com um clique" — sinal AI-native novo e 100% seguro com conteúdo pré-gerado.
 - **Trace de orquestração persistido** (`reports/<mês>/ai_trace.json` + expander "como a IA montou este brief"): o brief é gerado por **uma execução real com tool-use** (rodada uma vez), e o trace (tool calls → evidence_ids → claims) é salvo. É o que torna "a IA orquestra" verdadeiro, não slogan — sem viewer dedicado, só o replay do que já foi gerado.
-- O **output** de IA aparece **por padrão** na página executiva. A demo pública roda em **"AI Replay Mode"** (brief e trace pré-gerados e auditados); live calls ficam atrás de BYOK local. Rotular como "AI Replay Mode", nunca "AI disabled".
+- O **output** de IA aparece **por padrão** na página executiva. O **brief** roda em **"AI Replay Mode"** (pré-gerado e auditado); o **Pergunte ao IPCA** responde **ao vivo** (modelo grátis) com **fallback** para respostas pré-geradas e auditadas. Rotular o estado de fallback como "AI Replay Mode", nunca "AI disabled".
 
 **v0.2 — IA agêntica (o showcase real):**
 - **Ask the IPCA**: Q&A com tool-use aterrado sobre a Tool API (3.2). Cada resposta numérica traça a `evidence_id`; recusa fora de escopo; não navega na internet; não aconselha investimento.
-- Demo pública: ~6–8 perguntas **pré-respondidas** e auditáveis (sem chave). **BYOK** destrava Q&A ao vivo localmente.
+- Versão pública: ~6–8 perguntas **pré-respondidas** e auditadas como rede de segurança (replay). **BYOK** local destrava o Q&A agêntico completo.
 - Construído sobre a **mesma** Tool API do v0.1 — o upgrade é natural, não um rewrite.
 
 ---
@@ -284,8 +284,8 @@ O IPCA tem data específica. Action **diária** numa janela provável que **chec
 - **README em inglês** como principal (alcance no GitHub) + **`README.pt-BR.md` curto** apontando para ele. Não espelhar 100% (espelho gera drift).
 - **Artefato compartilhável/relatório em PT-BR por default** (audiência LinkedIn Brasil). UI com toggle PT-BR/EN depois.
 
-### 8.5 Demo pública
-Streamlit Community Cloud em v0.1, **com dados processados** publicados (Releases/Pages) e **IA pré-gerada** (sem chave em runtime). Sem dados fictícios: se API cair, erro claro + último dado válido com timestamp.
+### 8.5 Versão pública
+Streamlit Community Cloud em v0.1, **com dados processados** publicados (Releases/Pages). O **brief** de IA é pré-gerado e auditado; o **Pergunte ao IPCA** responde ao vivo (modelo grátis) com **fallback** para respostas pré-geradas e auditadas (rede de segurança quando a cota acaba). Sem dados fictícios: se API cair, erro claro + último dado válido com timestamp.
 
 ---
 
@@ -338,8 +338,8 @@ Lint/format: `ruff` (`select = ["E","F","I","UP","B","SIM"]`, line-length 100). 
 
 ## 12. Roadmap
 
-- **v0.1.0-public** — 6 bugs bloqueantes; difusão/percentil centralizados; freshness; staging strict; relabel de momentum + caveat NSA; OSS mínimo; página executiva limpa; **brief determinístico + um brief de IA aterrado com trace persistido**; regime classifier mínimo; artefato estático + hero via `make release-report` **manual**; demo em AI Replay Mode. (Ver §16 para o corte Must/Should/Nice.)
-- **v0.2.0-ai-agentic** — **Ask the IPCA** agêntico aterrado (BYOK live + replay na demo); STL (SA) + 3m anualizado SA; **detecção de release diária + PR automático**; `OllamaProvider`/segundo provider; eval harness completo; observabilidade de IA; capability tiers ativos; evidência clicável; tema/components polidos.
+- **v0.1.0-public** — 6 bugs bloqueantes; difusão/percentil centralizados; freshness; staging strict; relabel de momentum + caveat NSA; OSS mínimo; página executiva limpa; **brief determinístico + um brief de IA aterrado com trace persistido**; regime classifier mínimo; artefato estático + hero via `make release-report` **manual**; brief em AI Replay Mode + Pergunte ao IPCA ao vivo com rede auditada. (Ver §16 para o corte Must/Should/Nice.)
+- **v0.2.0-ai-agentic** — **Ask the IPCA** agêntico aterrado (Q&A multi-passo com tool-use; replay como rede); STL (SA) + 3m anualizado SA; **detecção de release diária + PR automático**; `OllamaProvider`/segundo provider; eval harness completo; observabilidade de IA; capability tiers ativos; evidência clicável; tema/components polidos.
 - **v0.3.0-research-workflow** — `alerts_history.parquet` + cooldown + status (new/repeated/resolved/suppressed); comparação manual com Focus/consenso; calendário de divulgação; export HTML/PDF; heatmap de difusão por grupo.
 - **v1.0.0** — API pública estável do pacote; migração opcional p/ namespace `openipca` com alias; cobertura mínima definida; possível frontend premium se houver tração.
 
@@ -361,7 +361,7 @@ Lint/format: `ruff` (`select = ["E","F","I","UP","B","SIM"]`, line-length 100). 
 [ ] LICENSE, README (EN+PT-BR curto), SECURITY, .env.example, .gitignore.
 [ ] Sem secrets versionados (check no CI).
 [ ] Screenshot/GIF hero + disclaimer de não-afiliação.
-[ ] Demo pública sem live AI.
+[ ] Versão pública: Pergunte ao IPCA ao vivo + rede auditada (replay).
 ```
 
 **v0.2:**
@@ -383,7 +383,7 @@ Lint/format: `ruff` (`select = ["E","F","I","UP","B","SIM"]`, line-length 100). 
 | Erro metodológico público (ex.: SAAR sobre NSA) | Não anualizar NSA em v0.1; caveat visível; STL em v0.2; testes/auditoria |
 | IA falar besteira em público | Human-in-the-loop (PR); guardrails; fallback determinístico |
 | Vazar chave | `.gitignore` + `.example` + check no CI + IA off por default |
-| Custo de IA | Demo sem live AI; pré-geração; BYOK; flags de custo destraváveis quando modelos baratearem |
+| Custo de IA | Modelo grátis + rede auditada (replay); BYOK; flags de custo destraváveis para features caras (ex.: Q&A agêntico) |
 | Modelo novo regredir qualidade | Eval gate (3.5): só promove quem mantém aterramento e não regride |
 | Repo inchar com artefatos | Publicar em Releases/Pages, não no `main` |
 | Nunca lançar (over-scope) | Escopo v0.1 enxuto; governança pesada adiada |

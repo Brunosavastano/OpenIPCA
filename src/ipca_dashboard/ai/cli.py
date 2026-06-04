@@ -7,7 +7,7 @@ brief. Either way it writes reports/latest/{ai_brief.md,ai_trace.json,metadata.j
 
 Usage:
     python -m ipca_dashboard.ai.cli
-The artifacts are committed (no key is ever written); the public demo replays them.
+The artifacts are committed (no key is ever written); the published app replays them.
 """
 
 from __future__ import annotations

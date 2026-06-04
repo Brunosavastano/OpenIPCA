@@ -312,7 +312,7 @@ REPORTS_LATEST = ROOT / "reports" / "latest"
 def render_ai_replay() -> None:
     """Show the pre-generated, auditable AI brief (the "Briefing IPCA").
 
-    The public demo replays an artifact generated offline (BYOK). If none exists
+    The published app replays an artifact generated offline (BYOK). If none exists
     yet, the deterministic reading above is the floor and this stays quiet.
     """
     brief_path = REPORTS_LATEST / "ai_brief.md"

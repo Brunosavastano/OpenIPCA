@@ -11,8 +11,8 @@ official data from **IBGE/SIDRA** and **BCB/SGS** into IPCA decomposition, core 
 diffusion and auditable alerts. The numbers are deterministic; the AI is **grounded** — it
 *orchestrates* those numbers and every claim traces to an evidence item, never an invented
 figure. Its most visible piece is **Ask the IPCA**: a grounded Q&A box that reasons about the
-release in plain Portuguese, where every number is auditable. The public demo serves
-pre-generated, audited answers (**AI Replay Mode**); your own key unlocks live Q&A locally.
+release in plain Portuguese, where every number traces to an evidence id. It answers live and
+falls back to audited, pre-generated answers, so a grounded reply is always there.
 
 > 🇧🇷 Leia em português: [README.pt-BR.md](README.pt-BR.md)
 
@@ -38,10 +38,10 @@ methodology fully in the open.
 
 ## Features
 
-- **Ask the IPCA** — a grounded Q&A box. Ask in Portuguese and get an answer anchored
-  in the official data, where *every number traces to an evidence id*. The public demo serves
-  pre-generated, audited answers (**AI Replay Mode**); with your own key (BYOK) it answers live
-  locally. It reasons about the release, confronts external hypotheses ("did an oil shock cause
+- **Ask the IPCA** — a grounded, live Q&A box. Ask in Portuguese and get an answer anchored
+  in the official data, where *every number traces to an evidence id*. It answers live and
+  falls back to audited, pre-generated answers, so a grounded reply is always there. It reasons
+  about the release, confronts external hypotheses ("did an oil shock cause
   this?") against the numbers, refuses prompt-injection, and never gives investment advice or
   Copom/Selic forecasts.
 - **Decomposition** of IPCA by group, subgroup, item and subitem (contributions in p.p.).
@@ -90,9 +90,9 @@ for key handling.
 It is **model-agnostic** (OpenAI, Anthropic or Google Gemini behind one provider seam — the
 model is config, not code) and the safety floor is code: guardrails reject prompt-injection
 and off-scope questions *before* the model, and reject ungrounded numbers, monetary-policy
-forecasts and asset advice *after* it. The public **Ask the IPCA** demo keeps a pre-generated,
-audited floor (**AI Replay Mode**) so a grounded answer is always visible; full live Q&A is
-unlocked locally with BYOK. The AI is always visible without ever blocking the product.
+forecasts and asset advice *after* it. **Ask the IPCA** answers live on a free model and falls
+back to audited, pre-generated answers when that's unavailable, so a grounded answer is always
+visible — the AI never blocks the product. Run it locally with your own key for unrestricted live Q&A.
 
 ## Contributing
 

@@ -299,7 +299,7 @@ def test_generated_artifact_roundtrips_to_a_served_answer(tmp_path):
 
     This is the owner's real path: generate_replay -> write reports/qa/replay.json
     -> (later, live path degraded) answer_with_replay serves that pair. A schema
-    drift between writer and reader would silently leave the demo with no safety
+    drift between writer and reader would silently leave the app with no safety
     net, so pin the round-trip end-to-end.
     """
     artifact = generate_replay(
