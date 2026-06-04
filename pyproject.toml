@@ -15,7 +15,7 @@ dependencies = [
   "pyarrow>=15.0",
   "PyYAML>=6.0",
   "requests>=2.31",
-  "streamlit>=1.36",
+  "streamlit==1.44.1",  # pinned: injected CSS depends on Streamlit's internal DOM
 ]
 
 [project.optional-dependencies]

@@ -129,6 +129,10 @@ CSS = """
   [data-testid="stTextInput"] input {
     background: #161D28; border: 1px solid #2E3845; color: #E6EAF1; border-radius: 5px;
   }
+  /* selectboxes ("Conjunto de núcleos", "Métrica"…) framed like the cards */
+  [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+    background: #11161F; border-color: #222A36 !important; border-radius: 8px;
+  }
 
   /* callout boxes */
   .diagnostic {
@@ -206,8 +210,7 @@ CSS = """
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]:hover { background: #161D28; }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"] > div:first-child { display: none; }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"]::before {
-    content: ""; width: 8px; height: 8px; border-radius: 50%; background: #6B7585; flex: none;
-    box-shadow: 0 0 6px rgba(122,136,150,.55);
+    content: ""; width: 8px; height: 8px; border-radius: 50%; background: transparent; flex: none;
   }
   [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"] div[data-testid="stMarkdownContainer"] p {
     color: #B7BECB; font-size: .92rem; margin: 0;
