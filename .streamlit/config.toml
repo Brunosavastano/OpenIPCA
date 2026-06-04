@@ -1,4 +1,4 @@
-# Fixed dark theme so the published app looks the same for every visitor,
+# Fixed dark theme so the public demo looks the same for every visitor,
 # regardless of their OS/browser preference. Coherent dark palette across the
 # app CSS and the Plotly charts (spec_V3 §14.4 — consistent look).
 [theme]

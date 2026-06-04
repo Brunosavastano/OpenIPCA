@@ -1,11 +1,11 @@
 """Degrade-to-replay for the public "Ask the IPCA" box (spec_V3 §3.8).
 
-The live Q&A (``answer_question``) needs a provider key. On the published app the
+The live Q&A (``answer_question``) needs a provider key. On the public demo the
 key may be absent or the free-tier quota may run out — in which case the live
 call degrades to ``mode="fallback"`` (a generic "AI unavailable" message). This
 layer makes that degradation graceful: for a curated question we serve a
 **pre-generated, audited** answer (``mode="replay"``) instead of the generic
-message, so the app always shows a grounded answer.
+message, so the demo always shows a grounded answer.
 
 Design (kept lightweight, no new backend):
 - ``answer_with_replay`` calls ``answer_question`` first. If the live answer is
@@ -240,7 +240,7 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - BYOK entr
     logger.info("Wrote %d/%d grounded replay pair(s) -> %s", grounded, total, out_path)
     if grounded == 0:
         logger.error(
-            "NO replay pairs were grounded. The published app will have NO safety net: "
+            "NO replay pairs were grounded. The public demo will have NO safety net: "
             "without a live key (or when the free quota runs out) visitors see only the "
             "'AI unavailable' fallback. Configure a provider key (a STRONGER model like "
             "openai/anthropic is recommended for the one-off replay) and re-run."

@@ -38,9 +38,9 @@ methodology fully in the open.
 
 ## Features
 
-- **Ask the IPCA** — a grounded, live Q&A box. Ask in Portuguese and get an answer anchored
-  in the official data, where *every number traces to an evidence id*. It answers live and
-  falls back to audited, pre-generated answers, so a grounded reply is always there. It reasons
+- **Ask the IPCA** — a grounded Q&A box where *every number traces to an evidence id*. Ask in
+  Portuguese and get an answer anchored in the official data; it answers live and falls back to
+  audited, pre-generated answers, so a grounded reply is always there. It reasons
   about the release, confronts external hypotheses ("did an oil shock cause
   this?") against the numbers, refuses prompt-injection, and never gives investment advice or
   Copom/Selic forecasts.
@@ -90,9 +90,10 @@ for key handling.
 It is **model-agnostic** (OpenAI, Anthropic or Google Gemini behind one provider seam — the
 model is config, not code) and the safety floor is code: guardrails reject prompt-injection
 and off-scope questions *before* the model, and reject ungrounded numbers, monetary-policy
-forecasts and asset advice *after* it. **Ask the IPCA** answers live on a free model and falls
-back to audited, pre-generated answers when that's unavailable, so a grounded answer is always
-visible — the AI never blocks the product. Run it locally with your own key for unrestricted live Q&A.
+forecasts and asset advice *after* it. **Ask the IPCA**'s answers are grounded and audited —
+every number traces to an evidence id; it answers live on a free model, with pre-generated
+audited answers as an always-on fallback so a grounded answer is always visible. Run it locally
+with your own key for unrestricted live Q&A.
 
 ## Contributing
 
