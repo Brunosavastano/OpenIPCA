@@ -4,7 +4,9 @@ plotly>=5.22
 pyarrow>=15.0
 PyYAML>=6.0
 requests>=2.31
-streamlit>=1.36
+# Pinned: the app's injected CSS targets Streamlit's internal DOM (data-testids),
+# which shifts between versions — pin so the cloud deploy matches local/CI exactly.
+streamlit==1.44.1
 # The public "Ask the IPCA" demo calls Gemini over its REST API using `requests`
 # above — no heavy SDK needed, so the deploy installs fast and is Python-proof.
 
