@@ -408,6 +408,7 @@ Corte de escopo para não re-inflar o projeto. **Só "Must" bloqueia o lançamen
 - OSS: MIT, README (EN) + `README.pt-BR.md` curto, SECURITY, `.env.example`, `.gitignore`, CI (`test` + `check-no-secrets`), disclaimer de não-afiliação.
 - Camada de IA (CP6, todos Must): **Tool API determinística** + **evidence table** (§3.2) + **o conjunto mínimo de guardrails da §3.3** — aterramento por `evidence_ids[]`, recusa fora de escopo, bloqueio de número fora da evidência, e guardrail de política monetária. Nenhum desses é "ambição não-bloqueante".
 - Brief determinístico (piso) + **1** brief de IA (CP7) com tool-use sobre a Tool API acima, **trace persistido**, validado pelos guardrails; em qualquer falha (sem chave/erro/guardrail) degrada para o determinístico.
+- **Pergunte ao IPCA** (Q&A da versão pública): resposta **ao vivo** single-pass sobre a Tool API + guardrails, degradando para **replay auditado** (perguntas curadas) e fallback honesto sem chave/cota. O Q&A **agêntico** multi-passo fica para v0.2.
 - Regime classifier determinístico mínimo (~4–5 regimes; alimenta badge + aterra a IA).
 - 1 screenshot/GIF hero + `report.md` + PNG via `python -m ipca_dashboard.reporting.build_report --latest` **manual** (comando canônico portável; sem Makefile como interface oficial).
 
@@ -415,7 +416,7 @@ Corte de escopo para não re-inflar o projeto. **Só "Must" bloqueia o lançamen
 - Evidência clicável (chips); estrutura `reports/latest/`; `test-ai-contract` separado de `eval-model`; tema/components.
 
 **NICE / DEFER (v0.2+):**
-- Ask the IPCA live (BYOK) + replay Q&A; detecção diária + PR automático; STL (SA); `OllamaProvider`/2º provider; Trust Panel; badges por elemento; taxonomia de 7 regimes; cooldown/histórico de alertas.
+- Ask the IPCA **agêntico** (Q&A multi-passo com tool-use); detecção diária + PR automático; STL (SA); `OllamaProvider`/2º provider; Trust Panel; badges por elemento; taxonomia de 7 regimes; cooldown/histórico de alertas.
 
 **Regras anti-overengineering (do projeto):**
 1. Ideia nova entra como **Nice** por default; só vira Must com justificativa explícita.
