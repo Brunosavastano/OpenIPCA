@@ -39,14 +39,12 @@
     "ev_alert_0",
     "ev_alert_1",
     "ev_alert_2",
-    "ev_alert_3",
-    "ev_alert_4",
     "ev_regime"
   ],
   "claims": [
     {
-      "text": "Em abril de 2026, o IPCA mostrou leitura forte: subiu 0,67% no mês e acumulou 4,39% em 12 meses, enquanto a MM3M, isto é, a média móvel de três meses da variação mensal sem ajuste sazonal, ficou em 0,75%.",
-      "type": "number",
+      "text": "O IPCA de abril de 2026 subiu 0,67% no mês e acumulou 4,39% em 12 meses, enquanto a MM3M, isto é, a média móvel de três meses da variação mensal sem ajuste sazonal, ficou em 0,75%, sugerindo uma leitura corrente ainda pressionada.",
+      "type": "interpretation",
       "evidence_ids": [
         "ev_headline_mom",
         "ev_headline_12m",
@@ -54,7 +52,14 @@
       ]
     },
     {
-      "text": "A pressão não ficou restrita a poucos itens: a difusão, que mede a parcela de subitens com alta de preços, alcançou 65,25% no mês, e sua MM3M ficou em 64,63%, no percentil 94,23, sinalizando espalhamento elevado da inflação.",
+      "text": "A leitura mensal também ficou no percentil 71,05, o que indica que o resultado de abril esteve em uma faixa relativamente elevada dentro da distribuição histórica usada na base.",
+      "type": "interpretation",
+      "evidence_ids": [
+        "ev_headline_percentile"
+      ]
+    },
+    {
+      "text": "A pressão não pareceu concentrada em poucos itens: a difusão, que mede a parcela de subitens com alta de preços, alcançou 65,25% no mês, e sua MM3M ficou em 64,63%, no percentil 69,59.",
       "type": "interpretation",
       "evidence_ids": [
         "ev_diffusion_mom",
@@ -63,7 +68,7 @@
       ]
     },
     {
-      "text": "Os núcleos, medidas que buscam filtrar choques mais voláteis para captar a tendência da inflação, também vieram pressionados: a média dos núcleos subiu 0,49% no mês e marcou 0,52% na MM3M.",
+      "text": "Nos núcleos, que procuram captar a tendência da inflação excluindo ruídos mais voláteis, a média subiu 0,49% no mês e 0,52% na MM3M, reforçando que a pressão não veio apenas do índice cheio.",
       "type": "interpretation",
       "evidence_ids": [
         "ev_core_mean_mom",
@@ -71,34 +76,39 @@
       ]
     },
     {
-      "text": "Na composição do índice, Alimentação e bebidas foi a principal pressão altista, com contribuição de 0,29 p.p., seguida por Saúde e cuidados pessoais, com 0,16 p.p., e Habitação, com 0,10 p.p.; do lado de menor pressão, Educação contribuiu 0,00 p.p., Transportes 0,01 p.p. e Artigos de residência 0,02 p.p.",
+      "text": "Pela abertura de contribuições, Alimentação e bebidas adicionou 0,29 p.p., Saúde e cuidados pessoais somou 0,16 p.p. e Habitação contribuiu com 0,10 p.p., formando o principal bloco de pressão altista do mês.",
       "type": "number",
       "evidence_ids": [
         "ev_contrib_top_pos_0",
         "ev_contrib_top_pos_1",
-        "ev_contrib_top_pos_2",
+        "ev_contrib_top_pos_2"
+      ]
+    },
+    {
+      "text": "Na direção oposta, Educação contribuiu com 0,00 p.p., Transportes com 0,01 p.p. e Artigos de residência com 0,02 p.p., funcionando como pontos de alívio ou de menor pressão relativa.",
+      "type": "number",
+      "evidence_ids": [
         "ev_contrib_top_neg_0",
         "ev_contrib_top_neg_1",
         "ev_contrib_top_neg_2"
       ]
     },
     {
-      "text": "Os alertas reforçam a leitura adversa: a média dos núcleos em ritmo de três meses anualizado aparece em 6,37 com classificação alta, algum núcleo nesse mesmo conceito aparece em 7,31 com classificação crítica, e a difusão em MM3M no percentil 94,23 aciona classificações alta e crítica.",
+      "text": "Os alertas complementam esse quadro ao classificar a média dos núcleos em três meses anualizada em 6,37 como high, algum núcleo em três meses anualizado em 7,31 como critical e serviços em aceleração em 2,88 como high.",
       "type": "interpretation",
       "evidence_ids": [
         "ev_alert_0",
         "ev_alert_1",
-        "ev_alert_2",
-        "ev_alert_3"
+        "ev_alert_2"
       ]
     },
     {
-      "text": "O regime inflacionário de abril de 2026 foi classificado como Pressão disseminada, consistente com uma inflação que combina leitura cheia elevada e difusão alta.",
+      "text": "Com esses sinais, o regime inflacionário de abril de 2026 foi classificado como Quadro misto.",
       "type": "regime",
       "evidence_ids": [
         "ev_regime"
       ],
-      "rule_id": "regime_v1_headline_high_diffusion_high"
+      "rule_id": "regime_v1_mixed"
     }
   ],
   "used_fallback": false

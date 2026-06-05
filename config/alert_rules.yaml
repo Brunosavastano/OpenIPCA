@@ -6,7 +6,7 @@ rules:
     severity: high
     window: latest
     cooldown_days: 30
-    message: "Média dos núcleos em 3m saar acima de 5,0%. Pressão subjacente desconfortável."
+    message: "Média dos núcleos em 3 meses anualizado (NSA, experimental) acima de 5,0%. Pressão subjacente desconfortável."
 
   - id: core_any_3m_saar_critical
     metric: core_any_3m_saar
@@ -15,7 +15,7 @@ rules:
     severity: critical
     window: latest
     cooldown_days: 30
-    message: "Ao menos um núcleo roda acima de 6,5% em 3m saar. Risco de persistência elevado."
+    message: "Ao menos um núcleo roda acima de 6,5% em 3 meses anualizado (NSA, experimental). Risco de persistência elevado."
 
   - id: diffusion_mm3_p80
     metric: diffusion_mm3_percentile
@@ -42,7 +42,7 @@ rules:
     severity: high
     window: latest
     cooldown_days: 30
-    message: "Serviços em 3m saar acima do ritmo de 12 meses. Sinal de aceleração."
+    message: "Serviços em 3 meses anualizado (NSA, experimental) acima do ritmo de 12 meses. Sinal de aceleração."
 
   - id: localized_shock
     metric: localized_shock_score
