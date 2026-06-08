@@ -91,6 +91,16 @@ def _replay_reference_month(path: Path | None = None) -> str | None:
     return None
 
 
+def _data_reference_month(bcb: pd.DataFrame) -> str:
+    """Latest data month, or empty string when the month cannot be known."""
+    try:
+        dates = bcb["date"]
+        latest = pd.to_datetime(dates, errors="coerce").max()
+    except Exception:  # noqa: BLE001 - unknown month must not crash Q&A fallback
+        return ""
+    return latest.strftime("%Y-%m") if pd.notna(latest) else ""
+
+
 def _replay_result(pair: dict, question: str, error: str | None) -> QAResult:
     """Build a QAResult that serves a pre-generated, audited answer."""
     provider = str(pair.get("provider", "replay"))
@@ -143,9 +153,7 @@ def answer_with_replay(
     # is one we pre-generated; otherwise keep the honest "unavailable" fallback.
     # Safety net: never serve a replay whose reference month lags the data (a rare
     # partial-refresh state) — fall back to the honest "unavailable" result.
-    latest = pd.to_datetime(bcb["date"]).max()
-    data_month = latest.strftime("%Y-%m") if pd.notna(latest) else ""
-    if is_stale(_replay_reference_month(replay_path), data_month):
+    if is_stale(_replay_reference_month(replay_path), _data_reference_month(bcb)):
         return result
     pair = load_replay(replay_path).get(_norm_q(question))
     if pair is None:

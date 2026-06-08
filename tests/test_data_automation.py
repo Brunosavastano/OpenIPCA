@@ -90,3 +90,7 @@ def test_refresh_workflow_regenerates_ai_artifacts_with_secret_key():
     # The regenerated AI artifacts are staged for the combined commit.
     assert "reports/latest/ai_brief.md" in text
     assert "reports/qa/replay.json" in text
+    # Automatic commits fail closed: deterministic fallback / zero replay pairs
+    # must not be pushed as "fresh AI".
+    assert 'metadata.get("mode") != "ai"' in text
+    assert "AI replay generated zero grounded pairs; refusing commit." in text

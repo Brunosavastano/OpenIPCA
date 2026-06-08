@@ -197,6 +197,18 @@ def test_fresh_replay_is_served_when_month_matches(tmp_path):
     assert result.answer == "RESPOSTA PRÉ-GERADA."
 
 
+def test_unknown_data_month_does_not_crash_or_block_replay(tmp_path):
+    # Unknown data month is not treated as stale; the guard must not turn a
+    # degraded live path into a crash when the date column is missing.
+    path = _write_replay(tmp_path, reference_month="2024-03")
+    result = answer_with_replay(
+        DIFFUSION_Q, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
+        provider=_BoomProvider(), replay_path=path,
+    )
+    assert result.mode == "replay"
+    assert result.answer == "RESPOSTA PRÉ-GERADA."
+
+
 def test_degraded_live_without_matching_replay_is_honest_fallback(tmp_path):
     # in-scope question the replay does NOT contain -> honest fallback, no replay
     result = answer_with_replay(

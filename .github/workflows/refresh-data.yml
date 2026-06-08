@@ -61,6 +61,21 @@ jobs:
           # the next scheduled run retries — data and AI commit together or not at all.
           python -m ipca_dashboard.ai.cli
           python -m ipca_dashboard.ai.qa_replay
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          metadata = json.loads(Path("reports/latest/metadata.json").read_text(encoding="utf-8"))
+          if metadata.get("mode") != "ai":
+              raise SystemExit(
+                  f"AI brief did not regenerate in ai mode (mode={metadata.get('mode')!r}); refusing commit."
+              )
+
+          replay = json.loads(Path("reports/qa/replay.json").read_text(encoding="utf-8"))
+          pairs = replay.get("pairs") if isinstance(replay, dict) else None
+          if not isinstance(pairs, list) or not pairs:
+              raise SystemExit("AI replay generated zero grounded pairs; refusing commit.")
+          PY
           git add reports/latest/ai_brief.md reports/latest/ai_trace.json reports/latest/metadata.json reports/qa/replay.json
           git commit -m "chore(data): monthly IPCA refresh + AI brief/replay [skip ci]"
           git push
