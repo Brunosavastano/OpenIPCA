@@ -86,7 +86,7 @@ class _NoEvidenceClaimsProvider:
         }
 
 
-def _write_replay(tmp_path, question=DIFFUSION_Q, answer="RESPOSTA PRÉ-GERADA."):
+def _write_replay(tmp_path, question=DIFFUSION_Q, answer="RESPOSTA PRÉ-GERADA.", reference_month=None):
     path = tmp_path / "replay.json"
     payload = {
         "pairs": [
@@ -99,6 +99,8 @@ def _write_replay(tmp_path, question=DIFFUSION_Q, answer="RESPOSTA PRÉ-GERADA."
             }
         ]
     }
+    if reference_month is not None:
+        payload["reference_month"] = reference_month
     path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     return path
 
@@ -170,6 +172,41 @@ def test_degraded_live_serves_replay(tmp_path):
     assert result.answer == "RESPOSTA PRÉ-GERADA."
     assert result.claims  # the audited claims travel with the replay
     assert "simulated outage" in (result.error or "")  # why we degraded is preserved
+
+
+def test_stale_replay_is_not_served(tmp_path):
+    # Replay reference month (2020-01) lags the data (_bcb is 2024-03): never serve
+    # a stale curated answer — keep the honest "unavailable" fallback instead.
+    path = _write_replay(tmp_path, reference_month="2020-01")
+    result = answer_with_replay(
+        DIFFUSION_Q, _bcb(), _items(), pd.DataFrame(), pd.DataFrame(),
+        provider=_BoomProvider(), replay_path=path,
+    )
+    assert result.mode != "replay"
+    assert result.answer != "RESPOSTA PRÉ-GERADA."
+
+
+def test_fresh_replay_is_served_when_month_matches(tmp_path):
+    # Replay reference month matches the data month (2024-03): served as usual.
+    path = _write_replay(tmp_path, reference_month="2024-03")
+    result = answer_with_replay(
+        DIFFUSION_Q, _bcb(), _items(), pd.DataFrame(), pd.DataFrame(),
+        provider=_BoomProvider(), replay_path=path,
+    )
+    assert result.mode == "replay"
+    assert result.answer == "RESPOSTA PRÉ-GERADA."
+
+
+def test_unknown_data_month_does_not_crash_or_block_replay(tmp_path):
+    # Unknown data month is not treated as stale; the guard must not turn a
+    # degraded live path into a crash when the date column is missing.
+    path = _write_replay(tmp_path, reference_month="2024-03")
+    result = answer_with_replay(
+        DIFFUSION_Q, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
+        provider=_BoomProvider(), replay_path=path,
+    )
+    assert result.mode == "replay"
+    assert result.answer == "RESPOSTA PRÉ-GERADA."
 
 
 def test_degraded_live_without_matching_replay_is_honest_fallback(tmp_path):

@@ -157,7 +157,7 @@ Action detecta IPCA novo ─▶ roda pipeline determinístico ─▶ monta evide
 
 Merge é a aprovação humana. A IA nunca fala em público sem revisão. (Detalhes de automação na seção 8.)
 
-> **Status (v0.1):** este fluxo automatizado de detecção→PR é **alvo da v0.2** (§12). Em v0.1, o refresh mensal de dados commita direto (`refresh-data.yml`) e o **brief de IA é regenerado manualmente (BYOK)** antes de publicar — a revisão humana acontece, mas ainda não via PR automático.
+> **Status (v0.1):** o refresh mensal (`refresh-data.yml`) commita os dados **e regenera o brief/replay de IA no mesmo passo** (chave OpenAI nos *secrets* do GitHub Actions), de modo que os artefatos públicos nunca defasam em relação ao painel. O piso de segurança do brief automático são os **guardrails** (aterramento por `evidence_id`, recusa de política monetária) + o fallback determinístico; uma rede no app esconde o brief caso ele, num run parcial, fique defasado. A revisão humana **via PR** (HITL) e a detecção diária seguem como **alvo da v0.2**.
 
 ### 3.8 Features de IA por versão
 

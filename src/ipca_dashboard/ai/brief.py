@@ -234,7 +234,10 @@ def write_brief_artifacts(
     paths["trace"].write_text(
         json.dumps(result.trace, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+    # Stamp reference_month into metadata so the app can detect a brief that has
+    # gone stale relative to the data (the staleness guard reads this field).
+    metadata = {**result.metadata, "reference_month": reference_month}
     paths["metadata"].write_text(
-        json.dumps(result.metadata, ensure_ascii=False, indent=2), encoding="utf-8"
+        json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return paths

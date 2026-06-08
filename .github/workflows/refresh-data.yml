@@ -34,21 +34,49 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install the package
-        run: python -m pip install -e .
+      - name: Install the package (with AI extras for brief/replay regen)
+        run: python -m pip install -e ".[ai]"
 
       - name: Run the pipeline (fetch + build from BCB/SGS and IBGE/SIDRA)
         run: python -m ipca_dashboard.pipeline run --strict
 
-      - name: Commit refreshed data if it changed
+      - name: Refresh AI artifacts and commit, only if the data changed
+        env:
+          OPENIPCA_AI_ENABLED: "true"
+          OPENIPCA_AI_PROVIDER: "openai"
+          # Strong model = same quality as the committed artifacts. Change here if needed.
+          OPENIPCA_AI_MODEL: "gpt-5.5"
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/processed/*.parquet outputs/validation_report.csv outputs/diagnostic_latest.json
           if git diff --staged --quiet; then
             echo "No data changes — nothing to commit."
-          else
-            git commit -m "chore(data): monthly IPCA refresh [skip ci]"
-            git push
-            echo "Pushed refreshed IPCA data."
+            exit 0
           fi
+          # Data changed: regenerate the AI brief + replay from the SAME data so the
+          # public artifacts never lag the panel. Fail-closed (bash -eo pipefail): if
+          # regen errors, the commit below never runs, the data is NOT committed, and
+          # the next scheduled run retries — data and AI commit together or not at all.
+          python -m ipca_dashboard.ai.cli
+          python -m ipca_dashboard.ai.qa_replay
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          metadata = json.loads(Path("reports/latest/metadata.json").read_text(encoding="utf-8"))
+          if metadata.get("mode") != "ai":
+              raise SystemExit(
+                  f"AI brief did not regenerate in ai mode (mode={metadata.get('mode')!r}); refusing commit."
+              )
+
+          replay = json.loads(Path("reports/qa/replay.json").read_text(encoding="utf-8"))
+          pairs = replay.get("pairs") if isinstance(replay, dict) else None
+          if not isinstance(pairs, list) or not pairs:
+              raise SystemExit("AI replay generated zero grounded pairs; refusing commit.")
+          PY
+          git add reports/latest/ai_brief.md reports/latest/ai_trace.json reports/latest/metadata.json reports/qa/replay.json
+          git commit -m "chore(data): monthly IPCA refresh + AI brief/replay [skip ci]"
+          git push
+          echo "Pushed refreshed IPCA data + AI artifacts."
