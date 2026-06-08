@@ -639,10 +639,14 @@ def render_drilldown(items: pd.DataFrame, date: pd.Timestamp) -> None:
             st.caption(f"{current['item_name']} não tem subdivisão neste nível.")
         else:
             label = node_label(items, current["classification_code"], date)
-            st.markdown(f"{label} ({current['contribution_mom']:.2f} p.p.) é composto por:")
-            show = kids[["item_name", "contribution_mom", "weight"]].rename(
+            st.markdown(
+                f"{label} (variou {current['mom']:.2f}%, "
+                f"contribuiu {current['contribution_mom']:.2f} p.p.) é composto por:"
+            )
+            show = kids[["item_name", "mom", "contribution_mom", "weight"]].rename(
                 columns={
                     "item_name": "Componente",
+                    "mom": "Variação (%)",
                     "contribution_mom": "Contribuição (p.p.)",
                     "weight": "Peso (%)",
                 }
@@ -653,6 +657,12 @@ def render_drilldown(items: pd.DataFrame, date: pd.Timestamp) -> None:
 def page_decomposition(data: dict[str, pd.DataFrame]) -> None:
     items = data["items"]
     st.header("Decomposição do IPCA")
+    st.caption(
+        "**Variação (%)** = quanto o preço do grupo mudou no mês (é o número do "
+        "IBGE/SIDRA). **Contribuição (p.p.)** = quanto ele puxou do IPCA do mês "
+        "= variação × peso ÷ 100. Um item pode variar muito e contribuir pouco se "
+        "seu peso na cesta for pequeno."
+    )
     dates = sorted(pd.to_datetime(items["date"]).dropna().unique())
     selected_date = st.selectbox(
         "Mês de referência",

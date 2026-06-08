@@ -142,7 +142,13 @@ def stacked_contribution(ipca_items: pd.DataFrame, months: int = 24) -> go.Figur
         color="item_name",
         color_discrete_map=GROUP_COLORS,
         color_discrete_sequence=_SEQ,  # fallback for any group missing from the map
+        custom_data=["mom"],  # variation (%) for the hover, beside the p.p. on the axis
         labels={"date": "Mês", "contribution_mom": "Contribuição (p.p.)", "item_name": "Grupo"},
+    )
+    fig.update_traces(
+        hovertemplate=(
+            "%{fullData.name}: %{y:.2f} p.p. (variação %{customdata[0]:.2f}%)<extra></extra>"
+        )
     )
     # Quarterly ticks + angled short dates so labels fit on narrow screens.
     fig.update_xaxes(dtick="M3", tickformat="%b/%y", tickangle=-45)
@@ -165,18 +171,26 @@ def waterfall_latest(ipca_items: pd.DataFrame, date: pd.Timestamp) -> go.Figure:
     x = groups["item_name"].tolist() + ["IPCA"]
     y = groups["contribution_mom"].tolist() + [headline_value]
     measure = ["relative"] * len(groups) + ["total"]
+    # Variation (%) for the hover: each group's price change, then the headline %
+    # for the total bar (headline weight is 100%, so its var == its contribution).
+    variation = groups["mom"].tolist() + [headline_value]
     fig = go.Figure(
         go.Waterfall(
             x=x,
             y=y,
             measure=measure,
+            customdata=variation,
             connector={"line": {"color": _MUTED}},
             increasing={"marker": {"color": _UP}},
             decreasing={"marker": {"color": _DOWN}},
             totals={"marker": {"color": _TEXT_COLOR}},
+            hovertemplate=(
+                "%{x}<br>Variação: %{customdata:.2f}%"
+                "<br>Contribuição: %{y:.2f} p.p.<extra></extra>"
+            ),
         )
     )
-    return apply_layout(fig, f"Waterfall do IPCA - {date:%Y-%m}", "p.p.")
+    return apply_layout(fig, f"Waterfall do IPCA - {date:%Y-%m}", "Contribuição (p.p.)")
 
 
 def contribution_ranking(
@@ -205,7 +219,13 @@ def contribution_ranking(
             y=ranking["item_name"],
             orientation="h",
             marker_color=colors,
-            hovertemplate="%{y}<br>%{x:.2f} p.p.<extra></extra>",
+            # Variation (%) — the IBGE/SIDRA price change — alongside the p.p. it
+            # contributed, so the two units are never confused (contrib = var × peso ÷ 100).
+            customdata=ranking["mom"],
+            hovertemplate=(
+                "%{y}<br>Variação: %{customdata:.2f}%"
+                "<br>Contribuição: %{x:.2f} p.p.<extra></extra>"
+            ),
         )
     )
     level_pt = {"group": "grupo", "subgroup": "subgrupo", "item": "item", "subitem": "subitem"}
@@ -225,19 +245,28 @@ def heatmap_groups(ipca_items: pd.DataFrame, months: int = 24) -> go.Figure:
     )
     # Order rows so the groups that pushed inflation the most sit on top.
     pivot = pivot.reindex(pivot.mean(axis=1).sort_values(ascending=True).index)
+    # Parallel variation (%) pivot, reindexed to the SAME rows/cols as the z grid,
+    # so the hover can show each cell's price change beside its p.p. contribution.
+    var_pivot = groups.pivot_table(
+        index="item_name", columns="date", values="mom", aggfunc="first"
+    ).reindex(index=pivot.index, columns=pivot.columns)
     x_labels = [d.strftime("%b/%y") for d in pivot.columns]
     fig = go.Figure(
         go.Heatmap(
             z=pivot.values,
             x=x_labels,
             y=pivot.index,
+            customdata=var_pivot.values,
             colorscale="RdBu_r",
             zmid=0,
             colorbar={
                 "title": "Contribuição<br>(p.p.)",
                 "ticksuffix": " p.p.",
             },
-            hovertemplate="<b>%{y}</b><br>%{x}<br>%{z:.2f} p.p.<extra></extra>",
+            hovertemplate=(
+                "<b>%{y}</b><br>%{x}<br>Variação: %{customdata:.2f}%"
+                "<br>Contribuição: %{z:.2f} p.p.<extra></extra>"
+            ),
         )
     )
     return apply_layout(

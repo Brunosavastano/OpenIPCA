@@ -47,6 +47,21 @@ CONCEPTS: dict[str, str] = {
         "Inflação (IPCA): índice oficial do Brasil (medido pelo IBGE) que mede a "
         "variação média dos preços de uma cesta de produtos e serviços."
     ),
+    "variacao": (
+        "Variação (%): quanto o preço médio de um grupo ou item mudou no mês, em "
+        "relação ao mês anterior. É o número que o IBGE divulga (ex.: 'Alimentação "
+        "subiu 1,34%')."
+    ),
+    "contribuicao": (
+        "Contribuição (p.p.): quanto um grupo ou item puxou da inflação cheia do mês, "
+        "em pontos percentuais do IPCA. Calcula-se como variação × peso ÷ 100 — por "
+        "isso um item pode variar muito e contribuir pouco se tiver peso pequeno."
+    ),
+    "peso": (
+        "Peso (%): a fatia do orçamento das famílias que um grupo ou item representa "
+        "na cesta do IPCA. Quanto maior o peso, mais a variação daquele item mexe no "
+        "índice cheio."
+    ),
     "nucleos": (
         "Núcleos de inflação: versões do IPCA que excluem ou suavizam os itens mais "
         "voláteis (como alimentos in natura e energia). Servem para ver a tendência de "

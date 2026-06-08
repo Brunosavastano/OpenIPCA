@@ -8,6 +8,7 @@ from ipca_dashboard.charts import (
     core_fan,
     core_lines,
     diffusion_line,
+    heatmap_groups,
     load_chart_theme,
     stacked_contribution,
     waterfall_latest,
@@ -65,11 +66,29 @@ def test_stacked_contribution_axis_labels_not_swapped():
             "level": ["group", "group"],
             "item_name": ["Alimentação e bebidas", "Alimentação e bebidas"],
             "contribution_mom": [0.2, 0.3],
+            "mom": [1.0, 1.4],
         }
     )
     fig = stacked_contribution(df)
     assert fig.layout.xaxis.title.text == "Mês"
     assert "p.p." in fig.layout.yaxis.title.text  # not "Mês" on the Y axis
+
+
+def test_stacked_contribution_hover_shows_variation_and_contribution():
+    df = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2024-01-01", "2024-02-01"]),
+            "level": ["group", "group"],
+            "item_name": ["Alimentação e bebidas", "Alimentação e bebidas"],
+            "contribution_mom": [0.2, 0.3],
+            "mom": [1.0, 1.4],
+        }
+    )
+    fig = stacked_contribution(df)
+    template = fig.data[0].hovertemplate
+    assert "variação" in template and "%" in template
+    assert "p.p." in template
+    assert fig.data[0].customdata is not None
 
 
 def _items(n: int, date: str = "2024-01-01") -> pd.DataFrame:
@@ -80,6 +99,7 @@ def _items(n: int, date: str = "2024-01-01") -> pd.DataFrame:
             "classification_code": [str(i) for i in range(n)],
             "item_name": [f"Grupo {i}" for i in range(n)],
             "contribution_mom": [float(i) - n / 2 for i in range(n)],
+            "mom": [float(i) + 0.5 for i in range(n)],  # variation (%), real data always carries it
         }
     )
 
@@ -148,3 +168,85 @@ def test_directional_colors_are_consistent_across_inflation_charts():
     assert diffusion.data[0].line.color != charts._DOWN
     assert diffusion.layout.shapes[0].line.color == charts._DOWN
     assert diffusion.layout.shapes[-1].line.color == charts._UP
+
+
+def _items_with_headline(n: int, headline_mom: float = 1.0) -> pd.DataFrame:
+    items = _items(n)
+    headline = pd.DataFrame(
+        [
+            {
+                "date": pd.Timestamp("2024-01-01"),
+                "level": "headline",
+                "classification_code": "headline",
+                "item_name": "IPCA",
+                "contribution_mom": 0.0,
+                "mom": headline_mom,
+            }
+        ]
+    )
+    return pd.concat([items, headline], ignore_index=True)
+
+
+def test_ranking_hover_shows_variation_and_contribution():
+    # The hover must carry BOTH the variation (%) and the contribution (p.p.) so
+    # the two units are never confused (the whole point of this view).
+    fig = contribution_ranking(_items(5), pd.Timestamp("2024-01-01"), "group", top_n=10)
+    template = fig.data[0].hovertemplate
+    assert "Variação" in template and "%" in template
+    assert "Contribuição" in template and "p.p." in template
+    assert fig.data[0].customdata is not None  # variation (mom) rides on customdata
+    # X axis stays the contribution in p.p. (the additive, correct unit).
+    assert fig.layout.xaxis.title.text == "Contribuição (p.p.)"
+
+
+def test_waterfall_hover_and_axis_show_variation_and_contribution():
+    fig = waterfall_latest(_items_with_headline(3), pd.Timestamp("2024-01-01"))
+    template = fig.data[0].hovertemplate
+    assert "Variação" in template and "%" in template
+    assert "Contribuição" in template and "p.p." in template
+    assert fig.data[0].customdata is not None
+    # Y axis is now unambiguous ("Contribuição (p.p.)", not a bare "p.p.").
+    assert fig.layout.yaxis.title.text == "Contribuição (p.p.)"
+
+
+def test_heatmap_customdata_matches_z_grid():
+    df = pd.DataFrame(
+        [
+            {
+                "date": pd.Timestamp("2024-01-01"),
+                "level": "group",
+                "item_name": "Grupo B",
+                "contribution_mom": 0.10,
+                "mom": 1.0,
+            },
+            {
+                "date": pd.Timestamp("2024-02-01"),
+                "level": "group",
+                "item_name": "Grupo B",
+                "contribution_mom": 0.30,
+                "mom": 3.0,
+            },
+            {
+                "date": pd.Timestamp("2024-01-01"),
+                "level": "group",
+                "item_name": "Grupo A",
+                "contribution_mom": 0.40,
+                "mom": 4.0,
+            },
+            {
+                "date": pd.Timestamp("2024-02-01"),
+                "level": "group",
+                "item_name": "Grupo A",
+                "contribution_mom": 0.20,
+                "mom": 2.0,
+            },
+        ]
+    )
+    fig = heatmap_groups(df, months=24)
+    trace = fig.data[0]
+    assert trace.hovertemplate and "Variação" in trace.hovertemplate
+    # Rows are sorted by mean contribution ascending. The variation customdata
+    # must follow that same row/column order, cell-for-cell with z.
+    assert list(trace.y) == ["Grupo B", "Grupo A"]
+    assert trace.z.tolist() == [[0.10, 0.30], [0.40, 0.20]]
+    assert trace.customdata.tolist() == [[1.0, 3.0], [4.0, 2.0]]
