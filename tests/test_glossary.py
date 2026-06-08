@@ -46,6 +46,18 @@ def test_concepts_are_present():
         assert describe(key), f"missing concept {key!r}"
 
 
+def test_decomposition_concepts_are_present():
+    # The decomposition page surfaces variation (%), contribution (p.p.) and weight;
+    # each needs a plain-language entry (also feeds the in-app glossary expander).
+    for key in ("variacao", "contribuicao", "peso"):
+        assert describe(key), f"missing concept {key!r}"
+    # accented / cased variants resolve to the same definition
+    assert describe("Variação") == describe("variacao")
+    assert describe("Contribuição") == describe("contribuicao")
+    # the definition spells out the relationship between the two units
+    assert "peso" in describe("contribuicao").lower()
+
+
 def test_unknown_term_returns_empty_string():
     assert describe("termo inexistente xyz") == ""
     assert describe("") == ""

@@ -65,6 +65,7 @@ def test_stacked_contribution_axis_labels_not_swapped():
             "level": ["group", "group"],
             "item_name": ["Alimentação e bebidas", "Alimentação e bebidas"],
             "contribution_mom": [0.2, 0.3],
+            "mom": [1.0, 1.4],
         }
     )
     fig = stacked_contribution(df)
@@ -80,6 +81,7 @@ def _items(n: int, date: str = "2024-01-01") -> pd.DataFrame:
             "classification_code": [str(i) for i in range(n)],
             "item_name": [f"Grupo {i}" for i in range(n)],
             "contribution_mom": [float(i) - n / 2 for i in range(n)],
+            "mom": [float(i) + 0.5 for i in range(n)],  # variation (%), real data always carries it
         }
     )
 
@@ -148,3 +150,42 @@ def test_directional_colors_are_consistent_across_inflation_charts():
     assert diffusion.data[0].line.color != charts._DOWN
     assert diffusion.layout.shapes[0].line.color == charts._DOWN
     assert diffusion.layout.shapes[-1].line.color == charts._UP
+
+
+def _items_with_headline(n: int, headline_mom: float = 1.0) -> pd.DataFrame:
+    items = _items(n)
+    headline = pd.DataFrame(
+        [
+            {
+                "date": pd.Timestamp("2024-01-01"),
+                "level": "headline",
+                "classification_code": "headline",
+                "item_name": "IPCA",
+                "contribution_mom": 0.0,
+                "mom": headline_mom,
+            }
+        ]
+    )
+    return pd.concat([items, headline], ignore_index=True)
+
+
+def test_ranking_hover_shows_variation_and_contribution():
+    # The hover must carry BOTH the variation (%) and the contribution (p.p.) so
+    # the two units are never confused (the whole point of this view).
+    fig = contribution_ranking(_items(5), pd.Timestamp("2024-01-01"), "group", top_n=10)
+    template = fig.data[0].hovertemplate
+    assert "Variação" in template and "%" in template
+    assert "Contribuição" in template and "p.p." in template
+    assert fig.data[0].customdata is not None  # variation (mom) rides on customdata
+    # X axis stays the contribution in p.p. (the additive, correct unit).
+    assert fig.layout.xaxis.title.text == "Contribuição (p.p.)"
+
+
+def test_waterfall_hover_and_axis_show_variation_and_contribution():
+    fig = waterfall_latest(_items_with_headline(3), pd.Timestamp("2024-01-01"))
+    template = fig.data[0].hovertemplate
+    assert "Variação" in template and "%" in template
+    assert "Contribuição" in template and "p.p." in template
+    assert fig.data[0].customdata is not None
+    # Y axis is now unambiguous ("Contribuição (p.p.)", not a bare "p.p.").
+    assert fig.layout.yaxis.title.text == "Contribuição (p.p.)"
