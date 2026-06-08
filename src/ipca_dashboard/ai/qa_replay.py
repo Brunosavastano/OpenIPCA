@@ -30,6 +30,7 @@ import pandas as pd
 
 from ipca_dashboard.ai import SCHEMA_VERSION
 from ipca_dashboard.ai.qa import QA_PROMPT_VERSION, QAResult, answer_question
+from ipca_dashboard.ai.staleness import is_stale
 from ipca_dashboard.config import PROJECT_ROOT
 
 REPLAY_PATH = PROJECT_ROOT / "reports" / "qa" / "replay.json"
@@ -73,6 +74,21 @@ def load_replay(path: Path | None = None) -> dict[str, dict]:
             if isinstance(pair, dict) and isinstance(pair.get("question"), str):
                 out[_norm_q(pair["question"])] = pair
     return out
+
+
+def _replay_reference_month(path: Path | None = None) -> str | None:
+    """The replay artifact's reference month (top-level field), robust to bad files."""
+    path = path or REPLAY_PATH
+    try:
+        if path.stat().st_size > MAX_REPLAY_BYTES:
+            return None
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError, OSError, RecursionError):
+        return None
+    if isinstance(raw, dict):
+        month = raw.get("reference_month")
+        return str(month) if month else None
+    return None
 
 
 def _replay_result(pair: dict, question: str, error: str | None) -> QAResult:
@@ -125,6 +141,12 @@ def answer_with_replay(
         return result
     # Live path degraded (fallback/deterministic): use a replay if the question
     # is one we pre-generated; otherwise keep the honest "unavailable" fallback.
+    # Safety net: never serve a replay whose reference month lags the data (a rare
+    # partial-refresh state) — fall back to the honest "unavailable" result.
+    latest = pd.to_datetime(bcb["date"]).max()
+    data_month = latest.strftime("%Y-%m") if pd.notna(latest) else ""
+    if is_stale(_replay_reference_month(replay_path), data_month):
+        return result
     pair = load_replay(replay_path).get(_norm_q(question))
     if pair is None:
         return result

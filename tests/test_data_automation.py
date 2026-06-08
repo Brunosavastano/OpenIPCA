@@ -76,3 +76,17 @@ def test_only_expected_app_data_artifacts_are_tracked():
     }
     tracked -= deleted
     assert tracked == EXPECTED_VERSIONED_DATA
+
+
+def test_refresh_workflow_regenerates_ai_artifacts_with_secret_key():
+    text = _workflow_text()
+    # AI brief + replay are regenerated alongside the data so the public artifacts
+    # never lag the panel.
+    assert "ipca_dashboard.ai.cli" in text
+    assert "ipca_dashboard.ai.qa_replay" in text
+    assert 'pip install -e ".[ai]"' in text
+    # The key comes from Actions secrets, NEVER a literal in the repo.
+    assert "${{ secrets.OPENAI_API_KEY }}" in text
+    # The regenerated AI artifacts are staged for the combined commit.
+    assert "reports/latest/ai_brief.md" in text
+    assert "reports/qa/replay.json" in text

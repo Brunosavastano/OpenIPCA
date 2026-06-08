@@ -29,6 +29,11 @@ provider mais forte que você tiver (gpt-5.x / Claude) para respostas de máxima
 qualidade. O modo *ao vivo* continua no Gemini grátis (para estranhos); o *replay*
 pode ser premium. O app é model-agnostic — isto já é suportado.
 
+> **Atualização mensal (automática):** o robô `refresh-data.yml` regenera o brief **e** o
+> replay junto com o dado a cada novo IPCA, usando a chave `OPENAI_API_KEY` nos *secrets* do
+> GitHub Actions — assim os artefatos públicos nunca ficam num mês diferente do painel. O passo
+> manual abaixo só é necessário na primeira geração ou para regenerar fora do ciclo mensal.
+
 1. No seu `.env` local (nunca commitado), aponte para o provider forte, por ex.:
    ```
    OPENIPCA_AI_ENABLED=true

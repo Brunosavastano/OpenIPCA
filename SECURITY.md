@@ -9,6 +9,9 @@ Still, the optional AI layer involves API keys, so please follow these rules.
 - Real secret files are git-ignored: `.env`, `.env.*`, `.streamlit/secrets.toml`.
 - Only the example files are tracked: `.env.example`, `.streamlit/secrets.toml.example`.
 - CI runs `scripts/check_no_secrets.py` to catch accidental key commits.
+- The monthly data refresh regenerates the AI brief/replay using an OpenAI key kept in
+  **GitHub Actions secrets** (encrypted, never in the repo, and not exposed to fork PRs —
+  the `refresh-data` workflow runs only on schedule / manual dispatch).
 
 ## If you accidentally commit a key
 
