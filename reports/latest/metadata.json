@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T18:48:34+00:00",
+  "generated_at": "2026-06-09T14:27:11+00:00",
   "provider": "openai",
   "mode": "ai",
   "prompt_version": "release_brief_v1",
@@ -10,5 +10,6 @@
     "IBGE/SIDRA",
     "BCB/SGS"
   ],
-  "used_fallback": false
+  "used_fallback": false,
+  "reference_month": "2026-04"
 }
