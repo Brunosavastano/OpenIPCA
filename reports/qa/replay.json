@@ -2,14 +2,14 @@
   "schema_version": "brief_v1",
   "prompt_version": "ask_ipca_v2",
   "reference_month": "2026-04",
-  "generated_at": "2026-06-10T14:54:51+00:00",
+  "generated_at": "2026-06-10T21:54:34+00:00",
   "pairs": [
     {
       "question": "O que mais puxou a inflação do IPCA neste mês?",
-      "answer": "Quem mais puxou a inflação do IPCA no mês foi Alimentação e bebidas: contribuiu 0,29 p.p. para o IPCA do mês, que foi 0,67%. Depois vieram Saúde e cuidados pessoais, com 0,16 p.p., e Habitação, com 0,10 p.p. Ou seja, a liderança altista foi claramente de alimentos, mas não foi uma pressão isolada em um único grupo. Do lado oposto, houve pouco alívio: Educação contribuiu 0,00 p.p., Transportes 0,01 p.p. e Artigos de residência 0,02 p.p. Isso não significa necessariamente queda relevante nesses grupos; significa que, na decomposição disponível, eles quase não empurraram o índice para cima. Como leitura de fundo, a difusão em 65,25% dos subitens e a média dos núcleos em 0,49% sugerem pressão relativamente espalhada; difusão é a parcela de subitens em alta, e núcleos tentam filtrar itens mais voláteis. O regime inflacionário está classificado como “Quadro misto”: há pressão relevante no mês, mas a composição também mostra alguns grupos com baixa contribuição.",
+      "answer": "O que mais puxou o IPCA no mês foi Alimentação e bebidas, com contribuição de 0,29 p.p. para uma inflação cheia de 0,67%. Depois vieram Saúde e cuidados pessoais, com 0,16 p.p., e Habitação, com 0,10 p.p. Ou seja, a pressão não ficou concentrada apenas em um item: a difusão, isto é, a parcela de subitens em alta, foi de 65,25%, enquanto a média dos núcleos, medidas que tentam filtrar choques mais voláteis, ficou em 0,49%. A leitura é de pressão altista relevante, mas com composição mista: alimentos lideraram, saúde e habitação reforçaram, e alguns grupos como Educação, Transportes e Artigos de residência tiveram contribuição baixa.",
       "claims": [
         {
-          "text": "Alimentação e bebidas contribuiu 0,29 p.p. para o IPCA do mês, que foi 0,67%.",
+          "text": "O principal vetor do IPCA no mês foi Alimentação e bebidas, com contribuição de 0,29 p.p. para uma inflação cheia de 0,67%.",
           "type": "number",
           "evidence_ids": [
             "ev_contrib_top_pos_0",
@@ -17,7 +17,7 @@
           ]
         },
         {
-          "text": "Saúde e cuidados pessoais contribuiu 0,16 p.p., e Habitação contribuiu 0,10 p.p.",
+          "text": "Saúde e cuidados pessoais contribuiu com 0,16 p.p., e Habitação contribuiu com 0,10 p.p.",
           "type": "number",
           "evidence_ids": [
             "ev_contrib_top_pos_1",
@@ -25,512 +25,26 @@
           ]
         },
         {
-          "text": "Educação contribuiu 0,00 p.p., Transportes 0,01 p.p. e Artigos de residência 0,02 p.p.",
+          "text": "A difusão foi de 65,25%, indicando que a alta esteve relativamente espalhada entre subitens.",
           "type": "number",
+          "evidence_ids": [
+            "ev_diffusion_mom"
+          ]
+        },
+        {
+          "text": "A média dos núcleos ficou em 0,49%, sinal de pressão subjacente ainda presente.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_core_mean_mom"
+          ]
+        },
+        {
+          "text": "Educação, Transportes e Artigos de residência aparecem como grupos de menor pressão relativa no mês.",
+          "type": "interpretation",
           "evidence_ids": [
             "ev_contrib_top_neg_0",
             "ev_contrib_top_neg_1",
             "ev_contrib_top_neg_2"
-          ]
-        },
-        {
-          "text": "A difusão foi 65,25% dos subitens e a média dos núcleos foi 0,49%.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_diffusion_mom",
-            "ev_core_mean_mom"
-          ]
-        },
-        {
-          "text": "O regime inflacionário está classificado como “Quadro misto”.",
-          "type": "regime",
-          "evidence_ids": [
-            "ev_regime"
-          ],
-          "rule_id": "regime_v1_mixed"
-        }
-      ],
-      "evidence": [
-        {
-          "evidence_id": "ev_headline_mom",
-          "metric": "IPCA m/m",
-          "value": 0.67,
-          "unit": "%",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_headline_12m",
-          "metric": "IPCA 12m",
-          "value": 4.39,
-          "unit": "%",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_headline_mm3",
-          "metric": "IPCA MM3M (NSA)",
-          "value": 0.75,
-          "unit": "%",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": "média móvel 3m da variação m/m, sem ajuste sazonal"
-        },
-        {
-          "evidence_id": "ev_headline_percentile",
-          "metric": "IPCA m/m percentil",
-          "value": 71.05,
-          "unit": "percentile",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_diffusion_mom",
-          "metric": "Difusão m/m",
-          "value": 65.25,
-          "unit": "% de subitens",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_diffusion_mm3",
-          "metric": "Difusão MM3M",
-          "value": 64.63,
-          "unit": "% de subitens",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_diffusion_mm3_percentile",
-          "metric": "Difusão MM3M percentil",
-          "value": 69.59,
-          "unit": "percentile",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_core_mean_mom",
-          "metric": "Média núcleos m/m (bcb_compact)",
-          "value": 0.49,
-          "unit": "%",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_core_mean_mm3",
-          "metric": "Média núcleos MM3M (bcb_compact)",
-          "value": 0.52,
-          "unit": "%",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_contrib_top_pos_0",
-          "metric": "Contribuição: Alimentação e bebidas",
-          "value": 0.29,
-          "unit": "p.p.",
-          "date": "2026-04",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "pressão altista"
-        },
-        {
-          "evidence_id": "ev_contrib_top_pos_1",
-          "metric": "Contribuição: Saúde e cuidados pessoais",
-          "value": 0.16,
-          "unit": "p.p.",
-          "date": "2026-04",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "pressão altista"
-        },
-        {
-          "evidence_id": "ev_contrib_top_pos_2",
-          "metric": "Contribuição: Habitação",
-          "value": 0.1,
-          "unit": "p.p.",
-          "date": "2026-04",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "pressão altista"
-        },
-        {
-          "evidence_id": "ev_contrib_top_neg_0",
-          "metric": "Contribuição: Educação",
-          "value": 0.0,
-          "unit": "p.p.",
-          "date": "2026-04",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "alívio / menor pressão"
-        },
-        {
-          "evidence_id": "ev_contrib_top_neg_1",
-          "metric": "Contribuição: Transportes",
-          "value": 0.01,
-          "unit": "p.p.",
-          "date": "2026-04",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "alívio / menor pressão"
-        },
-        {
-          "evidence_id": "ev_contrib_top_neg_2",
-          "metric": "Contribuição: Artigos de residência",
-          "value": 0.02,
-          "unit": "p.p.",
-          "date": "2026-04",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "alívio / menor pressão"
-        },
-        {
-          "evidence_id": "ev_alert_0",
-          "metric": "Alerta: core_mean_3m_saar_high",
-          "value": 6.37,
-          "unit": "",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": "high"
-        },
-        {
-          "evidence_id": "ev_alert_1",
-          "metric": "Alerta: core_any_3m_saar_critical",
-          "value": 7.31,
-          "unit": "",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": "critical"
-        },
-        {
-          "evidence_id": "ev_alert_2",
-          "metric": "Alerta: services_accelerating",
-          "value": 2.88,
-          "unit": "",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": "high"
-        },
-        {
-          "evidence_id": "ev_regime",
-          "metric": "Regime inflacionário",
-          "value": "Quadro misto",
-          "unit": "label",
-          "date": "2026-04",
-          "source": "OpenIPCA (determinístico)",
-          "interpretation": "regime_v1_mixed"
-        }
-      ],
-      "provider": "openai",
-      "mode": "ai"
-    },
-    {
-      "question": "A inflação está espalhada ou concentrada? Como está a difusão?",
-      "answer": "A inflação parece mais espalhada do que concentrada, mas não de forma extrema. A difusão m/m está em 65,25% dos subitens, e a difusão MM3M está em 64,63%; além disso, a difusão MM3M está no percentil 69,59. Isso sugere que a alta não vem só de poucos itens: uma parcela relevante da cesta está subindo. Ao mesmo tempo, há concentração de contribuição no topo: Alimentação e bebidas respondeu por 0,29 p.p., Saúde e cuidados pessoais por 0,16 p.p. e Habitação por 0,10 p.p.; Transportes contribuiu apenas 0,01 p.p. e Educação 0,00 p.p. Ou seja, é um quadro de disseminação relativamente ampla, com alguns grupos liderando o índice. Isso é compatível com o regime “Quadro misto”. O diagnóstico também conversa com os núcleos, que ainda mostram pressão subjacente: média dos núcleos m/m em 0,49% e MM3M em 0,52%. Portanto, eu não chamaria de choque isolado; chamaria de inflação com difusão alta o suficiente para exigir cautela, embora a contribuição do mês não esteja uniformemente distribuída.",
-      "claims": [
-        {
-          "text": "A inflação parece mais espalhada do que concentrada, mas não de forma extrema.",
-          "type": "interpretation",
-          "evidence_ids": [
-            "ev_diffusion_mom",
-            "ev_diffusion_mm3",
-            "ev_diffusion_mm3_percentile",
-            "ev_contrib_top_pos_0",
-            "ev_contrib_top_pos_1",
-            "ev_contrib_top_pos_2"
-          ]
-        },
-        {
-          "text": "A difusão m/m está em 65,25% dos subitens, e a difusão MM3M está em 64,63%; além disso, a difusão MM3M está no percentil 69,59.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_diffusion_mom",
-            "ev_diffusion_mm3",
-            "ev_diffusion_mm3_percentile"
-          ]
-        },
-        {
-          "text": "Isso sugere que a alta não vem só de poucos itens: uma parcela relevante da cesta está subindo.",
-          "type": "interpretation",
-          "evidence_ids": [
-            "ev_diffusion_mom",
-            "ev_diffusion_mm3",
-            "ev_diffusion_mm3_percentile"
-          ]
-        },
-        {
-          "text": "Ao mesmo tempo, há concentração de contribuição no topo: Alimentação e bebidas respondeu por 0,29 p.p., Saúde e cuidados pessoais por 0,16 p.p. e Habitação por 0,10 p.p.; Transportes contribuiu apenas 0,01 p.p. e Educação 0,00 p.p.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_contrib_top_pos_0",
-            "ev_contrib_top_pos_1",
-            "ev_contrib_top_pos_2",
-            "ev_contrib_top_neg_1",
-            "ev_contrib_top_neg_0"
-          ]
-        },
-        {
-          "text": "Ou seja, é um quadro de disseminação relativamente ampla, com alguns grupos liderando o índice.",
-          "type": "interpretation",
-          "evidence_ids": [
-            "ev_diffusion_mom",
-            "ev_diffusion_mm3",
-            "ev_contrib_top_pos_0",
-            "ev_contrib_top_pos_1",
-            "ev_contrib_top_pos_2"
-          ]
-        },
-        {
-          "text": "Isso é compatível com o regime “Quadro misto”.",
-          "type": "regime",
-          "evidence_ids": [
-            "ev_regime"
-          ],
-          "rule_id": "regime_v1_mixed"
-        },
-        {
-          "text": "O diagnóstico também conversa com os núcleos, que ainda mostram pressão subjacente: média dos núcleos m/m em 0,49% e MM3M em 0,52%.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_core_mean_mom",
-            "ev_core_mean_mm3"
-          ]
-        },
-        {
-          "text": "Portanto, eu não chamaria de choque isolado; chamaria de inflação com difusão alta o suficiente para exigir cautela, embora a contribuição do mês não esteja uniformemente distribuída.",
-          "type": "interpretation",
-          "evidence_ids": [
-            "ev_diffusion_mom",
-            "ev_diffusion_mm3",
-            "ev_diffusion_mm3_percentile",
-            "ev_contrib_top_pos_0",
-            "ev_contrib_top_pos_1",
-            "ev_contrib_top_pos_2",
-            "ev_contrib_top_neg_0",
-            "ev_contrib_top_neg_1"
-          ]
-        }
-      ],
-      "evidence": [
-        {
-          "evidence_id": "ev_headline_mom",
-          "metric": "IPCA m/m",
-          "value": 0.67,
-          "unit": "%",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_headline_12m",
-          "metric": "IPCA 12m",
-          "value": 4.39,
-          "unit": "%",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_headline_mm3",
-          "metric": "IPCA MM3M (NSA)",
-          "value": 0.75,
-          "unit": "%",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": "média móvel 3m da variação m/m, sem ajuste sazonal"
-        },
-        {
-          "evidence_id": "ev_headline_percentile",
-          "metric": "IPCA m/m percentil",
-          "value": 71.05,
-          "unit": "percentile",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_diffusion_mom",
-          "metric": "Difusão m/m",
-          "value": 65.25,
-          "unit": "% de subitens",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_diffusion_mm3",
-          "metric": "Difusão MM3M",
-          "value": 64.63,
-          "unit": "% de subitens",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_diffusion_mm3_percentile",
-          "metric": "Difusão MM3M percentil",
-          "value": 69.59,
-          "unit": "percentile",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_core_mean_mom",
-          "metric": "Média núcleos m/m (bcb_compact)",
-          "value": 0.49,
-          "unit": "%",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_core_mean_mm3",
-          "metric": "Média núcleos MM3M (bcb_compact)",
-          "value": 0.52,
-          "unit": "%",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": ""
-        },
-        {
-          "evidence_id": "ev_contrib_top_pos_0",
-          "metric": "Contribuição: Alimentação e bebidas",
-          "value": 0.29,
-          "unit": "p.p.",
-          "date": "2026-04",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "pressão altista"
-        },
-        {
-          "evidence_id": "ev_contrib_top_pos_1",
-          "metric": "Contribuição: Saúde e cuidados pessoais",
-          "value": 0.16,
-          "unit": "p.p.",
-          "date": "2026-04",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "pressão altista"
-        },
-        {
-          "evidence_id": "ev_contrib_top_pos_2",
-          "metric": "Contribuição: Habitação",
-          "value": 0.1,
-          "unit": "p.p.",
-          "date": "2026-04",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "pressão altista"
-        },
-        {
-          "evidence_id": "ev_contrib_top_neg_0",
-          "metric": "Contribuição: Educação",
-          "value": 0.0,
-          "unit": "p.p.",
-          "date": "2026-04",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "alívio / menor pressão"
-        },
-        {
-          "evidence_id": "ev_contrib_top_neg_1",
-          "metric": "Contribuição: Transportes",
-          "value": 0.01,
-          "unit": "p.p.",
-          "date": "2026-04",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "alívio / menor pressão"
-        },
-        {
-          "evidence_id": "ev_contrib_top_neg_2",
-          "metric": "Contribuição: Artigos de residência",
-          "value": 0.02,
-          "unit": "p.p.",
-          "date": "2026-04",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "alívio / menor pressão"
-        },
-        {
-          "evidence_id": "ev_alert_0",
-          "metric": "Alerta: core_mean_3m_saar_high",
-          "value": 6.37,
-          "unit": "",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": "high"
-        },
-        {
-          "evidence_id": "ev_alert_1",
-          "metric": "Alerta: core_any_3m_saar_critical",
-          "value": 7.31,
-          "unit": "",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": "critical"
-        },
-        {
-          "evidence_id": "ev_alert_2",
-          "metric": "Alerta: services_accelerating",
-          "value": 2.88,
-          "unit": "",
-          "date": "2026-04",
-          "source": "BCB/SGS",
-          "interpretation": "high"
-        },
-        {
-          "evidence_id": "ev_regime",
-          "metric": "Regime inflacionário",
-          "value": "Quadro misto",
-          "unit": "label",
-          "date": "2026-04",
-          "source": "OpenIPCA (determinístico)",
-          "interpretation": "regime_v1_mixed"
-        }
-      ],
-      "provider": "openai",
-      "mode": "ai"
-    },
-    {
-      "question": "Como estão os núcleos do IPCA em relação ao headline?",
-      "answer": "Os núcleos estão abaixo do headline na leitura corrente, mas não dá para chamar isso de benigno. Em 2026-04, o IPCA cheio subiu 0,67% m/m, enquanto a média dos núcleos ficou em 0,49% m/m. Na média móvel de 3 meses, o mesmo padrão aparece: IPCA cheio em 0,75% e média dos núcleos em 0,52%. Isso sugere que o headline foi mais pressionado por itens fora da medida média de núcleo — com destaque, nos dados de contribuição, para Alimentação e bebidas, Saúde e cuidados pessoais e Habitação. O ponto cético é que os núcleos ainda parecem desconfortáveis: há alerta de média dos núcleos em 3m saar em 6,37 e de algum núcleo em 3m saar em 7,31, além de difusão em 65,25% dos subitens. Em linguagem simples: o cheio está pior que os núcleos, mas os núcleos não estão “limpos”; a pressão segue relativamente espalhada. Por isso, a leitura é de quadro misto, não de desinflação consolidada.",
-      "claims": [
-        {
-          "text": "Em 2026-04, o IPCA cheio subiu 0,67% m/m, enquanto a média dos núcleos ficou em 0,49% m/m.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_headline_mom",
-            "ev_core_mean_mom"
-          ]
-        },
-        {
-          "text": "Na média móvel de 3 meses, o IPCA cheio ficou em 0,75% e a média dos núcleos em 0,52%.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_headline_mm3",
-            "ev_core_mean_mm3"
-          ]
-        },
-        {
-          "text": "As maiores contribuições altistas vieram de Alimentação e bebidas, Saúde e cuidados pessoais e Habitação.",
-          "type": "interpretation",
-          "evidence_ids": [
-            "ev_contrib_top_pos_0",
-            "ev_contrib_top_pos_1",
-            "ev_contrib_top_pos_2"
-          ]
-        },
-        {
-          "text": "Há alerta de média dos núcleos em 3m saar em 6,37 e de algum núcleo em 3m saar em 7,31.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_alert_0",
-            "ev_alert_1"
-          ]
-        },
-        {
-          "text": "A difusão está em 65,25% dos subitens, indicando pressão relativamente espalhada.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_diffusion_mom"
           ]
         },
         {
@@ -719,11 +233,279 @@
       "mode": "ai"
     },
     {
-      "question": "Qual é o regime inflacionário atual e o que ele significa?",
-      "answer": "O regime inflacionário atual é \"Quadro misto\". Isso significa que a inflação não está em leitura claramente benigna, mas também não configura, pelos dados fornecidos, um quadro de pressão totalmente uniforme. A leitura cheia do IPCA está pressionada: alta de 0,67% no mês, 4,39% em 12 meses e média móvel recente de 0,75%. A difusão — parcela dos subitens com alta — está elevada, em 65,25% no mês e 64,63% na média móvel, sugerindo pressão espalhada por uma parte relevante da cesta. A composição, porém, é heterogênea: Alimentação e bebidas, Saúde e cuidados pessoais e Habitação puxam para cima, enquanto Educação, Transportes e Artigos de residência aparecem como alívio ou menor pressão. O ponto mais incômodo é que os núcleos — medidas que tentam filtrar choques temporários — seguem firmes, em 0,49% no mês e 0,52% na média móvel. Em termos práticos: eu leria esse regime como misto com viés de cautela, não como desinflação consolidada.",
+      "question": "A inflação está espalhada ou concentrada? Como está a difusão?",
+      "answer": "A inflação parece mais espalhada do que concentrada. A difusão mensal está em 65,25% dos subitens, e a difusão em MM3M está em 64,63%, no percentil 69,59%; ou seja, a pressão não está restrita a poucos preços, embora também não seja um quadro de disseminação extrema. Ao mesmo tempo, há focos claros: Alimentação e bebidas contribuiu 0,29 p.p., Saúde e cuidados pessoais 0,16 p.p. e Habitação 0,10 p.p., enquanto Transportes teve contribuição bem menor, de 0,01 p.p. Minha leitura: o quadro é amplo o suficiente para incomodar, mas ainda com liderança setorial visível — por isso eu não chamaria de inflação puramente concentrada. Os núcleos também reforçam cautela: a média dos núcleos subiu 0,49% no mês e 0,52% em MM3M, sugerindo que a pressão não vem só de itens muito voláteis. O regime classificado é de “Quadro misto”: há sinais de difusão e núcleo pressionados, mas com concentração relevante em alguns grupos.",
       "claims": [
         {
-          "text": "O regime inflacionário atual é Quadro misto.",
+          "text": "A difusão mensal está em 65,25% dos subitens, e a difusão em MM3M está em 64,63%, no percentil 69,59%.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_diffusion_mom",
+            "ev_diffusion_mm3",
+            "ev_diffusion_mm3_percentile"
+          ]
+        },
+        {
+          "text": "Alimentação e bebidas contribuiu 0,29 p.p., Saúde e cuidados pessoais 0,16 p.p. e Habitação 0,10 p.p., enquanto Transportes teve contribuição de 0,01 p.p.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_contrib_top_pos_0",
+            "ev_contrib_top_pos_1",
+            "ev_contrib_top_pos_2",
+            "ev_contrib_top_neg_1"
+          ]
+        },
+        {
+          "text": "A média dos núcleos subiu 0,49% no mês e 0,52% em MM3M.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_core_mean_mom",
+            "ev_core_mean_mm3"
+          ]
+        },
+        {
+          "text": "A inflação parece mais espalhada do que concentrada, mas com liderança setorial visível.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_diffusion_mom",
+            "ev_diffusion_mm3",
+            "ev_contrib_top_pos_0",
+            "ev_contrib_top_pos_1",
+            "ev_contrib_top_pos_2"
+          ]
+        },
+        {
+          "text": "O regime classificado é de “Quadro misto”.",
+          "type": "regime",
+          "evidence_ids": [
+            "ev_regime"
+          ],
+          "rule_id": "regime_v1_mixed"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "ev_headline_mom",
+          "metric": "IPCA m/m",
+          "value": 0.67,
+          "unit": "%",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_headline_12m",
+          "metric": "IPCA 12m",
+          "value": 4.39,
+          "unit": "%",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_headline_mm3",
+          "metric": "IPCA MM3M (NSA)",
+          "value": 0.75,
+          "unit": "%",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": "média móvel 3m da variação m/m, sem ajuste sazonal"
+        },
+        {
+          "evidence_id": "ev_headline_percentile",
+          "metric": "IPCA m/m percentil",
+          "value": 71.05,
+          "unit": "percentile",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_diffusion_mom",
+          "metric": "Difusão m/m",
+          "value": 65.25,
+          "unit": "% de subitens",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_diffusion_mm3",
+          "metric": "Difusão MM3M",
+          "value": 64.63,
+          "unit": "% de subitens",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_diffusion_mm3_percentile",
+          "metric": "Difusão MM3M percentil",
+          "value": 69.59,
+          "unit": "percentile",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_core_mean_mom",
+          "metric": "Média núcleos m/m (bcb_compact)",
+          "value": 0.49,
+          "unit": "%",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_core_mean_mm3",
+          "metric": "Média núcleos MM3M (bcb_compact)",
+          "value": 0.52,
+          "unit": "%",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_contrib_top_pos_0",
+          "metric": "Contribuição: Alimentação e bebidas",
+          "value": 0.29,
+          "unit": "p.p.",
+          "date": "2026-04",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "pressão altista"
+        },
+        {
+          "evidence_id": "ev_contrib_top_pos_1",
+          "metric": "Contribuição: Saúde e cuidados pessoais",
+          "value": 0.16,
+          "unit": "p.p.",
+          "date": "2026-04",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "pressão altista"
+        },
+        {
+          "evidence_id": "ev_contrib_top_pos_2",
+          "metric": "Contribuição: Habitação",
+          "value": 0.1,
+          "unit": "p.p.",
+          "date": "2026-04",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "pressão altista"
+        },
+        {
+          "evidence_id": "ev_contrib_top_neg_0",
+          "metric": "Contribuição: Educação",
+          "value": 0.0,
+          "unit": "p.p.",
+          "date": "2026-04",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "alívio / menor pressão"
+        },
+        {
+          "evidence_id": "ev_contrib_top_neg_1",
+          "metric": "Contribuição: Transportes",
+          "value": 0.01,
+          "unit": "p.p.",
+          "date": "2026-04",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "alívio / menor pressão"
+        },
+        {
+          "evidence_id": "ev_contrib_top_neg_2",
+          "metric": "Contribuição: Artigos de residência",
+          "value": 0.02,
+          "unit": "p.p.",
+          "date": "2026-04",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "alívio / menor pressão"
+        },
+        {
+          "evidence_id": "ev_alert_0",
+          "metric": "Alerta: core_mean_3m_saar_high",
+          "value": 6.37,
+          "unit": "",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": "high"
+        },
+        {
+          "evidence_id": "ev_alert_1",
+          "metric": "Alerta: core_any_3m_saar_critical",
+          "value": 7.31,
+          "unit": "",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": "critical"
+        },
+        {
+          "evidence_id": "ev_alert_2",
+          "metric": "Alerta: services_accelerating",
+          "value": 2.88,
+          "unit": "",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": "high"
+        },
+        {
+          "evidence_id": "ev_regime",
+          "metric": "Regime inflacionário",
+          "value": "Quadro misto",
+          "unit": "label",
+          "date": "2026-04",
+          "source": "OpenIPCA (determinístico)",
+          "interpretation": "regime_v1_mixed"
+        }
+      ],
+      "provider": "openai",
+      "mode": "ai"
+    },
+    {
+      "question": "Como estão os núcleos do IPCA em relação ao headline?",
+      "answer": "Os núcleos estão abaixo do headline na comparação direta, mas isso não é um sinal plenamente benigno. No mês, a média dos núcleos foi 0,49%, abaixo do IPCA cheio de 0,67%. Na MM3M, a média dos núcleos ficou em 0,52%, também abaixo do headline de 0,75%. Isso sugere que o índice cheio recebeu pressão relevante de itens fora do miolo mais persistente da inflação; as contribuições de Alimentação e bebidas, Saúde e cuidados pessoais e Habitação foram 0,29 p.p., 0,16 p.p. e 0,10 p.p. respectivamente. O ponto cético é que a difusão segue elevada, em 65,25% no mês e 64,63% na MM3M, ou seja, a alta de preços está relativamente espalhada entre subitens. Além disso, os alertas de núcleos em ritmo anualizado aparecem como high em 6,37 e critical em 7,31. Meu diagnóstico: núcleos melhores que o headline, mas ainda pressionados; o regime inflacionário é Quadro misto.",
+      "claims": [
+        {
+          "text": "No mês, a média dos núcleos foi 0,49%, abaixo do IPCA cheio de 0,67%.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_core_mean_mom",
+            "ev_headline_mom"
+          ]
+        },
+        {
+          "text": "Na MM3M, a média dos núcleos ficou em 0,52%, também abaixo do headline de 0,75%.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_core_mean_mm3",
+            "ev_headline_mm3"
+          ]
+        },
+        {
+          "text": "As contribuições de Alimentação e bebidas, Saúde e cuidados pessoais e Habitação foram 0,29 p.p., 0,16 p.p. e 0,10 p.p. respectivamente.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_contrib_top_pos_0",
+            "ev_contrib_top_pos_1",
+            "ev_contrib_top_pos_2"
+          ]
+        },
+        {
+          "text": "A difusão segue elevada, em 65,25% no mês e 64,63% na MM3M, indicando alta relativamente espalhada entre subitens.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_diffusion_mom",
+            "ev_diffusion_mm3"
+          ]
+        },
+        {
+          "text": "Os alertas de núcleos em ritmo anualizado aparecem como high em 6,37 e critical em 7,31.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_alert_0",
+            "ev_alert_1"
+          ]
+        },
+        {
+          "text": "O regime inflacionário é Quadro misto.",
           "type": "regime",
           "evidence_ids": [
             "ev_regime"
@@ -731,7 +513,210 @@
           "rule_id": "regime_v1_mixed"
         },
         {
-          "text": "A leitura cheia do IPCA mostra alta de 0,67% no mês, 4,39% em 12 meses e média móvel recente de 0,75%.",
+          "text": "Os núcleos estão abaixo do headline, mas a combinação com difusão elevada e alertas de núcleos impede uma leitura plenamente benigna.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_core_mean_mom",
+            "ev_headline_mom",
+            "ev_core_mean_mm3",
+            "ev_headline_mm3",
+            "ev_diffusion_mom",
+            "ev_diffusion_mm3",
+            "ev_alert_0",
+            "ev_alert_1"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "ev_headline_mom",
+          "metric": "IPCA m/m",
+          "value": 0.67,
+          "unit": "%",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_headline_12m",
+          "metric": "IPCA 12m",
+          "value": 4.39,
+          "unit": "%",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_headline_mm3",
+          "metric": "IPCA MM3M (NSA)",
+          "value": 0.75,
+          "unit": "%",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": "média móvel 3m da variação m/m, sem ajuste sazonal"
+        },
+        {
+          "evidence_id": "ev_headline_percentile",
+          "metric": "IPCA m/m percentil",
+          "value": 71.05,
+          "unit": "percentile",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_diffusion_mom",
+          "metric": "Difusão m/m",
+          "value": 65.25,
+          "unit": "% de subitens",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_diffusion_mm3",
+          "metric": "Difusão MM3M",
+          "value": 64.63,
+          "unit": "% de subitens",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_diffusion_mm3_percentile",
+          "metric": "Difusão MM3M percentil",
+          "value": 69.59,
+          "unit": "percentile",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_core_mean_mom",
+          "metric": "Média núcleos m/m (bcb_compact)",
+          "value": 0.49,
+          "unit": "%",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_core_mean_mm3",
+          "metric": "Média núcleos MM3M (bcb_compact)",
+          "value": 0.52,
+          "unit": "%",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_contrib_top_pos_0",
+          "metric": "Contribuição: Alimentação e bebidas",
+          "value": 0.29,
+          "unit": "p.p.",
+          "date": "2026-04",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "pressão altista"
+        },
+        {
+          "evidence_id": "ev_contrib_top_pos_1",
+          "metric": "Contribuição: Saúde e cuidados pessoais",
+          "value": 0.16,
+          "unit": "p.p.",
+          "date": "2026-04",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "pressão altista"
+        },
+        {
+          "evidence_id": "ev_contrib_top_pos_2",
+          "metric": "Contribuição: Habitação",
+          "value": 0.1,
+          "unit": "p.p.",
+          "date": "2026-04",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "pressão altista"
+        },
+        {
+          "evidence_id": "ev_contrib_top_neg_0",
+          "metric": "Contribuição: Educação",
+          "value": 0.0,
+          "unit": "p.p.",
+          "date": "2026-04",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "alívio / menor pressão"
+        },
+        {
+          "evidence_id": "ev_contrib_top_neg_1",
+          "metric": "Contribuição: Transportes",
+          "value": 0.01,
+          "unit": "p.p.",
+          "date": "2026-04",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "alívio / menor pressão"
+        },
+        {
+          "evidence_id": "ev_contrib_top_neg_2",
+          "metric": "Contribuição: Artigos de residência",
+          "value": 0.02,
+          "unit": "p.p.",
+          "date": "2026-04",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "alívio / menor pressão"
+        },
+        {
+          "evidence_id": "ev_alert_0",
+          "metric": "Alerta: core_mean_3m_saar_high",
+          "value": 6.37,
+          "unit": "",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": "high"
+        },
+        {
+          "evidence_id": "ev_alert_1",
+          "metric": "Alerta: core_any_3m_saar_critical",
+          "value": 7.31,
+          "unit": "",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": "critical"
+        },
+        {
+          "evidence_id": "ev_alert_2",
+          "metric": "Alerta: services_accelerating",
+          "value": 2.88,
+          "unit": "",
+          "date": "2026-04",
+          "source": "BCB/SGS",
+          "interpretation": "high"
+        },
+        {
+          "evidence_id": "ev_regime",
+          "metric": "Regime inflacionário",
+          "value": "Quadro misto",
+          "unit": "label",
+          "date": "2026-04",
+          "source": "OpenIPCA (determinístico)",
+          "interpretation": "regime_v1_mixed"
+        }
+      ],
+      "provider": "openai",
+      "mode": "ai"
+    },
+    {
+      "question": "Qual é o regime inflacionário atual e o que ele significa?",
+      "answer": "O regime inflacionário atual é de “Quadro misto”. Isso significa que a leitura não é benignamente desinflacionária, mas também não é uma pressão totalmente uniforme: há sinais relevantes de inflação ainda espalhada e núcleos pressionados, ao mesmo tempo em que alguns grupos mostram menor contribuição.\n\nA parte preocupante é que o IPCA subiu 0,67% no mês e acumula 4,39% em 12 meses, com média móvel de 3 meses em 0,75%. A difusão também está alta: 65,25% dos subitens subiram no mês, e a média móvel de 3 meses está em 64,63%, o que indica inflação relativamente disseminada. Além disso, a média dos núcleos — medidas que tentam filtrar choques mais voláteis — foi de 0,49% no mês e 0,52% na média móvel de 3 meses, com alertas de núcleo em patamar alto/crítico.\n\nA parte que impede chamar o quadro de simplesmente “inflacionário forte” é que a pressão não aparece com a mesma intensidade em todos os grupos: Alimentação e bebidas contribuiu 0,29 p.p., Saúde e cuidados pessoais 0,16 p.p. e Habitação 0,10 p.p., enquanto Transportes contribuiu apenas 0,01 p.p., Artigos de residência 0,02 p.p. e Educação 0,00 p.p.\n\nEm termos práticos: “Quadro misto” quer dizer que a inflação corrente ainda exige cautela, porque a disseminação e os núcleos não estão confortáveis; mas a composição mostra focos específicos de pressão, não uma aceleração homogênea em todos os componentes do IPCA.",
+      "claims": [
+        {
+          "text": "O regime inflacionário atual é de “Quadro misto”.",
+          "type": "regime",
+          "evidence_ids": [
+            "ev_regime"
+          ],
+          "rule_id": "regime_v1_mixed"
+        },
+        {
+          "text": "O IPCA subiu 0,67% no mês e acumula 4,39% em 12 meses, com média móvel de 3 meses em 0,75%.",
           "type": "number",
           "evidence_ids": [
             "ev_headline_mom",
@@ -740,7 +725,7 @@
           ]
         },
         {
-          "text": "A difusão está em 65,25% no mês e 64,63% na média móvel, o que indica pressão espalhada por parcela relevante dos subitens.",
+          "text": "A difusão foi de 65,25% dos subitens no mês, e a média móvel de 3 meses ficou em 64,63%.",
           "type": "number",
           "evidence_ids": [
             "ev_diffusion_mom",
@@ -748,23 +733,48 @@
           ]
         },
         {
-          "text": "A composição é heterogênea: Alimentação e bebidas, Saúde e cuidados pessoais e Habitação aparecem como pressão altista, enquanto Educação, Transportes e Artigos de residência aparecem como alívio ou menor pressão.",
+          "text": "A média dos núcleos foi de 0,49% no mês e 0,52% na média móvel de 3 meses, com alertas de núcleo em patamar alto/crítico.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_core_mean_mom",
+            "ev_core_mean_mm3",
+            "ev_alert_0",
+            "ev_alert_1"
+          ]
+        },
+        {
+          "text": "Alimentação e bebidas contribuiu 0,29 p.p., Saúde e cuidados pessoais 0,16 p.p. e Habitação 0,10 p.p.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_contrib_top_pos_0",
+            "ev_contrib_top_pos_1",
+            "ev_contrib_top_pos_2"
+          ]
+        },
+        {
+          "text": "Transportes contribuiu 0,01 p.p., Artigos de residência 0,02 p.p. e Educação 0,00 p.p.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_contrib_top_neg_1",
+            "ev_contrib_top_neg_2",
+            "ev_contrib_top_neg_0"
+          ]
+        },
+        {
+          "text": "“Quadro misto” significa inflação ainda exigindo cautela, pois há disseminação e núcleos pressionados, mas a composição mostra focos específicos de pressão, não aceleração homogênea em todos os componentes.",
           "type": "interpretation",
           "evidence_ids": [
+            "ev_regime",
+            "ev_diffusion_mom",
+            "ev_diffusion_mm3",
+            "ev_core_mean_mom",
+            "ev_core_mean_mm3",
             "ev_contrib_top_pos_0",
             "ev_contrib_top_pos_1",
             "ev_contrib_top_pos_2",
             "ev_contrib_top_neg_0",
             "ev_contrib_top_neg_1",
             "ev_contrib_top_neg_2"
-          ]
-        },
-        {
-          "text": "A média dos núcleos está em 0,49% no mês e 0,52% na média móvel, sinalizando persistência da inflação subjacente.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_core_mean_mom",
-            "ev_core_mean_mm3"
           ]
         }
       ],
@@ -946,24 +956,34 @@
     },
     {
       "question": "Alimentação puxou ou segurou a inflação do mês?",
-      "answer": "Alimentação puxou — não segurou — a inflação do mês. A contribuição de Alimentação e bebidas foi positiva, de 0,29 p.p., dentro de um IPCA de 0,67%. Em termos práticos, isso quer dizer que o grupo adicionou pressão ao índice, em vez de compensar altas de outros itens.",
+      "answer": "Alimentação e bebidas puxou a inflação do mês, não segurou. O grupo contribuiu com 0,29 p.p. para o IPCA mensal de 0,67%, com sinal de pressão altista. Entre os grupos destacados, foi a principal contribuição positiva; isso sugere que a alta do mês teve participação relevante de alimentos, embora a tabela não permita dizer a causa dessa pressão.",
       "claims": [
         {
-          "text": "Alimentação e bebidas contribuiu com 0,29 p.p. no mês, caracterizando pressão altista sobre o IPCA.",
-          "type": "number",
+          "text": "Alimentação e bebidas puxou a inflação do mês, não segurou.",
+          "type": "interpretation",
           "evidence_ids": [
             "ev_contrib_top_pos_0"
           ]
         },
         {
-          "text": "O IPCA do mês foi 0,67%.",
+          "text": "O grupo contribuiu com 0,29 p.p. para o IPCA mensal de 0,67%, com sinal de pressão altista.",
           "type": "number",
           "evidence_ids": [
+            "ev_contrib_top_pos_0",
             "ev_headline_mom"
           ]
         },
         {
-          "text": "Como a contribuição de Alimentação e bebidas foi positiva, o grupo puxou a inflação do mês, em vez de segurá-la.",
+          "text": "Entre os grupos destacados, Alimentação e bebidas foi a principal contribuição positiva.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_contrib_top_pos_0",
+            "ev_contrib_top_pos_1",
+            "ev_contrib_top_pos_2"
+          ]
+        },
+        {
+          "text": "A tabela não permite afirmar a causa da pressão em Alimentação e bebidas; ela mostra a contribuição do grupo ao IPCA.",
           "type": "interpretation",
           "evidence_ids": [
             "ev_contrib_top_pos_0"
@@ -1148,17 +1168,17 @@
     },
     {
       "question": "Como está a inflação acumulada em 12 meses?",
-      "answer": "A inflação acumulada em doze meses está em 4,39% na leitura mais recente da tabela. Minha leitura é cautelosa: o número em doze meses não parece isoladamente dramático, mas o curto prazo ainda incomoda, porque o IPCA mensal foi de 0,67% e a média móvel de três meses está em 0,75%. Além disso, a difusão está em 65,25%, ou seja, a alta de preços está relativamente espalhada entre subitens, não concentrada em poucos choques. Por isso, eu resumiria o quadro como inflação acumulada ainda moderada, mas com composição recente pouco confortável; o próprio regime indicado é “Quadro misto”.",
+      "answer": "Em abril de 2026, o IPCA acumulado em 12 meses está em 4,39%. A leitura mensal também veio pressionada, em 0,67%, e a média móvel de 3 meses ficou em 0,75%, sugerindo que a inflação corrente ainda não está claramente benigna. O quadro é misto: o acumulado em 12 meses é a fotografia principal, mas difusão e núcleos ainda pedem cautela, porque indicam pressão relativamente espalhada e persistente nos preços.",
       "claims": [
         {
-          "text": "A inflação acumulada em doze meses está em 4,39% na leitura mais recente da tabela.",
+          "text": "Em abril de 2026, o IPCA acumulado em 12 meses está em 4,39%.",
           "type": "number",
           "evidence_ids": [
             "ev_headline_12m"
           ]
         },
         {
-          "text": "O curto prazo ainda incomoda, porque o IPCA mensal foi de 0,67% e a média móvel de três meses está em 0,75%.",
+          "text": "A leitura mensal veio em 0,67%, e a média móvel de 3 meses ficou em 0,75%.",
           "type": "number",
           "evidence_ids": [
             "ev_headline_mom",
@@ -1166,19 +1186,30 @@
           ]
         },
         {
-          "text": "A difusão está em 65,25%, indicando que a alta de preços está relativamente espalhada entre subitens.",
-          "type": "number",
+          "text": "A inflação corrente ainda não está claramente benigna, pois a leitura mensal e a média móvel de curto prazo seguem pressionadas.",
+          "type": "interpretation",
           "evidence_ids": [
-            "ev_diffusion_mom"
+            "ev_headline_mom",
+            "ev_headline_mm3"
           ]
         },
         {
-          "text": "O regime indicado é “Quadro misto”.",
+          "text": "O quadro é misto.",
           "type": "regime",
           "evidence_ids": [
             "ev_regime"
           ],
           "rule_id": "regime_v1_mixed"
+        },
+        {
+          "text": "Difusão e núcleos ainda pedem cautela, porque indicam pressão relativamente espalhada e persistente nos preços.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_diffusion_mom",
+            "ev_diffusion_mm3",
+            "ev_core_mean_mom",
+            "ev_core_mean_mm3"
+          ]
         }
       ],
       "evidence": [
