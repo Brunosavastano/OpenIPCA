@@ -33,6 +33,17 @@ def evidence_ids(table: list[Evidence]) -> set[str]:
     return {e.evidence_id for e in table}
 
 
+def normalize_evidence_ids(value: object) -> list[str]:
+    """Evidence ids as a list, preserving malformed scalar ids as visible ids."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, (list, tuple, set)):
+        return [str(item) for item in value]
+    return [str(value)]
+
+
 def resolve_claim_evidence(
     claims: list[dict], evidence: list[dict]
 ) -> list[dict[str, object]]:
@@ -53,10 +64,17 @@ def resolve_claim_evidence(
         if not isinstance(claim, dict):
             continue
         text = str(claim.get("text", ""))
-        ids = [str(i) for i in (claim.get("evidence_ids") or [])]
+        ids = normalize_evidence_ids(claim.get("evidence_ids"))
         if not ids:
             rows.append(
-                {"claim": text, "metric": "", "value": "", "unit": "", "date": "", "source": ""}
+                {
+                    "claim": text,
+                    "metric": "(sem evidence_id)",
+                    "value": "",
+                    "unit": "",
+                    "date": "",
+                    "source": "",
+                }
             )
             continue
         for evidence_id in ids:

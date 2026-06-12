@@ -58,8 +58,15 @@ def test_resolve_never_silently_drops_a_citation():
     ]
     rows = resolve_claim_evidence(claims, EVIDENCE)
     assert len(rows) == 2  # both claims still visible
-    assert rows[0]["metric"] == ""  # no ids -> claim shown with empty evidence
+    assert rows[0]["metric"] == "(sem evidence_id)"  # no ids -> explicit placeholder
     assert "ev_inexistente" in rows[1]["metric"]  # unknown id -> visible placeholder
+
+
+def test_resolve_treats_scalar_evidence_id_as_one_citation():
+    claims = [{"text": "IPCA subiu.", "type": "number", "evidence_ids": "ev_headline_mom"}]
+    rows = resolve_claim_evidence(claims, EVIDENCE)
+    assert len(rows) == 1
+    assert rows[0]["metric"] == "IPCA m/m"
 
 
 def test_resolve_tolerates_malformed_inputs():
@@ -74,7 +81,7 @@ def test_trace_summary_reads_the_committed_shape(tmp_path: Path):
         "prompt_version": "release_brief_v1",
         "tool_calls": [{"tool": "get_headline"}, {"tool": "get_diffusion"}],
         "evidence_ids": ["ev_a", "ev_b", "ev_c"],
-        "claims": [{"text": "IPCA subiu.", "type": "number", "evidence_ids": ["ev_a"]}],
+        "claims": [{"text": "IPCA subiu.", "type": "number", "evidence_ids": "ev_a"}],
         "used_fallback": False,
     }
     path = tmp_path / "ai_trace.json"

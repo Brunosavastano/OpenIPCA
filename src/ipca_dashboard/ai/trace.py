@@ -15,6 +15,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from ipca_dashboard.ai.evidence import normalize_evidence_ids
+
 MAX_TRACE_BYTES = 2_000_000
 
 
@@ -42,7 +44,7 @@ def load_trace_summary(path: Path) -> dict | None:
     claims = [
         {
             "text": str(claim.get("text", "")),
-            "evidence_ids": [str(i) for i in (claim.get("evidence_ids") or [])],
+            "evidence_ids": normalize_evidence_ids(claim.get("evidence_ids")),
         }
         for claim in raw.get("claims", []) or []
         if isinstance(claim, dict) and claim.get("text")
