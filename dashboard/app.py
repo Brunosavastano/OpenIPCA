@@ -27,7 +27,11 @@ from ipca_dashboard.ai.env import bridge_secrets_to_env, load_env_once  # noqa: 
 from ipca_dashboard.ai.evidence import resolve_claim_evidence  # noqa: E402
 from ipca_dashboard.ai.qa_replay import CURATED_QUESTIONS, answer_with_replay  # noqa: E402
 from ipca_dashboard.ai.staleness import is_stale, reference_month_from_brief  # noqa: E402
-from ipca_dashboard.ai.trace import load_trace_summary  # noqa: E402
+from ipca_dashboard.ai.trace import (  # noqa: E402
+    brief_stamp_line,
+    load_brief_metadata,
+    load_trace_summary,
+)
 from ipca_dashboard.config import OUTPUTS_DIR, PROCESSED_DIR, load_yaml  # noqa: E402
 from ipca_dashboard.diagnostics import classify_latest_regime  # noqa: E402
 from ipca_dashboard.glossary import (  # noqa: E402
@@ -44,6 +48,7 @@ from ipca_dashboard.hierarchy import (  # noqa: E402
     top_level_rows,
 )
 from ipca_dashboard.transforms import calculate_diffusion_from_items  # noqa: E402
+from ipca_dashboard.validation import summarize_report  # noqa: E402
 
 # On a deploy (e.g. Streamlit Community Cloud) the AI key is set as a *secret*.
 # The AI config reads os.environ, so mirror secrets into it (real env vars win).
@@ -239,6 +244,11 @@ CSS = """
   .status-strip .strip-left { display: flex; align-items: center; gap: 8px; }
   .status-strip .dot { width: 7px; height: 7px; border-radius: 50%; background: #E8943A; }
   .status-strip .strip-right { color: #5A6373; }
+  /* data-quality seal: MUST be able to degrade (amber/red) — a badge that can
+     never turn red is a vanity seal, not a trust signal. */
+  .status-strip .seal-ok { color: #35B07D; }
+  .status-strip .seal-warn { color: #E0A046; }
+  .status-strip .seal-block { color: #E5484D; }
 
   /* regime pill */
   .regime-row { display: flex; align-items: center; gap: 10px; margin: 4px 0 2px; flex-wrap: wrap; }
@@ -328,8 +338,19 @@ def render_ai_replay(data_month: str = "") -> None:
         return
     if is_stale(reference_month_from_brief(REPORTS_LATEST), data_month):
         return  # stale -> hide; the deterministic reading above carries the page
-    with st.expander("Briefing IPCA", expanded=False):
+    # Open by default: the audited AI brief is the product's differentiator —
+    # it must not be born hidden behind a click (spec §3.8: visible by default).
+    with st.expander("Briefing IPCA", expanded=True):
         st.markdown(brief_path.read_text(encoding="utf-8"))
+        meta = load_brief_metadata(REPORTS_LATEST / "metadata.json")
+        if meta:
+            stamp = brief_stamp_line(meta)
+            if stamp:
+                st.caption(
+                    f"{stamp} · "
+                    "[artefatos auditáveis no GitHub]"
+                    "(https://github.com/Brunosavastano/OpenIPCA/tree/main/reports/latest)"
+                )
     _render_brief_trace()
 
 
@@ -969,6 +990,38 @@ def page_ask(data: dict[str, pd.DataFrame]) -> None:
                 )
 
 
+_PT_MONTHS = {
+    1: "JAN", 2: "FEV", 3: "MAR", 4: "ABR", 5: "MAI", 6: "JUN",
+    7: "JUL", 8: "AGO", 9: "SET", 10: "OUT", 11: "NOV", 12: "DEZ",
+}
+
+
+def _status_strip_right(data: dict[str, pd.DataFrame]) -> str:
+    """Freshness + quality seal for the strip: 'DADOS ABR/2026 · 8/8 VERIFICAÇÕES OK'.
+
+    Answers the first question any data-dashboard visitor has ("isso é de
+    quando?") and surfaces the validation rigor that already runs every month.
+    Only our own derived values go in (months/counts) — no user input.
+    """
+    parts: list[str] = []
+    try:
+        latest = pd.to_datetime(data["bcb"]["date"]).max()
+        if pd.notna(latest):
+            parts.append(f"DADOS {_PT_MONTHS[latest.month]}/{latest.year}")
+    except (KeyError, TypeError, ValueError):
+        pass  # the strip must never break the app
+    summary = summarize_report(OUTPUTS_DIR / "validation_report.csv")
+    if summary:
+        seal_cls = {"pass": "seal-ok", "warn": "seal-warn", "block": "seal-block"}[
+            str(summary["worst"])
+        ]
+        label = f"{summary['passed']}/{summary['total']} VERIFICAÇÕES"
+        if summary["worst"] == "pass":
+            label += " OK"
+        parts.append(f"<span class='{seal_cls}'>{label}</span>")
+    return " · ".join(parts) or "openipca.streamlit.app"
+
+
 def main() -> None:
     try:
         data = load_data(processed_signature())
@@ -1009,7 +1062,7 @@ def main() -> None:
     st.markdown(
         "<div class='status-strip'>"
         f"<span class='strip-left'><span class='dot'></span>{escape(page.upper())}</span>"
-        "<span class='strip-right'>openipca.streamlit.app</span></div>",
+        f"<span class='strip-right'>{_status_strip_right(data)}</span></div>",
         unsafe_allow_html=True,
     )
     if page == "Painel executivo":

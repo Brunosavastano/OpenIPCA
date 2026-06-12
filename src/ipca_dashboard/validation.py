@@ -1,10 +1,40 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 
 
 def validation_row(check: str, status: str, value: float | str, details: str) -> dict[str, object]:
     return {"check": check, "status": status, "value": value, "details": details}
+
+
+def summarize_report(path: Path) -> dict[str, object] | None:
+    """Summary of a written validation_report.csv for display: counts + worst status.
+
+    Returns ``{"total": int, "passed": int, "worst": "pass"|"warn"|"block"}``, or
+    ``None`` when the file is missing/unreadable/empty — the app must then OMIT
+    its quality seal rather than show a made-up one. The seal must also be able
+    to degrade (worst="warn"/"block"): a badge that can never turn red is a
+    vanity seal, not a trust signal.
+    """
+    try:
+        report = pd.read_csv(path)
+    except (OSError, ValueError, pd.errors.ParserError):
+        return None
+    if report.empty or "status" not in report.columns:
+        return None
+    statuses = report["status"].astype(str)
+    worst = "pass"
+    if (statuses == "warn").any():
+        worst = "warn"
+    if (statuses == "block").any():
+        worst = "block"
+    return {
+        "total": int(len(report)),
+        "passed": int((statuses == "pass").sum()),
+        "worst": worst,
+    }
 
 
 # Minimum set of series whose latest month must match the global latest month.
