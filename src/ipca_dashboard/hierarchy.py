@@ -54,3 +54,19 @@ def node_label(items: pd.DataFrame, code: str, date: pd.Timestamp) -> str:
     if row.empty:
         return code
     return str(row.iloc[0].get("item_name", code))
+
+
+def subitem_options(items: pd.DataFrame, date: pd.Timestamp) -> pd.DataFrame:
+    """Subitems available in `date` as (classification_code, item_name), name-sorted.
+
+    Feeds the "quanto subiu o meu item?" search box — the one-gesture answer to
+    the question every visitor brings, instead of the 3-selectbox drilldown.
+    """
+    if items.empty or not {"date", "level", "classification_code", "item_name"}.issubset(
+        items.columns
+    ):
+        return pd.DataFrame(columns=["classification_code", "item_name"])
+    rows = items[(items["date"] == date) & (items["level"] == "subitem")]
+    out = rows[["classification_code", "item_name"]].dropna()
+    out = out.drop_duplicates("classification_code")
+    return out.sort_values("item_name").reset_index(drop=True)
