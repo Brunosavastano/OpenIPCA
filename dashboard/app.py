@@ -47,7 +47,7 @@ from ipca_dashboard.hierarchy import (  # noqa: E402
     node_label,
     top_level_rows,
 )
-from ipca_dashboard.transforms import calculate_diffusion_from_items  # noqa: E402
+from ipca_dashboard.transforms import calculate_diffusion_from_items, top_movers  # noqa: E402
 from ipca_dashboard.validation import summarize_report  # noqa: E402
 
 # On a deploy (e.g. Streamlit Community Cloud) the AI key is set as a *secret*.
@@ -122,6 +122,25 @@ CSS = """
   .kpi-delta.down { color: #35B07D; }   /* falling = good = green */
   .kpi-delta.flat { color: #8A93A3; }
   .kpi-note { color: #5A6373; font-size: .64rem; margin-top: 3px; }
+
+  /* "Vilões e aliados" — the month's biggest 12m movers, in everyday names */
+  .movers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 2px 0 6px; }
+  @media (max-width: 640px) { .movers-grid { grid-template-columns: 1fr; } }
+  .movers-col {
+    background: #11161F; border: 1px solid #222A36; border-radius: 6px; padding: 12px 14px;
+  }
+  .movers-title-up { color: #E5484D; }
+  .movers-title-down { color: #35B07D; }
+  .mover-row { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
+  .mover-name {
+    color: #E6EAF1; font-size: .86rem;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mover-val {
+    font-family: 'IBM Plex Mono', monospace; font-size: .86rem; font-weight: 500; flex: none;
+  }
+  .mover-val.up { color: #E5484D; }
+  .mover-val.down { color: #35B07D; }
 
   /* buttons & input */
   .stButton > button[kind="primary"] {
@@ -319,6 +338,43 @@ def load_diagnostic() -> str:
         return "Diagnóstico ainda não gerado."
     return json.loads(path.read_text(encoding="utf-8")).get(
         "diagnostic", "Diagnóstico indisponível."
+    )
+
+
+def render_top_movers(items: pd.DataFrame, date: pd.Timestamp) -> None:
+    """The month's "vilões e aliados": top subitems by official 12m variation.
+
+    The first thing a lay visitor understands in 5 seconds — names people buy
+    (arroz, energia, transporte por aplicativo), not p.p. jargon. Selection is
+    a pure, declared rule (transforms.top_movers); the card is silently omitted
+    when the data has no usable yoy.
+    """
+    up, down = top_movers(items, date)
+    if up.empty and down.empty:
+        return
+
+    def _rows(frame: pd.DataFrame) -> str:
+        return "".join(
+            "<div class='mover-row'>"
+            f"<span class='mover-name'>{escape(str(row.item_name))}</span>"
+            f"<span class='mover-val {'up' if row.yoy >= 0 else 'down'}'>{row.yoy:+.1f}%</span>"
+            "</div>"
+            for row in frame.itertuples()
+        )
+
+    st.markdown(
+        "<div class='movers-grid'>"
+        "<div class='movers-col'>"
+        "<div class='callout-title movers-title-up'>Vilões do bolso · 12 meses</div>"
+        f"{_rows(up)}</div>"
+        "<div class='movers-col'>"
+        "<div class='callout-title movers-title-down'>Aliados do bolso · 12 meses</div>"
+        f"{_rows(down)}</div></div>",
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "Subitens com peso ≥ 0,1% da cesta, ordenados pela variação oficial acumulada "
+        "em 12 meses (IBGE/SIDRA). Regra fixa, sem curadoria manual."
     )
 
 
@@ -614,6 +670,8 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
         f"{escape(load_diagnostic())}</div>",
         unsafe_allow_html=True,
     )
+
+    render_top_movers(items, latest_date)
 
     with st.container(border=True):
         st.markdown(
