@@ -257,6 +257,45 @@ def test_ask_page_cache_is_keyed_by_question(monkeypatch):
             path.unlink(missing_ok=True)
 
 
+def test_ask_page_evidence_expander_shows_resolved_table(monkeypatch):
+    """The evidence expander must show RESOLVED evidence (metric/value/source),
+    not raw evidence_ids — that's the 'auditable by humans' promise."""
+
+    def fake_answer(question, *args, **kwargs):
+        return QAResult(
+            answer="O IPCA subiu 0,67% no mês.",
+            claims=[
+                {"text": "O IPCA subiu 0,67%.", "type": "number",
+                 "evidence_ids": ["ev_headline_mom"]},
+            ],
+            evidence=[
+                {"evidence_id": "ev_headline_mom", "metric": "IPCA m/m", "value": 0.67,
+                 "unit": "%", "date": "2026-04", "source": "BCB/SGS", "interpretation": ""},
+            ],
+            trace={},
+            metadata={},
+            mode="ai",
+            provider_name="fake",
+        )
+
+    monkeypatch.setattr("ipca_dashboard.ai.qa_replay.answer_with_replay", fake_answer)
+    created = _ensure_processed_fixtures()
+    try:
+        app = AppTest.from_file("dashboard/app.py")
+        app.run(timeout=60)
+        app.sidebar.radio[0].set_value("Pergunte ao IPCA")
+        app.session_state["qa_last_q"] = "Como está a difusão do IPCA?"
+        app.run(timeout=60)
+        assert not app.exception
+        tables = [el.value for el in app.dataframe]
+        assert tables, "evidence expander should render a dataframe"
+        joined = "\n".join(t.to_string() for t in tables)
+        assert "IPCA m/m" in joined and "BCB/SGS" in joined  # resolved, not bare ids
+    finally:
+        for path in created:
+            path.unlink(missing_ok=True)
+
+
 def test_ask_page_renders_model_html_as_safe_markdown(monkeypatch):
     payload = "<script>alert('xss')</script>\n[clique](javascript:alert(1))"
 

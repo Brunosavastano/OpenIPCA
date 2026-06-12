@@ -24,8 +24,10 @@ from ipca_dashboard.charts import (  # noqa: E402
     waterfall_latest,
 )
 from ipca_dashboard.ai.env import bridge_secrets_to_env, load_env_once  # noqa: E402
+from ipca_dashboard.ai.evidence import resolve_claim_evidence  # noqa: E402
 from ipca_dashboard.ai.qa_replay import CURATED_QUESTIONS, answer_with_replay  # noqa: E402
 from ipca_dashboard.ai.staleness import is_stale, reference_month_from_brief  # noqa: E402
+from ipca_dashboard.ai.trace import load_trace_summary  # noqa: E402
 from ipca_dashboard.config import OUTPUTS_DIR, PROCESSED_DIR, load_yaml  # noqa: E402
 from ipca_dashboard.diagnostics import classify_latest_regime  # noqa: E402
 from ipca_dashboard.glossary import (  # noqa: E402
@@ -325,6 +327,35 @@ def render_ai_replay(data_month: str = "") -> None:
         return  # stale -> hide; the deterministic reading above carries the page
     with st.expander("Briefing IPCA", expanded=False):
         st.markdown(brief_path.read_text(encoding="utf-8"))
+    _render_brief_trace()
+
+
+def _render_brief_trace() -> None:
+    """The committed orchestration trace, rendered (spec_V3 §3.8).
+
+    Sibling of the brief expander — NEVER nested inside it (Streamlit forbids
+    nested expanders; see test_app_no_nested_expander). Omitted silently when
+    the trace is missing or malformed.
+    """
+    summary = load_trace_summary(REPORTS_LATEST / "ai_trace.json")
+    if summary is None:
+        return
+    with st.expander("Como a IA montou este brief", expanded=False):
+        st.markdown(
+            "A IA não escreve números por conta própria: ela consulta ferramentas "
+            "determinísticas sobre os dados oficiais e cada frase é validada contra as "
+            "evidências citadas — sem evidência, a frase é rejeitada (fail-closed)."
+        )
+        tools = ", ".join(f"`{tool}`" for tool in summary["tools"])
+        st.markdown(f"**1 · Ferramentas consultadas:** {tools}")
+        st.markdown(
+            f"**2 · Evidências coletadas:** {summary['n_evidence']} itens, cada um com "
+            "valor, unidade, data e fonte oficial."
+        )
+        st.markdown("**3 · Afirmações validadas pelos guardrails:**")
+        for claim in summary["claims"]:
+            ids = ", ".join(claim["evidence_ids"])
+            st.markdown(f"- {claim['text']}" + (f"  \n  `{ids}`" if ids else ""))
 
 
 def _alert_messages() -> dict[str, str]:
@@ -915,10 +946,24 @@ def page_ask(data: dict[str, pd.DataFrame]) -> None:
 
     if result.claims:
         with st.expander("🔎 Evidências — cada número rastreado a um dado oficial", expanded=False):
-            for claim in result.claims:
-                text = claim.get("text", "")
-                ids = ", ".join(claim.get("evidence_ids", []) or [])
-                st.markdown(f"- {text}" + (f"  \n  `{ids}`" if ids else ""))
+            # Resolved table (metric/value/source), not raw evidence_ids: the id
+            # alone is unreadable; the promise is auditable BY HUMANS.
+            rows = resolve_claim_evidence(result.claims, result.evidence)
+            if rows:
+                st.dataframe(
+                    pd.DataFrame(rows).rename(
+                        columns={
+                            "claim": "Afirmação",
+                            "metric": "Métrica",
+                            "value": "Valor",
+                            "unit": "Unidade",
+                            "date": "Data",
+                            "source": "Fonte",
+                        }
+                    ),
+                    use_container_width=True,
+                    hide_index=True,
+                )
 
 
 def main() -> None:

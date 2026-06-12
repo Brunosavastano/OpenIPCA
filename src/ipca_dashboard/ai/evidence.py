@@ -31,3 +31,56 @@ def evidence_table_to_dicts(table: list[Evidence]) -> list[dict[str, object]]:
 
 def evidence_ids(table: list[Evidence]) -> set[str]:
     return {e.evidence_id for e in table}
+
+
+def resolve_claim_evidence(
+    claims: list[dict], evidence: list[dict]
+) -> list[dict[str, object]]:
+    """Join each claim with its resolved evidence rows, for human-readable display.
+
+    The UI promise is "every number traces to an official figure" — an evidence_id
+    alone is unreadable; this returns one row per (claim, evidence_id) with the
+    resolved metric/value/unit/date/source. A claim without ids still yields one
+    row, and an unknown id resolves to a visible placeholder — a citation is
+    never silently dropped.
+    """
+    by_id: dict[str, dict] = {}
+    for item in evidence or []:
+        if isinstance(item, dict) and item.get("evidence_id"):
+            by_id[str(item["evidence_id"])] = item
+    rows: list[dict[str, object]] = []
+    for claim in claims or []:
+        if not isinstance(claim, dict):
+            continue
+        text = str(claim.get("text", ""))
+        ids = [str(i) for i in (claim.get("evidence_ids") or [])]
+        if not ids:
+            rows.append(
+                {"claim": text, "metric": "", "value": "", "unit": "", "date": "", "source": ""}
+            )
+            continue
+        for evidence_id in ids:
+            item = by_id.get(evidence_id)
+            if item is None:
+                rows.append(
+                    {
+                        "claim": text,
+                        "metric": f"({evidence_id} não encontrada)",
+                        "value": "",
+                        "unit": "",
+                        "date": "",
+                        "source": "",
+                    }
+                )
+                continue
+            rows.append(
+                {
+                    "claim": text,
+                    "metric": str(item.get("metric", "")),
+                    "value": item.get("value", ""),
+                    "unit": str(item.get("unit", "")),
+                    "date": str(item.get("date", "")),
+                    "source": str(item.get("source", "")),
+                }
+            )
+    return rows
