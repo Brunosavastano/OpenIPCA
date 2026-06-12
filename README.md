@@ -6,6 +6,10 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 
+**[➡️ Open the live app — openipca.streamlit.app](https://openipca.streamlit.app)**
+
+[![OpenIPCA executive panel: KPI tiles, inflation-regime badge, deterministic monthly reading and the grounded AI brief](docs/hero.png)](https://openipca.streamlit.app)
+
 OpenIPCA is an open-source macro research dashboard for Brazilian inflation. It turns
 official data from **IBGE/SIDRA** and **BCB/SGS** into IPCA decomposition, core inflation,
 diffusion and auditable alerts. The numbers are deterministic; the AI is **grounded** — it
@@ -94,6 +98,23 @@ forecasts and asset advice *after* it. **Ask the IPCA**'s answers are grounded a
 every number traces to an evidence id; it answers live on a free model, with pre-generated
 audited answers as an always-on fallback so a grounded answer is always visible. Run it locally
 with your own key for unrestricted live Q&A.
+
+### How the AI works
+
+1. **The AI sees deterministic tool outputs** — OpenIPCA first runs typed functions
+   (`get_headline`, `get_contributions`, `get_diffusion`, …) over the processed official
+   data and passes only that evidence table to the provider. The model does not compute
+   the source numbers itself.
+2. **Every claim traces to an evidence id** — each tool returns values wrapped in an
+   evidence table; a claim that doesn't cite an existing `evidence_id` is rejected.
+3. **Guardrails fail closed** — ungrounded numbers, monetary-policy forecasts and
+   prompt-injection are blocked in code; on any failure the app degrades to a
+   deterministic brief or an honest Q&A fallback instead of guessing.
+4. **Public replay artifacts are audited** — the monthly brief and curated fallback Q&A
+   answers are generated once, validated, committed with model/prompt/evidence hashes
+   ([reports/latest/](reports/latest/)) and refreshed in lockstep with the data.
+
+Key handling and deployment details: [DEPLOY.md](DEPLOY.md).
 
 ## Contributing
 

@@ -56,7 +56,10 @@ load_env_once()
 
 
 st.set_page_config(
-    page_title="IPCA Macro Dashboard", layout="wide", initial_sidebar_state="expanded"
+    page_title="OpenIPCA — IPCA além da headline",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 
@@ -489,7 +492,7 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     ].sort_values("date")
     core_prev = core_prev_df.iloc[-1] if not core_prev_df.empty else None
 
-    st.title("IPCA Macro Dashboard")
+    st.title("OpenIPCA — Painel executivo")
     st.caption(f"Último dado processado: {latest_date:%Y-%m} | Fontes: BCB/SGS e IBGE/SIDRA")
 
     notice = freshness_notice()
@@ -925,7 +928,7 @@ def main() -> None:
     try:
         data = load_data(processed_signature())
     except FileNotFoundError as exc:
-        st.title("IPCA Macro Dashboard")
+        st.title("OpenIPCA")
         st.error("Dados processados não encontrados.")
         st.code(
             "python -m ipca_dashboard.pipeline run --start 2020-01\nstreamlit run dashboard/app.py"
