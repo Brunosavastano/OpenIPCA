@@ -268,3 +268,35 @@ def _chain_contribution(df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame(columns=["date", "classification_code", "contribution_12m_chain"])
     out = pd.concat(rows, ignore_index=True).rename(columns={"index": "classification_code"})
     return out[["date", "classification_code", "contribution_12m_chain"]]
+
+
+def top_movers(
+    items: pd.DataFrame,
+    date: pd.Timestamp,
+    n: int = 5,
+    min_weight: float = 0.1,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Top-N subitems by 12m variation (yoy), up and down, for the month.
+
+    The selection rule is PURE and declared (weight >= min_weight, ranked by the
+    official yoy) — no hand-curated "everyday items" list, which would be an
+    editorial choice disguised as a ranking. The weight floor keeps sub-0.1%
+    curiosities (e.g. tiny produce) from crowding out items people actually buy.
+
+    Returns (up, down) with item_name/yoy/mom/weight, both possibly empty —
+    callers must omit the card rather than crash (e.g. yoy column absent).
+    """
+    required = {"date", "level", "item_name", "yoy", "mom", "weight"}
+    if items.empty or not required.issubset(items.columns):
+        empty = pd.DataFrame(columns=["item_name", "yoy", "mom", "weight"])
+        return empty, empty
+    rows = items[
+        (items["date"] == date)
+        & (items["level"] == "subitem")
+        & (items["weight"].notna())
+        & (items["weight"] >= min_weight)
+        & (items["yoy"].notna())
+    ][["item_name", "yoy", "mom", "weight"]]
+    up = rows.nlargest(n, "yoy").reset_index(drop=True)
+    down = rows.nsmallest(n, "yoy").sort_values("yoy").reset_index(drop=True)
+    return up, down

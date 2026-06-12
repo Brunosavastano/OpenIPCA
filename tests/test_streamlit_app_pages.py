@@ -116,6 +116,7 @@ def _ensure_processed_fixtures() -> list[Path]:
                     "contribution_mom": 0.04,
                     "weight": 1.0,
                     "mom": 0.6,
+                    "yoy": -21.6,  # feeds the "vilões e aliados" card
                     "group_classification_code": "1",
                 },
             ]
@@ -252,6 +253,24 @@ def test_ask_page_cache_is_keyed_by_question(monkeypatch):
             "Como está a difusão do IPCA?",
             "Como está o IPCA acumulado em 12 meses?",
         ]
+    finally:
+        for path in created:
+            path.unlink(missing_ok=True)
+
+
+def test_executive_panel_shows_top_movers_card():
+    """The 'vilões e aliados' card renders subitem names with their 12m change."""
+    created = _ensure_processed_fixtures()
+    try:
+        app = AppTest.from_file("dashboard/app.py")
+        app.run(timeout=60)
+        assert not app.exception
+        movers = [
+            md.value for md in app.markdown if "<div class='movers-grid'>" in md.value
+        ]
+        assert movers, "top movers card should render on the executive panel"
+        assert "bolso" in movers[0]  # the two column titles
+        assert "%" in movers[0]  # a formatted yoy value made it in
     finally:
         for path in created:
             path.unlink(missing_ok=True)
