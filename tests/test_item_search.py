@@ -50,3 +50,9 @@ def test_sparkline_unknown_code_returns_valid_empty_figure():
     fig = subitem_sparkline(_items(), "9999999")
     assert "9999999" in fig.layout.title.text  # falls back to the code
     assert len(fig.data[0].x) == 0
+
+
+def test_sparkline_tolerates_missing_columns():
+    fig = subitem_sparkline(pd.DataFrame({"date": [DATE]}), "7201001")
+    assert "7201001" in fig.layout.title.text
+    assert len(fig.data[0].x) == 0
