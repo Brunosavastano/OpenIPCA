@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-06-11T21:57:26+00:00",
+  "generated_at": "2026-06-12T02:52:29+00:00",
   "provider": "openai",
   "mode": "ai",
   "prompt_version": "release_brief_v1",
   "prompt_hash": "sha256:c74d958f8534b0cd0a04e2387990e32f71aa64ad44d84e274646dbeadcdbd0b1",
-  "evidence_hash": "sha256:7cc3487b8b3473fd4561be0ac66e3426a2cf353c307dcb433baebd4968226b01",
+  "evidence_hash": "sha256:820decf45780818f474ff5214e11199f8a646b6475c93def63fb5d5bde68ab8b",
   "schema_version": "brief_v1",
   "data_sources": [
     "IBGE/SIDRA",

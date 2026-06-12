@@ -46,7 +46,17 @@ PROCESSED_FILENAMES = {
     "cores": "core_metrics_monthly.parquet",
     "alerts": "alerts.parquet",
 }
-STRICT_REQUIRED_PASS_CHECKS = {"critical_series_freshness"}
+# Separate fetch starts: the expanding percentiles (spec §4.6) need the LONG SGS
+# history — a short window silently biases percentile_since_2012 and the public
+# regime badge. SIDRA table 7060 simply does not exist before 2020. The monthly
+# workflow runs `pipeline run --strict` with no flags, so these defaults are the
+# single source of truth for what the public data contains.
+DEFAULT_SGS_START = "2012-01"
+DEFAULT_SIDRA_START = "2020-01"
+# sgs_history_depth is the tripwire: if the SGS API ever caps the request window
+# (it does not today — tested empirically), the strict cron fails closed BEFORE
+# promoting short-history data. See spec §5.2 P1 (chunking only if ever needed).
+STRICT_REQUIRED_PASS_CHECKS = {"critical_series_freshness", "sgs_history_depth"}
 
 
 def _promote_staging_to_processed(filenames: dict[str, str]) -> None:
@@ -69,12 +79,12 @@ def _has_strict_rejection(validation_report) -> bool:
     return bool((strict_checks["status"] != "pass").any())
 
 
-def fetch_command(start: str | None, end: str | None) -> None:
+def fetch_command(start_sgs: str | None, start_sidra: str | None, end: str | None) -> None:
     ensure_project_dirs()
     series_config = load_yaml("series_sgs.yaml")
     sidra_config = load_yaml("sidra_7060.yaml")
-    bcb = fetch_all_sgs(series_config, start=start, end=end)
-    sidra_raw = fetch_sidra_7060(sidra_config, start=start, end=end)
+    bcb = fetch_all_sgs(series_config, start=start_sgs, end=end)
+    sidra_raw = fetch_sidra_7060(sidra_config, start=start_sidra, end=end)
     write_parquet(bcb, RAW_BCB)
     write_parquet(sidra_raw, RAW_SIDRA)
     LOGGER.info("Wrote raw BCB data to %s", RAW_BCB)
@@ -136,8 +146,10 @@ def build_command(strict: bool = False) -> None:
         LOGGER.info("Build completed with no blocking validation findings.")
 
 
-def run_command(start: str | None, end: str | None, strict: bool = False) -> None:
-    fetch_command(start=start, end=end)
+def run_command(
+    start_sgs: str | None, start_sidra: str | None, end: str | None, strict: bool = False
+) -> None:
+    fetch_command(start_sgs=start_sgs, start_sidra=start_sidra, end=end)
     build_command(strict=strict)
 
 
@@ -146,9 +158,21 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--log-level", default="INFO", help="Python logging level.")
     sub = parser.add_subparsers(dest="command", required=True)
 
+    def _add_fetch_args(p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--start-sgs",
+            default=DEFAULT_SGS_START,
+            help="Start month (YYYY-MM) for BCB/SGS — percentiles need the long history.",
+        )
+        p.add_argument(
+            "--start-sidra",
+            default=DEFAULT_SIDRA_START,
+            help="Start month (YYYY-MM) for IBGE/SIDRA 7060 (table only exists from 2020).",
+        )
+        p.add_argument("--end", default=None, help="End month in YYYY-MM format.")
+
     fetch = sub.add_parser("fetch", help="Fetch raw data from BCB/SGS and IBGE/SIDRA.")
-    fetch.add_argument("--start", default="2020-01", help="Start month in YYYY-MM format.")
-    fetch.add_argument("--end", default=None, help="End month in YYYY-MM format.")
+    _add_fetch_args(fetch)
 
     build = sub.add_parser("build", help="Build processed datasets from raw parquet files.")
     build.add_argument(
@@ -158,8 +182,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     run = sub.add_parser("run", help="Fetch and build in one step.")
-    run.add_argument("--start", default="2020-01", help="Start month in YYYY-MM format.")
-    run.add_argument("--end", default=None, help="End month in YYYY-MM format.")
+    _add_fetch_args(run)
     run.add_argument(
         "--strict",
         action="store_true",
@@ -173,11 +196,16 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     logging.basicConfig(level=getattr(logging, args.log_level.upper()), format="%(levelname)s:%(message)s")
     if args.command == "fetch":
-        fetch_command(start=args.start, end=args.end)
+        fetch_command(start_sgs=args.start_sgs, start_sidra=args.start_sidra, end=args.end)
     elif args.command == "build":
         build_command(strict=args.strict)
     elif args.command == "run":
-        run_command(start=args.start, end=args.end, strict=args.strict)
+        run_command(
+            start_sgs=args.start_sgs,
+            start_sidra=args.start_sidra,
+            end=args.end,
+            strict=args.strict,
+        )
     else:  # pragma: no cover - argparse enforces commands.
         raise ValueError(args.command)
 

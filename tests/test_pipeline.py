@@ -90,6 +90,42 @@ def test_pipeline_promotes_when_validation_passes(tmp_path, monkeypatch):
         assert "v" not in df.columns
 
 
+def test_parser_defaults_pin_sgs_2012_and_sidra_2020():
+    """The monthly workflow runs `pipeline run --strict` with NO flags — these
+    defaults are the single source of truth for the public data window. SGS from
+    2012 is what makes percentile_since_2012 honest; regressing it would bias
+    every percentile and the public regime badge."""
+    parser = pipeline.build_parser()
+    for command in ("run", "fetch"):
+        args = parser.parse_args([command])
+        assert args.start_sgs == "2012-01" == pipeline.DEFAULT_SGS_START
+        assert args.start_sidra == "2020-01" == pipeline.DEFAULT_SIDRA_START
+
+
+def test_strict_checks_include_history_depth_tripwire():
+    assert "sgs_history_depth" in pipeline.STRICT_REQUIRED_PASS_CHECKS
+
+
+def test_fetch_command_passes_separate_starts(monkeypatch, tmp_path):
+    received = {}
+    monkeypatch.setattr(pipeline, "ensure_project_dirs", lambda: None)
+    monkeypatch.setattr(pipeline, "load_yaml", lambda name: {})
+    monkeypatch.setattr(
+        pipeline,
+        "fetch_all_sgs",
+        lambda cfg, start, end: received.update(sgs=start) or pd.DataFrame(),
+    )
+    monkeypatch.setattr(
+        pipeline,
+        "fetch_sidra_7060",
+        lambda cfg, start, end: received.update(sidra=start) or pd.DataFrame(),
+    )
+    monkeypatch.setattr(pipeline, "write_parquet", lambda df, path: None)
+
+    pipeline.fetch_command(start_sgs="2012-01", start_sidra="2020-01", end=None)
+    assert received == {"sgs": "2012-01", "sidra": "2020-01"}
+
+
 def test_promote_staging_to_processed_is_per_file(tmp_path, monkeypatch):
     processed = tmp_path / "processed"
     staging = tmp_path / "staging"

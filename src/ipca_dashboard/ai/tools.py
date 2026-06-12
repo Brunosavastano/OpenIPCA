@@ -70,6 +70,7 @@ def get_headline(bcb: pd.DataFrame) -> list[Evidence]:
             "percentile",
             month,
             SOURCE_SGS,
+            "percentil da história desde 2012 (janela expansiva, midrank)",
         ),
     ]
 
@@ -104,6 +105,7 @@ def get_diffusion(bcb: pd.DataFrame) -> list[Evidence]:
             "percentile",
             month,
             SOURCE_SGS,
+            "percentil da história desde 2012 (janela expansiva, midrank)",
         ),
     ]
 

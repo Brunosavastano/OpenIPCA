@@ -176,11 +176,49 @@ def validate_ipca_items(items: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+# The expanding percentiles need a long history to be honest: a short window
+# (e.g. an accidental --start-sgs regression, or a future API window cap) would
+# silently bias percentile_since_2012 and the public regime badge. 120 sits
+# between the old 2020+ sample (76 months) and the full 2012+ one (~172).
+MIN_SGS_HISTORY_MONTHS = 120
+
+
+def validate_sgs_history_depth(bcb: pd.DataFrame) -> pd.DataFrame:
+    """Warn when the IPCA history is too short for honest expanding percentiles.
+
+    Wired into pipeline.STRICT_REQUIRED_PASS_CHECKS: the strict (cron) build
+    fails closed BEFORE promoting short-history data. If the SGS API ever caps
+    the request window, implement chunking (spec §5.2 P1) — today a single
+    request returns the full 2012+ history for every configured series.
+    """
+    if bcb.empty:
+        return pd.DataFrame(
+            [validation_row("sgs_history_depth", "warn", 0, "BCB dataset is empty.")]
+        )
+    months = int(bcb[bcb["series_short_name"] == "IPCA"]["date"].nunique())
+    ok = months >= MIN_SGS_HISTORY_MONTHS
+    return pd.DataFrame(
+        [
+            validation_row(
+                "sgs_history_depth",
+                "pass" if ok else "warn",
+                months,
+                (
+                    f"Histórico SGS do IPCA com {months} meses (mínimo "
+                    f"{MIN_SGS_HISTORY_MONTHS} para percentis honestos; coleta desde "
+                    "2012-01). Histórico curto distorce percentile_since_2012."
+                ),
+            )
+        ]
+    )
+
+
 def validate_all(bcb: pd.DataFrame, items: pd.DataFrame, core_sets_config: dict) -> pd.DataFrame:
     return pd.concat(
         [
             validate_bcb_series(bcb, core_sets_config),
             validate_critical_series_freshness(bcb),
+            validate_sgs_history_depth(bcb),
             validate_ipca_items(items),
         ],
         ignore_index=True,
