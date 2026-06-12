@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 from ipca_dashboard.ai.evidence import resolve_claim_evidence
-from ipca_dashboard.ai.trace import load_trace_summary
+from ipca_dashboard.ai.trace import brief_stamp_line, load_brief_metadata, load_trace_summary
 
 EVIDENCE = [
     {
@@ -114,3 +114,37 @@ def test_trace_summary_against_the_real_committed_artifact():
     assert summary is not None
     assert summary["tools"] and summary["claims"]
     assert all(claim["text"] for claim in summary["claims"])
+
+
+def test_brief_metadata_loader_robustness(tmp_path: Path):
+    assert load_brief_metadata(tmp_path / "nope.json") is None
+    bad = tmp_path / "bad.json"
+    bad.write_text("{oops", encoding="utf-8")
+    assert load_brief_metadata(bad) is None
+    empty = tmp_path / "empty.json"
+    empty.write_text("{}", encoding="utf-8")
+    assert load_brief_metadata(empty) is None
+    ok = tmp_path / "ok.json"
+    ok.write_text(json.dumps({"provider": "openai"}), encoding="utf-8")
+    assert load_brief_metadata(ok) == {"provider": "openai"}
+
+
+def test_brief_stamp_line_formats_only_existing_fields():
+    meta = {
+        "generated_at": "2026-06-04T18:48:34+00:00",
+        "provider": "openai",
+        "prompt_version": "release_brief_v1",
+        "prompt_hash": "sha256:c74d958f8534b0cd0a04e2387990e32f71aa64ad44d84e274646dbeadcdbd0b1",
+        "evidence_hash": "sha256:7cc3487b8b3473fd4561be0ac66e3426a2cf353c307dcb433baebd4968226b01",
+    }
+    line = brief_stamp_line(meta)
+    assert "Gerado em 2026-06-04" in line
+    assert "provider openai" in line
+    assert "prompt release_brief_v1 (sha256:c74d958f)" in line  # truncated, searchable
+    assert "evidência sha256:7cc3487b" in line
+    assert "dbeadcdbd0b1" not in line  # full hash does NOT flood the caption
+
+
+def test_brief_stamp_line_degrades_to_empty_for_empty_meta():
+    assert brief_stamp_line({}) == ""
+    assert brief_stamp_line({"provider": "openai"}) == "provider openai"

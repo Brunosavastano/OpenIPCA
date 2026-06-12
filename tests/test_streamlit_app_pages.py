@@ -257,6 +257,24 @@ def test_ask_page_cache_is_keyed_by_question(monkeypatch):
             path.unlink(missing_ok=True)
 
 
+def test_status_strip_shows_data_month_and_validation_seal():
+    """Freshness + the quality seal must be visible in the header strip."""
+    created = _ensure_processed_fixtures()
+    try:
+        app = AppTest.from_file("dashboard/app.py")
+        app.run(timeout=60)
+        assert not app.exception
+        strips = [
+            md.value for md in app.markdown if "<div class='status-strip'" in md.value
+        ]
+        assert strips, "status strip should render"
+        assert "DADOS " in strips[0]  # data reference month (e.g. DADOS ABR/2026)
+        assert "VERIFICAÇÕES" in strips[0]  # validation seal from the committed report
+    finally:
+        for path in created:
+            path.unlink(missing_ok=True)
+
+
 def test_ask_page_evidence_expander_shows_resolved_table(monkeypatch):
     """The evidence expander must show RESOLVED evidence (metric/value/source),
     not raw evidence_ids — that's the 'auditable by humans' promise."""
