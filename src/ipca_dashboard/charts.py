@@ -278,6 +278,41 @@ def heatmap_groups(ipca_items: pd.DataFrame, months: int = 24) -> go.Figure:
     )
 
 
+def subitem_sparkline(ipca_items: pd.DataFrame, code: str, months: int = 24) -> go.Figure:
+    """Monthly variation (m/m, %) of one subitem — the search box's mini-chart."""
+    required = {"classification_code", "date", "mom"}
+    if ipca_items.empty or not required.issubset(ipca_items.columns):
+        data = pd.DataFrame(columns=["date", "mom", "item_name"])
+    else:
+        data = ipca_items[ipca_items["classification_code"] == code].sort_values("date").copy()
+        data["date"] = pd.to_datetime(data["date"], errors="coerce")
+        data["mom"] = pd.to_numeric(data["mom"], errors="coerce")
+        data = data.dropna(subset=["date"])
+    if not data.empty:
+        data = data[data["date"] >= data["date"].max() - pd.DateOffset(months=months - 1)]
+    fig = go.Figure(
+        go.Scatter(
+            x=data["date"],
+            y=data["mom"],
+            line=dict(color=_INFO, width=1.6),
+            hovertemplate="%{x|%b/%y}<br>Variação: %{y:.2f}%<extra></extra>",
+        )
+    )
+    fig.add_hline(y=0, line_dash="dot", line_color=_MUTED)
+    if not data.empty and "item_name" in data.columns and data["item_name"].notna().any():
+        name = str(data["item_name"].dropna().iloc[-1])
+    else:
+        name = code
+    fig = apply_layout(
+        fig,
+        f"{name} — variação mensal (últimos {months} meses)",
+        yaxis_title="% m/m",
+        xaxis_title="Mês",
+    )
+    fig.update_layout(height=280, showlegend=False)
+    return fig
+
+
 def core_lines(
     core_metrics: pd.DataFrame, core_set_name: str, metric: str = "rolling_12m"
 ) -> go.Figure:

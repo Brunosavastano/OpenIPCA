@@ -258,6 +258,28 @@ def test_ask_page_cache_is_keyed_by_question(monkeypatch):
             path.unlink(missing_ok=True)
 
 
+def test_decomposition_item_search_renders_mini_card():
+    """Picking a subitem in the search box yields metrics + sparkline, no crash."""
+    created = _ensure_processed_fixtures()
+    try:
+        app = AppTest.from_file("dashboard/app.py")
+        app.run(timeout=60)
+        app.sidebar.radio[0].set_value("Decomposição")
+        app.run(timeout=60)
+        assert not app.exception
+        search = [sb for sb in app.selectbox if sb.key == "item_search"]
+        assert search, "item search selectbox should render"
+        search[0].set_value(search[0].options[0])  # pick the first subitem
+        app.run(timeout=60)
+        assert not app.exception
+        labels = [m.label for m in app.metric]
+        assert any("12 meses" in label for label in labels)
+        assert any("Peso na cesta" in label for label in labels)
+    finally:
+        for path in created:
+            path.unlink(missing_ok=True)
+
+
 def test_executive_panel_shows_top_movers_card():
     """The 'vilões e aliados' card renders subitem names with their 12m change."""
     created = _ensure_processed_fixtures()

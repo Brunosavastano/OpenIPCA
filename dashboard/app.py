@@ -21,6 +21,7 @@ from ipca_dashboard.charts import (  # noqa: E402
     heatmap_groups,
     ipca_diffusion_scatter,
     stacked_contribution,
+    subitem_sparkline,
     waterfall_latest,
 )
 from ipca_dashboard.ai.env import bridge_secrets_to_env, load_env_once  # noqa: E402
@@ -45,6 +46,7 @@ from ipca_dashboard.hierarchy import (  # noqa: E402
     LEVEL_LABEL_PT,
     children,
     node_label,
+    subitem_options,
     top_level_rows,
 )
 from ipca_dashboard.transforms import calculate_diffusion_from_items, top_movers  # noqa: E402
@@ -698,6 +700,43 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     render_active_alerts(alerts)
 
 
+def render_item_search(items: pd.DataFrame, date: pd.Timestamp) -> None:
+    """"Quanto subiu o meu item?" — one-gesture answer for the question every
+    visitor brings ("e o café? e a gasolina?").
+
+    A searchable selectbox over the month's subitems -> mini-card with the
+    month/12m variation, basket weight and a 24-month sparkline. The 3-level
+    drilldown below stays for structure exploration; this is the shortcut.
+    """
+    options = subitem_options(items, date)
+    if options.empty:
+        return
+    st.subheader("Quanto subiu o meu item?")
+    st.caption(
+        f"Digite para buscar um dos {len(options)} subitens da cesta — "
+        "ex.: gasolina, arroz, aluguel."
+    )
+    labels = dict(zip(options["classification_code"], options["item_name"], strict=False))
+    chosen = st.selectbox(
+        "Subitem",
+        list(options["classification_code"]),
+        index=None,
+        format_func=lambda code: labels.get(code, code),
+        placeholder="Ex.: gasolina, café, aluguel…",
+        key="item_search",
+        label_visibility="collapsed",
+    )
+    if not chosen:
+        return
+    row = items[(items["classification_code"] == chosen) & (items["date"] == date)].iloc[0]
+    name = str(row.get("item_name", chosen))
+    col_mom, col_yoy, col_weight = st.columns(3)
+    col_mom.metric(f"{name} — no mês", fmt(row.get("mom")))
+    col_yoy.metric("Em 12 meses", fmt(row.get("yoy")))
+    col_weight.metric("Peso na cesta", fmt(row.get("weight")))
+    st.plotly_chart(subitem_sparkline(items, chosen), use_container_width=True)
+
+
 def render_drilldown(items: pd.DataFrame, date: pd.Timestamp) -> None:
     """Navigate the hierarchy: group → subgroup → item → subitem.
 
@@ -802,6 +841,7 @@ def page_decomposition(data: dict[str, pd.DataFrame]) -> None:
         st.plotly_chart(contribution_ranking(items, selected_date, level), use_container_width=True)
     st.plotly_chart(heatmap_groups(items), use_container_width=True)
 
+    render_item_search(items, selected_date)
     render_drilldown(items, selected_date)
 
     latest = items[(items["date"] == selected_date) & (items["level"] == level)].copy()
