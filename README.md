@@ -101,16 +101,17 @@ with your own key for unrestricted live Q&A.
 
 ### How the AI works
 
-1. **The AI orchestrates deterministic tools** — it calls typed functions
+1. **The AI sees deterministic tool outputs** — OpenIPCA first runs typed functions
    (`get_headline`, `get_contributions`, `get_diffusion`, …) over the processed official
-   data; it never receives free-form text to paraphrase and never computes a number itself.
+   data and passes only that evidence table to the provider. The model does not compute
+   the source numbers itself.
 2. **Every claim traces to an evidence id** — each tool returns values wrapped in an
    evidence table; a claim that doesn't cite an existing `evidence_id` is rejected.
 3. **Guardrails fail closed** — ungrounded numbers, monetary-policy forecasts and
-   prompt-injection are blocked in code; on any failure the app degrades to the
-   deterministic brief instead of guessing.
-4. **Public answers are audited replays** — the monthly brief and the curated Q&A answers
-   are generated once, validated, committed with model/prompt/evidence hashes
+   prompt-injection are blocked in code; on any failure the app degrades to a
+   deterministic brief or an honest Q&A fallback instead of guessing.
+4. **Public replay artifacts are audited** — the monthly brief and curated fallback Q&A
+   answers are generated once, validated, committed with model/prompt/evidence hashes
    ([reports/latest/](reports/latest/)) and refreshed in lockstep with the data.
 
 Key handling and deployment details: [DEPLOY.md](DEPLOY.md).
