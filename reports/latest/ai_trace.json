@@ -43,18 +43,24 @@
   ],
   "claims": [
     {
-      "text": "Em abril de 2026, o IPCA subiu 0,67% no mês e acumulou 4,39% em 12 meses, enquanto a MM3M — média móvel de três meses, sem ajuste sazonal — ficou em 0,75% e a leitura mensal apareceu no percentil 71,05, compondo uma fotografia corrente ainda firme.",
-      "type": "interpretation",
+      "text": "Em abril de 2026, o IPCA subiu 0,67% no mês e acumulou 4,39% em 12 meses, enquanto a MM3M, isto é, a média móvel de três meses da variação mensal sem ajuste sazonal, ficou em 0,75%, indicando que a leitura mensal veio acompanhada de uma tendência recente ainda elevada.",
+      "type": "number",
       "evidence_ids": [
         "ev_headline_mom",
         "ev_headline_12m",
-        "ev_headline_mm3",
+        "ev_headline_mm3"
+      ]
+    },
+    {
+      "text": "A intensidade do dado também aparece na comparação histórica: a variação mensal ficou no percentil 74,71 da série desde 2012, ou seja, acima de boa parte das observações anteriores nessa janela.",
+      "type": "interpretation",
+      "evidence_ids": [
         "ev_headline_percentile"
       ]
     },
     {
-      "text": "A pressão também veio relativamente disseminada: a difusão, isto é, o percentual de subitens com alta, alcançou 65,25% no mês, e sua MM3M ficou em 64,63%, no percentil 69,59.",
-      "type": "interpretation",
+      "text": "A difusão, que mede a parcela de subitens com alta de preços e ajuda a avaliar se a inflação está espalhada, alcançou 65,25% no mês, com MM3M de 64,63% e percentil 67,35 nessa métrica suavizada.",
+      "type": "number",
       "evidence_ids": [
         "ev_diffusion_mom",
         "ev_diffusion_mm3",
@@ -62,36 +68,48 @@
       ]
     },
     {
-      "text": "Nos núcleos, medidas que tentam captar a tendência da inflação ao reduzir ruídos de itens mais voláteis, a média avançou 0,49% no mês e 0,52% na MM3M, sinalizando que a pressão não ficou restrita ao índice cheio.",
-      "type": "interpretation",
+      "text": "Nos núcleos, que são medidas usadas para tentar filtrar choques temporários e captar a tendência da inflação, a média mensal foi de 0,49% e a MM3M ficou em 0,52%, reforçando que a pressão não esteve restrita apenas ao índice cheio.",
+      "type": "number",
       "evidence_ids": [
         "ev_core_mean_mom",
         "ev_core_mean_mm3"
       ]
     },
     {
-      "text": "Na composição por grupos, Alimentação e bebidas respondeu por 0,29 p.p., Saúde e cuidados pessoais por 0,16 p.p. e Habitação por 0,10 p.p., enquanto Educação, com 0,00 p.p., Transportes, com 0,01 p.p., e Artigos de residência, com 0,02 p.p., apareceram como alívios ou focos de menor pressão.",
+      "text": "Os alertas de tendência também foram desconfortáveis: a média dos núcleos em três meses anualizada marcou 6,37, classificada como high, enquanto ao menos um núcleo em três meses anualizado chegou a 7,31, classificado como critical.",
       "type": "interpretation",
+      "evidence_ids": [
+        "ev_alert_0",
+        "ev_alert_1"
+      ]
+    },
+    {
+      "text": "Além disso, havia alerta de serviços em aceleração, com valor de 2,88 e classificação high, o que adiciona cautela à leitura qualitativa do dado.",
+      "type": "interpretation",
+      "evidence_ids": [
+        "ev_alert_2"
+      ]
+    },
+    {
+      "text": "Pelo lado das contribuições, Alimentação e bebidas respondeu por 0,29 p.p., Saúde e cuidados pessoais por 0,16 p.p. e Habitação por 0,10 p.p., compondo as principais pressões altistas do mês em pontos percentuais.",
+      "type": "number",
       "evidence_ids": [
         "ev_contrib_top_pos_0",
         "ev_contrib_top_pos_1",
-        "ev_contrib_top_pos_2",
+        "ev_contrib_top_pos_2"
+      ]
+    },
+    {
+      "text": "Na ponta de menor pressão, Educação contribuiu com 0,00 p.p., Transportes com 0,01 p.p. e Artigos de residência com 0,02 p.p., grupos que ajudaram a limitar a alta agregada.",
+      "type": "number",
+      "evidence_ids": [
         "ev_contrib_top_neg_0",
         "ev_contrib_top_neg_1",
         "ev_contrib_top_neg_2"
       ]
     },
     {
-      "text": "Os sinais de alerta reforçaram a cautela: a média dos núcleos em três meses apareceu em nível alto, com leitura de 6,37, algum núcleo alcançou nível crítico, com 7,31, e serviços em aceleração vieram em nível alto, com 2,88.",
-      "type": "interpretation",
-      "evidence_ids": [
-        "ev_alert_0",
-        "ev_alert_1",
-        "ev_alert_2"
-      ]
-    },
-    {
-      "text": "Com esse conjunto, o regime inflacionário — uma classificação sintética do quadro — foi rotulado como \"Quadro misto\" em abril de 2026.",
+      "text": "No enquadramento de regime, isto é, uma leitura sintética do estado da inflação a partir das evidências disponíveis, o quadro foi classificado como Quadro misto.",
       "type": "regime",
       "evidence_ids": [
         "ev_regime"

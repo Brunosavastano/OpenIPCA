@@ -488,7 +488,7 @@ Alertas sensíveis à janela: {", ".join(sensitive_alerts) if not sensitive_aler
 
 - Manter o dashboard usando fonte oficial SGS para núcleos, agregados e difusão.
 - Usar SIDRA 7060 como referência de decomposição granular e auditar mensalmente a soma de contribuições.
-- Renomear futuramente `percentile_since_2012` para refletir a janela efetiva quando a coleta começar após 2012.
+- O pipeline público coleta SGS desde 2012-01 (defaults de `pipeline.py`), então `percentile_since_2012` reflete a janela real; conferir a janela efetiva por série em `metric_window_report.csv`.
 - Revisar thresholds de alertas sempre que uma regra for classificada como `sensível à janela`.
 """)
 

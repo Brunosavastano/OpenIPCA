@@ -65,7 +65,9 @@ A média é calculada sobre o conjunto selecionado em `config/core_sets.yaml`. O
 
 ### Percentis e z-score
 
-O percentil histórico é calculado de forma expansiva, com mínimo de 24 observações. O z-score usa janela móvel de 60 meses, também com mínimo de 24 observações.
+O percentil histórico (`percentile_since_2012`) é calculado de forma expansiva (midrank), com mínimo de 24 observações, sobre a série SGS coletada **desde 2012-01** — é essa janela longa que dá sentido a "onde o mês atual está vs. a história" e ao badge de regime. O z-score usa janela móvel de 60 meses, também com mínimo de 24 observações.
+
+A decomposição por itens (SIDRA 7060) segue coletada **desde 2020-01** — a tabela não existe antes disso. A assimetria é intencional: percentis e regime usam só séries SGS (janela longa); a decomposição usa a janela disponível da SIDRA. O check `sgs_history_depth` falha o build estrito se o histórico SGS encurtar (ex.: regressão de parâmetro ou um futuro limite de janela da API).
 
 ## Alertas
 
@@ -108,5 +110,5 @@ Os relatórios ficam em `outputs/audit/` e não substituem os Parquets usados pe
 
 - A decomposição granular depende da estrutura SIDRA 7060, iniciada em 2020 para a estrutura atual do IPCA.
 - A contribuição 12m encadeada é uma aproximação técnica baseada no índice headline reconstruído.
-- Percentis expansivos sao sensiveis ao periodo inicial escolhido.
+- Percentis expansivos sao sensiveis ao periodo inicial escolhido; a base pública coleta SGS desde 2012-01 (pós-crise de 2008, regime de metas maduro), e essa escolha está exposta aqui em vez de embutida.
 - O sistema não realiza dessazonalização nem modelos preditivos no MVP.

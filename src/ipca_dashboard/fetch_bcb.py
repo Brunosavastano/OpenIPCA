@@ -95,6 +95,19 @@ def fetch_all_sgs(
     for metadata in flatten_series_config(config):
         LOGGER.info("Fetching SGS %s (%s)", metadata["sgs_code"], metadata["series_name"])
         df = fetch_sgs_series(metadata["sgs_code"], start=start, end=end)
+        # Tripwire log: percentiles depend on the full requested history. A series
+        # starting after the requested month means a late series OR an API window
+        # cap (would require chunking, spec §5.2 P1) — surface it loudly either way.
+        if start and not df.empty:
+            first = df["date"].min().to_period("M")
+            if first > pd.Period(start, freq="M"):
+                LOGGER.warning(
+                    "SGS %s history starts %s, after requested %s — late series or "
+                    "API window cap.",
+                    metadata["sgs_code"],
+                    first,
+                    start,
+                )
         for key, value in metadata.items():
             df[key] = value
         df["source"] = "BCB/SGS"

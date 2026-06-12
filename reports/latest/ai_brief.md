@@ -2,11 +2,14 @@
 
 _AI Replay Mode · provider: openai_
 
-O IPCA de abril mostrou uma combinação de alta corrente firme, espalhamento relevante entre subitens e núcleos ainda pressionados. A composição ajuda a explicar o diagnóstico: alimentos, saúde e habitação concentraram as pressões altistas, enquanto educação, transportes e artigos de residência apareceram como áreas de menor pressão. Os alertas em núcleos e serviços impedem uma leitura benigna, mas a própria classificação do quadro aponta para um regime misto.
+O IPCA de abril mostrou uma combinação de índice cheio ainda firme, inflação espalhada e núcleos pressionados, com contribuições concentradas em alimentação, saúde e habitação. A presença de alertas em núcleos e serviços recomenda uma leitura cautelosa, embora o próprio enquadramento agregado aponte um quadro misto, e não uma deterioração uniforme em todas as frentes.
 
-- Em abril de 2026, o IPCA subiu 0,67% no mês e acumulou 4,39% em 12 meses, enquanto a MM3M — média móvel de três meses, sem ajuste sazonal — ficou em 0,75% e a leitura mensal apareceu no percentil 71,05, compondo uma fotografia corrente ainda firme.
-- A pressão também veio relativamente disseminada: a difusão, isto é, o percentual de subitens com alta, alcançou 65,25% no mês, e sua MM3M ficou em 64,63%, no percentil 69,59.
-- Nos núcleos, medidas que tentam captar a tendência da inflação ao reduzir ruídos de itens mais voláteis, a média avançou 0,49% no mês e 0,52% na MM3M, sinalizando que a pressão não ficou restrita ao índice cheio.
-- Na composição por grupos, Alimentação e bebidas respondeu por 0,29 p.p., Saúde e cuidados pessoais por 0,16 p.p. e Habitação por 0,10 p.p., enquanto Educação, com 0,00 p.p., Transportes, com 0,01 p.p., e Artigos de residência, com 0,02 p.p., apareceram como alívios ou focos de menor pressão.
-- Os sinais de alerta reforçaram a cautela: a média dos núcleos em três meses apareceu em nível alto, com leitura de 6,37, algum núcleo alcançou nível crítico, com 7,31, e serviços em aceleração vieram em nível alto, com 2,88.
-- Com esse conjunto, o regime inflacionário — uma classificação sintética do quadro — foi rotulado como "Quadro misto" em abril de 2026.
+- Em abril de 2026, o IPCA subiu 0,67% no mês e acumulou 4,39% em 12 meses, enquanto a MM3M, isto é, a média móvel de três meses da variação mensal sem ajuste sazonal, ficou em 0,75%, indicando que a leitura mensal veio acompanhada de uma tendência recente ainda elevada.
+- A intensidade do dado também aparece na comparação histórica: a variação mensal ficou no percentil 74,71 da série desde 2012, ou seja, acima de boa parte das observações anteriores nessa janela.
+- A difusão, que mede a parcela de subitens com alta de preços e ajuda a avaliar se a inflação está espalhada, alcançou 65,25% no mês, com MM3M de 64,63% e percentil 67,35 nessa métrica suavizada.
+- Nos núcleos, que são medidas usadas para tentar filtrar choques temporários e captar a tendência da inflação, a média mensal foi de 0,49% e a MM3M ficou em 0,52%, reforçando que a pressão não esteve restrita apenas ao índice cheio.
+- Os alertas de tendência também foram desconfortáveis: a média dos núcleos em três meses anualizada marcou 6,37, classificada como high, enquanto ao menos um núcleo em três meses anualizado chegou a 7,31, classificado como critical.
+- Além disso, havia alerta de serviços em aceleração, com valor de 2,88 e classificação high, o que adiciona cautela à leitura qualitativa do dado.
+- Pelo lado das contribuições, Alimentação e bebidas respondeu por 0,29 p.p., Saúde e cuidados pessoais por 0,16 p.p. e Habitação por 0,10 p.p., compondo as principais pressões altistas do mês em pontos percentuais.
+- Na ponta de menor pressão, Educação contribuiu com 0,00 p.p., Transportes com 0,01 p.p. e Artigos de residência com 0,02 p.p., grupos que ajudaram a limitar a alta agregada.
+- No enquadramento de regime, isto é, uma leitura sintética do estado da inflação a partir das evidências disponíveis, o quadro foi classificado como Quadro misto.

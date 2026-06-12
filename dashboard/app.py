@@ -975,9 +975,7 @@ def main() -> None:
     except FileNotFoundError as exc:
         st.title("OpenIPCA")
         st.error("Dados processados não encontrados.")
-        st.code(
-            "python -m ipca_dashboard.pipeline run --start 2020-01\nstreamlit run dashboard/app.py"
-        )
+        st.code("python -m ipca_dashboard.pipeline run\nstreamlit run dashboard/app.py")
         st.caption(str(exc))
         return
 

@@ -37,6 +37,9 @@ jobs:
       - name: Install the package (with AI extras for brief/replay regen)
         run: python -m pip install -e ".[ai]"
 
+      # No --start flags on purpose: pipeline defaults fetch SGS from 2012-01
+      # (percentile_since_2012 needs the long history; the sgs_history_depth
+      # strict check fails closed if it ever shortens) and SIDRA from 2020-01.
       - name: Run the pipeline (fetch + build from BCB/SGS and IBGE/SIDRA)
         run: python -m ipca_dashboard.pipeline run --strict
 

@@ -66,8 +66,10 @@ python -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 
-# Fetch official data and build the processed datasets:
-python -m ipca_dashboard.pipeline run --start 2020-01
+# Fetch official data and build the processed datasets
+# (defaults: BCB/SGS from 2012-01 — the percentiles need the long history —
+#  and IBGE/SIDRA from 2020-01, the table's first month):
+python -m ipca_dashboard.pipeline run
 
 # Launch the dashboard:
 streamlit run dashboard/app.py

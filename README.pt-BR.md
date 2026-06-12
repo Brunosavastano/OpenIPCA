@@ -38,8 +38,10 @@ python -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 
-# Baixar dados oficiais e construir os datasets processados:
-python -m ipca_dashboard.pipeline run --start 2020-01
+# Baixar dados oficiais e construir os datasets processados
+# (defaults: BCB/SGS desde 2012-01 — os percentis precisam da história longa —
+#  e IBGE/SIDRA desde 2020-01, primeiro mês da tabela):
+python -m ipca_dashboard.pipeline run
 
 # Abrir o dashboard:
 streamlit run dashboard/app.py

@@ -82,8 +82,8 @@ CONCEPTS: dict[str, str] = {
     ),
     "regime": (
         "Regime inflacionário: um rótulo que resume o quadro do mês combinando o nível "
-        "da inflação com o quão espalhada ela está. É calculado por uma regra fixa, "
-        "não pela IA."
+        "da inflação com o quão espalhada ela está, comparando o mês atual com a "
+        "história desde 2012. É calculado por uma regra fixa, não pela IA."
     ),
     "alertas": (
         "Alertas: sinais de atenção disparados por regras objetivas (ex.: núcleos acima "
