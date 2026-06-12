@@ -4,6 +4,10 @@
 
 > 🇬🇧 The primary documentation is in English: [README.md](README.md). Este é um resumo em português.
 
+**[➡️ Abra o app — openipca.streamlit.app](https://openipca.streamlit.app)**
+
+[![Painel executivo do OpenIPCA: KPIs, badge de regime inflacionário, leitura do mês e briefing de IA aterrado](docs/hero.png)](https://openipca.streamlit.app)
+
 OpenIPCA é um dashboard open-source de pesquisa macro para a inflação brasileira. Ele
 transforma dados oficiais do **IBGE/SIDRA** e do **BCB/SGS** em decomposição do IPCA,
 núcleos, difusão e alertas auditáveis. Os números são determinísticos; a interpretação pode
