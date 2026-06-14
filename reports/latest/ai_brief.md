@@ -1,15 +1,13 @@
-# Brief de IA — IPCA 2026-04
+# Brief de IA — IPCA 2026-05
 
 _AI Replay Mode · provider: openai_
 
-O IPCA de abril mostrou uma combinação de índice cheio ainda firme, inflação espalhada e núcleos pressionados, com contribuições concentradas em alimentação, saúde e habitação. A presença de alertas em núcleos e serviços recomenda uma leitura cautelosa, embora o próprio enquadramento agregado aponte um quadro misto, e não uma deterioração uniforme em todas as frentes.
+O IPCA de maio mostrou uma inflação ainda pressionada no índice cheio, com alta de 0,58% no mês e 4,72% em 12 meses, enquanto a MM3M ficou em 0,71%. A abertura sugere disseminação relevante das altas, já que a difusão chegou a 64,99% no mês e 65,87% na MM3M, ao mesmo tempo em que os núcleos ficaram em 0,45% no mês e 0,46% na MM3M. A composição teve pressões principalmente de Alimentação e bebidas, Habitação e Saúde e cuidados pessoais, parcialmente compensadas por Transportes, levando a uma leitura geral de quadro misto.
 
-- Em abril de 2026, o IPCA subiu 0,67% no mês e acumulou 4,39% em 12 meses, enquanto a MM3M, isto é, a média móvel de três meses da variação mensal sem ajuste sazonal, ficou em 0,75%, indicando que a leitura mensal veio acompanhada de uma tendência recente ainda elevada.
-- A intensidade do dado também aparece na comparação histórica: a variação mensal ficou no percentil 74,71 da série desde 2012, ou seja, acima de boa parte das observações anteriores nessa janela.
-- A difusão, que mede a parcela de subitens com alta de preços e ajuda a avaliar se a inflação está espalhada, alcançou 65,25% no mês, com MM3M de 64,63% e percentil 67,35 nessa métrica suavizada.
-- Nos núcleos, que são medidas usadas para tentar filtrar choques temporários e captar a tendência da inflação, a média mensal foi de 0,49% e a MM3M ficou em 0,52%, reforçando que a pressão não esteve restrita apenas ao índice cheio.
-- Os alertas de tendência também foram desconfortáveis: a média dos núcleos em três meses anualizada marcou 6,37, classificada como high, enquanto ao menos um núcleo em três meses anualizado chegou a 7,31, classificado como critical.
-- Além disso, havia alerta de serviços em aceleração, com valor de 2,88 e classificação high, o que adiciona cautela à leitura qualitativa do dado.
-- Pelo lado das contribuições, Alimentação e bebidas respondeu por 0,29 p.p., Saúde e cuidados pessoais por 0,16 p.p. e Habitação por 0,10 p.p., compondo as principais pressões altistas do mês em pontos percentuais.
-- Na ponta de menor pressão, Educação contribuiu com 0,00 p.p., Transportes com 0,01 p.p. e Artigos de residência com 0,02 p.p., grupos que ajudaram a limitar a alta agregada.
-- No enquadramento de regime, isto é, uma leitura sintética do estado da inflação a partir das evidências disponíveis, o quadro foi classificado como Quadro misto.
+- Em maio, o IPCA avançou 0,58% no mês, acumulou 4,72% em 12 meses e, pela média móvel de três meses, ou MM3M, que suaviza as últimas variações mensais, rodou a 0,71% sem ajuste sazonal.
+- A leitura mensal ficou no percentil 67,92 da história desde 2012, indicando um resultado acima de boa parte das observações desse período.
+- A difusão, isto é, a parcela de subitens com alta de preços, alcançou 64,99% no mês e 65,87% na MM3M, com esta última no percentil 72,81 da história desde 2012.
+- Nos núcleos, medidas que buscam enxergar a tendência da inflação por trás de movimentos mais voláteis, a média ficou em 0,45% no mês e 0,46% na MM3M.
+- Os sinais de alerta dos núcleos reforçam a cautela, com o indicador de média em 5,64 classificado como high e ao menos um núcleo em 6,59 classificado como critical.
+- Na composição, Alimentação e bebidas adicionou 0,29 p.p., Habitação 0,19 p.p. e Saúde e cuidados pessoais 0,12 p.p., enquanto Transportes contribuiu com -0,09 p.p. e Educação e Artigos de residência ficaram em 0,00 p.p.
+- A classificação determinística do quadro é de regime de “Quadro misto”, com pressões e alívios aparecendo ao mesmo tempo na leitura de maio.

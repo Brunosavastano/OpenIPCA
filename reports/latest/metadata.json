@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-06-12T02:52:29+00:00",
+  "generated_at": "2026-06-14T13:29:32+00:00",
   "provider": "openai",
   "mode": "ai",
   "prompt_version": "release_brief_v1",
   "prompt_hash": "sha256:c74d958f8534b0cd0a04e2387990e32f71aa64ad44d84e274646dbeadcdbd0b1",
-  "evidence_hash": "sha256:820decf45780818f474ff5214e11199f8a646b6475c93def63fb5d5bde68ab8b",
+  "evidence_hash": "sha256:6e68149761947532ee7c641c32f00942835d72230eddf55aed1d25edade8c9b6",
   "schema_version": "brief_v1",
   "data_sources": [
     "IBGE/SIDRA",
     "BCB/SGS"
   ],
   "used_fallback": false,
-  "reference_month": "2026-04"
+  "reference_month": "2026-05"
 }

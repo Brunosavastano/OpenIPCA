@@ -3,8 +3,8 @@ bcb_no_duplicate_series_month,pass,0.0,Uma observação por série SGS por mês.
 bcb_latest_dates_present,pass,0.0,Toda série SGS configurada tem ao menos uma data.
 diffusion_between_0_and_100,pass,0.0,Valores oficiais de difusão devem ficar entre 0 e 100.
 default_core_set_available,pass,0.0,Todos os núcleos do preset default estão presentes na saída SGS.
-critical_series_freshness,pass,0.0,Todas as séries críticas estão no mês mais recente (2026-04).
-sgs_history_depth,pass,172.0,Histórico SGS do IPCA com 172 meses (mínimo 120 para percentis honestos; coleta desde 2012-01). Histórico curto distorce percentile_since_2012.
+critical_series_freshness,pass,0.0,Todas as séries críticas estão no mês mais recente (2026-05).
+sgs_history_depth,pass,173.0,Histórico SGS do IPCA com 173 meses (mínimo 120 para percentis honestos; coleta desde 2012-01). Histórico curto distorce percentile_since_2012.
 sidra_no_duplicate_item_month,pass,0.0,Uma observação por classificação SIDRA por mês.
 sidra_non_negative_weights,pass,0.0,Pesos devem ser não negativos.
 group_contribution_matches_headline,pass,0.0066,"Diferença absoluta máxima, em p.p., entre soma das contribuições por grupo e headline."
