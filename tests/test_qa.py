@@ -152,6 +152,22 @@ def test_brief_evidence_excludes_reference_corpus():
     assert not any(e.evidence_id.startswith("ev_ref_") for e in table)
 
 
+def test_qa_evidence_includes_seasonal_adjustment():
+    # SA (STL) momentum is injected on the Q&A path so "is inflation accelerating?"
+    # can ground on ev_headline_saar_sa.
+    ids = [e["evidence_id"] for e in _ask(_GroundedProvider()).evidence]
+    assert "ev_headline_saar_sa" in ids
+
+
+def test_brief_evidence_excludes_seasonal_adjustment():
+    # Same lean-brief discipline as the corpus: SA is Q&A-only and must NOT appear
+    # in build_evidence_table (the brief path).
+    from ipca_dashboard.ai.tools import build_evidence_table
+
+    table = build_evidence_table(_bcb(), _items(), pd.DataFrame(), pd.DataFrame())
+    assert not any(e.evidence_id.endswith("saar_sa") for e in table)
+
+
 def test_reference_corpus_lets_model_ground_a_methodology_answer():
     # End-to-end: a model citing a real ev_ref_* fact (qualitative) grounds -> ai.
     class _RefProvider:

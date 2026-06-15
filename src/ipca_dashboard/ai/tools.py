@@ -75,16 +75,6 @@ def get_headline(bcb: pd.DataFrame) -> list[Evidence]:
             SOURCE_SGS,
             "percentil da história desde 2012 (janela expansiva, midrank)",
         ),
-        Evidence(
-            "ev_headline_saar_sa",
-            "IPCA 3m anualizado (SA)",
-            _num(row.get("annualized_3m_sa")),
-            "% a.a.",
-            month,
-            SOURCE_STL,
-            "momentum dessazonalizado (STL), 3m anualizado; o fator sazonal do mês "
-            "mais recente é estimativa e revisa quando entram novos dados",
-        ),
     ]
 
 
@@ -160,17 +150,56 @@ def get_cores(
             SOURCE_SGS,
             interp,
         ),
-        Evidence(
-            "ev_core_mean_saar_sa",
-            f"Média núcleos 3m anualizado SA ({core_set})",
-            _num(row.get("annualized_3m_sa")),
-            "% a.a.",
-            month,
-            SOURCE_STL,
-            (interp + "; " if interp else "")
-            + "momentum dessazonalizado (STL); fator sazonal recente revisa",
-        ),
     ]
+
+
+def get_seasonal_adjustment(
+    bcb: pd.DataFrame, core_metrics: pd.DataFrame, core_set: str = "bcb_compact"
+) -> list[Evidence]:
+    """Seasonally adjusted momentum (STL): headline + core mean, 3m annualized.
+
+    Q&A ONLY — deliberately kept OUT of build_evidence_table (the brief path). The
+    brief is the fragile monthly artifact and stays lean (same discipline as the
+    reference corpus); SA momentum is citable in the live Q&A, where "is inflation
+    accelerating?" questions land. value is None when the column is absent (older
+    parquet) — the row still documents the metric and its STL provenance.
+    """
+    out: list[Evidence] = []
+    row = _latest_row(bcb, "IPCA")
+    if row is not None:
+        out.append(
+            Evidence(
+                "ev_headline_saar_sa",
+                "IPCA 3m anualizado (SA)",
+                _num(row.get("annualized_3m_sa")),
+                "% a.a.",
+                _month(row),
+                SOURCE_STL,
+                "momentum dessazonalizado (STL), 3m anualizado; o fator sazonal do mês "
+                "mais recente é estimativa e revisa quando entram novos dados",
+            )
+        )
+    if not core_metrics.empty:
+        latest_date = pd.to_datetime(core_metrics["date"]).max()
+        mean = core_metrics[
+            (core_metrics["core_set_name"] == core_set)
+            & (core_metrics["core_name"].isin(["Media", "Média"]))
+            & (core_metrics["date"] == latest_date)
+        ]
+        if not mean.empty:
+            crow = mean.iloc[0]
+            out.append(
+                Evidence(
+                    "ev_core_mean_saar_sa",
+                    f"Média núcleos 3m anualizado SA ({core_set})",
+                    _num(crow.get("annualized_3m_sa")),
+                    "% a.a.",
+                    pd.to_datetime(latest_date).strftime("%Y-%m"),
+                    SOURCE_STL,
+                    "momentum dessazonalizado (STL); fator sazonal recente revisa",
+                )
+            )
+    return out
 
 
 def get_contributions(ipca_items: pd.DataFrame, top_n: int = 3) -> list[Evidence]:

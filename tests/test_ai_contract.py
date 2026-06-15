@@ -16,7 +16,12 @@ from ipca_dashboard.ai.guardrails import (
     validate_ai_output,
 )
 from ipca_dashboard.ai.providers.no_ai import NoAIProvider
-from ipca_dashboard.ai.tools import _num, build_evidence_table, get_headline
+from ipca_dashboard.ai.tools import (
+    _num,
+    build_evidence_table,
+    get_headline,
+    get_seasonal_adjustment,
+)
 
 pytestmark = pytest.mark.ai_contract
 
@@ -92,16 +97,22 @@ def test_build_evidence_table_includes_regime_and_contributions():
     assert any(i.startswith("ev_contrib_top_pos") for i in ids)
 
 
-def test_headline_evidence_carries_seasonally_adjusted_momentum():
+def test_seasonal_adjustment_evidence_is_qa_only_not_in_brief():
     bcb = _bcb().copy()
     bcb.loc[bcb["series_short_name"] == "IPCA", "annualized_3m_sa"] = 5.20
-    table = get_headline(bcb)
-    sa = next(e for e in table if e.evidence_id == "ev_headline_saar_sa")
-    assert sa.value == 5.20  # cited number must come from this evidence's value
+    # SA momentum is exposed by its own tool (the Q&A path uses it), STL-sourced.
+    sa = next(
+        e for e in get_seasonal_adjustment(bcb, _cores()) if e.evidence_id == "ev_headline_saar_sa"
+    )
+    assert sa.value == 5.20  # a cited number must come from this evidence's value
     assert "STL" in sa.source  # honest provenance, not BCB/IBGE official
-    # and it reaches the full evidence table the brief/Q&A consume
-    full = build_evidence_table(bcb, _items(), _cores(), pd.DataFrame())
-    assert "ev_headline_saar_sa" in {e.evidence_id for e in full}
+    # ...but it must NOT leak into the brief's evidence table (lean-brief discipline).
+    brief = build_evidence_table(bcb, _items(), _cores(), pd.DataFrame())
+    brief_ids = {e.evidence_id for e in brief}
+    assert "ev_headline_saar_sa" not in brief_ids
+    assert "ev_core_mean_saar_sa" not in brief_ids
+    # get_headline no longer carries SA either.
+    assert "ev_headline_saar_sa" not in {e.evidence_id for e in get_headline(bcb)}
 
 
 def test_regime_tool_does_not_mix_months():

@@ -33,7 +33,7 @@ from ipca_dashboard.ai.providers.base import LLMProvider
 from ipca_dashboard.ai.providers.registry import resolve_provider
 from ipca_dashboard.ai.reference import load_reference_evidence
 from ipca_dashboard.ai.schemas import ANSWER_SCHEMA
-from ipca_dashboard.ai.tools import build_evidence_table
+from ipca_dashboard.ai.tools import build_evidence_table, get_seasonal_adjustment
 
 # v2: the analyst rewrite. The brief providers (OpenAI/Anthropic) used to drop the
 # question entirely and the shared prompt only "narrated" the data; v2 ships a
@@ -180,12 +180,17 @@ def answer_question(
         config = load_ai_config()
         if provider is None:
             provider = resolve_provider(config.provider if config.is_active else "none")
-        # Numeric evidence of the month (shared with the brief) PLUS the curated
-        # official reference corpus — Q&A only, so the model can ground
-        # methodology/concept answers. The brief path does not load the corpus.
-        evidence = evidence_table_to_dicts(
-            build_evidence_table(bcb, ipca_items, core_metrics, alerts, core_set)
-        ) + evidence_table_to_dicts(load_reference_evidence())
+        # Numeric evidence of the month (shared with the brief) PLUS two Q&A-only
+        # additions the brief never sees, to keep that fragile artifact lean: the
+        # seasonally adjusted (STL) momentum, and the curated official reference
+        # corpus for methodology/concept grounding.
+        evidence = (
+            evidence_table_to_dicts(
+                build_evidence_table(bcb, ipca_items, core_metrics, alerts, core_set)
+            )
+            + evidence_table_to_dicts(get_seasonal_adjustment(bcb, core_metrics, core_set))
+            + evidence_table_to_dicts(load_reference_evidence())
+        )
     except Exception as exc:  # noqa: BLE001 - AI must never block
         from ipca_dashboard.ai.providers.no_ai import NoAIProvider
 
