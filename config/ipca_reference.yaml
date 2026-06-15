@@ -59,21 +59,22 @@ facts:
     unit: "áreas"
     source: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html"
     interpretation: >-
-      O IPCA é coletado em dezesseis áreas: as regiões metropolitanas de Belém,
-      Fortaleza, Recife, Salvador, Belo Horizonte, Vitória, Rio de Janeiro, São
-      Paulo, Curitiba e Porto Alegre, mais os municípios de Goiânia, Campo
-      Grande, Rio Branco, São Luís, Aracaju e o Distrito Federal (Brasília).
+      O IPCA é coletado em dezesseis áreas urbanas do país — regiões
+      metropolitanas e municípios, incluindo o Distrito Federal —, entre elas São
+      Paulo, Rio de Janeiro, Belo Horizonte, Porto Alegre, Curitiba, Salvador,
+      Recife, Fortaleza, Belém, Vitória, Brasília, Goiânia, Campo Grande, Rio
+      Branco, São Luís e Aracaju.
 
   # --- Pesos e estrutura ----------------------------------------------------
   - id: ev_ref_pesos_pof
     metric: "Origem dos pesos do IPCA"
     unit: "texto"
-    source: "https://www.ibge.gov.br/estatisticas/sociais/rendimento-despesa-e-consumo/9050-pesquisa-de-orcamentos-familiares.html"
+    source: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html"
     interpretation: >-
       Os pesos de cada produto e serviço na cesta do IPCA vêm da Pesquisa de
       Orçamentos Familiares (POF) do IBGE, que mede a estrutura de gastos das
-      famílias; a estrutura vigente baseia-se na POF de 2017-2018 e é atualizada
-      quando uma nova POF é incorporada.
+      famílias; a estrutura vigente baseia-se na POF de 2017-2018, incorporada a
+      partir de janeiro de 2020, e é atualizada quando uma nova POF entra em vigor.
 
   - id: ev_ref_grupos
     metric: "Grupos do IPCA"
@@ -92,9 +93,10 @@ facts:
     unit: "texto"
     source: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html"
     interpretation: >-
-      O IPCA tem periodicidade mensal e é divulgado pelo IBGE por volta da
-      segunda semana do mês seguinte ao de referência (em geral entre os dias dez
-      e doze).
+      O IPCA tem periodicidade mensal e é divulgado pelo IBGE em datas definidas
+      no calendário oficial, geralmente na primeira quinzena do mês seguinte ao de
+      referência (com frequência por volta da segunda semana). As datas exatas
+      constam do calendário de divulgações do IBGE.
 
   # --- Índices relacionados -------------------------------------------------
   - id: ev_ref_inpc
@@ -112,9 +114,10 @@ facts:
     unit: "texto"
     source: "https://www.ibge.gov.br/explica/inflacao.php"
     interpretation: >-
-      O IPCA-15 é uma prévia do IPCA: difere apenas no período de coleta de
-      preços, que vai aproximadamente do dia dezesseis do mês anterior ao dia
-      quinze do mês de referência.
+      O IPCA-15 é uma prévia do IPCA: a principal diferença é o período de coleta
+      de preços, que vai aproximadamente do dia dezesseis do mês anterior ao dia
+      quinze do mês de referência; pode haver também diferença de abrangência
+      geográfica em relação ao IPCA cheio.
 
   - id: ev_ref_ipcae
     metric: "IPCA-E"
@@ -156,9 +159,10 @@ facts:
     unit: "texto"
     source: "https://www.bcb.gov.br/controleinflacao"
     interpretation: >-
-      A difusão é a parcela dos itens da cesta que subiram de preço no período;
-      difusão alta indica inflação espalhada por muitos itens — sinal mais
-      preocupante do que uma alta concentrada em poucos itens.
+      A difusão é o percentual (não ponderado) dos subitens efetivamente
+      pesquisados do IPCA que tiveram variação de preço positiva no período;
+      difusão alta indica inflação espalhada por muitos subitens — sinal mais
+      preocupante do que uma alta concentrada em poucos.
 
   - id: ev_ref_mm3m
     metric: "MM3M (média móvel de 3 meses)"
@@ -213,16 +217,18 @@ facts:
     unit: "texto"
     source: "https://www.bcb.gov.br/controleinflacao/nucleosinflacao"
     interpretation: >-
-      EX0 é um núcleo por exclusão: remove do IPCA itens muito voláteis (alimentos
-      no domicílio e energia) para mostrar a tendência de fundo.
+      EX0 é um núcleo por exclusão calculado pelo Banco Central: inclui todos os
+      preços livres do IPCA, exceto alimentação no domicílio, para mostrar a
+      tendência de fundo.
 
   - id: ev_ref_nucleo_ex3
     metric: "Núcleo EX3"
     unit: "texto"
     source: "https://www.bcb.gov.br/controleinflacao/nucleosinflacao"
     interpretation: >-
-      EX3 é um núcleo por exclusão que retira alimentos no domicílio e itens de
-      energia, muito acompanhado pelo Banco Central.
+      EX3 é um núcleo por exclusão do Banco Central, derivado do EX2: é composto
+      pelos núcleos de serviços e bens industriais presentes no EX2, exceto
+      alimentação no domicílio.
 
   - id: ev_ref_nucleo_ms
     metric: "Núcleo MS (médias aparadas com suavização)"
