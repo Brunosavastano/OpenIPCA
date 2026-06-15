@@ -199,7 +199,8 @@ facts:
 
   - id: ev_ref_fontes
     metric: "Fontes de dados do app"
-    unit: "texto"
+    value: 7060
+    unit: "tabela SIDRA"
     source: "OpenIPCA — methodology.md"
     interpretation: >-
       Os números do app vêm de fontes oficiais: IBGE/SIDRA (tabela 7060) para a
@@ -242,7 +243,8 @@ facts:
 
   - id: ev_ref_nucleo_p55
     metric: "Núcleo P55 (percentil)"
-    unit: "texto"
+    value: 55
+    unit: "percentil"
     source: "https://www.bcb.gov.br/controleinflacao/nucleosinflacao"
     interpretation: >-
       P55 é um núcleo de percentil: usa a variação do item na posição 55% da

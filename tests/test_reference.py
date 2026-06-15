@@ -8,6 +8,7 @@ to an empty list instead of breaking the Q&A.
 
 from ipca_dashboard.ai import reference
 from ipca_dashboard.ai.evidence import Evidence
+from ipca_dashboard.ai.guardrails import _numbers_in
 from ipca_dashboard.ai.reference import load_reference_evidence
 
 
@@ -28,6 +29,21 @@ def test_numeric_facts_carry_their_figure_in_value():
     by_id = {f.evidence_id: f for f in load_reference_evidence()}
     assert by_id["ev_ref_cobertura"].value == 16
     assert by_id["ev_ref_grupos"].value == 9
+
+
+def test_numbers_in_reference_prose_are_citable_values():
+    # If the model copies a number from reference prose, the unchanged guardrail
+    # will only accept it when that number also lives in the evidence `value`.
+    for fact in load_reference_evidence():
+        numbers = _numbers_in(fact.interpretation)
+        if not numbers:
+            continue
+        assert isinstance(fact.value, (int, float)), fact.evidence_id
+        assert all(abs(number - float(fact.value)) <= 0.005 for number in numbers), (
+            fact.evidence_id,
+            numbers,
+            fact.value,
+        )
 
 
 def test_missing_corpus_yields_empty(monkeypatch):
