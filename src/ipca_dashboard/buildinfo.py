@@ -9,6 +9,22 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+import re
+
+
+_SHORT_SHA_RE = re.compile(r"^[0-9a-f]{7,12}$")
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _git_stdout(args: list[str], base: Path) -> str:
+    result = subprocess.run(
+        args,
+        cwd=str(base),
+        capture_output=True,
+        text=True,
+        timeout=3,
+    )
+    return result.stdout.strip() if result.returncode == 0 else ""
 
 
 def build_stamp(root: Path | str | None = None) -> str:
@@ -20,22 +36,10 @@ def build_stamp(root: Path | str | None = None) -> str:
     """
     base = Path(root) if root is not None else Path(__file__).resolve().parents[2]
     try:
-        sha = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            cwd=str(base),
-            capture_output=True,
-            text=True,
-            timeout=3,
-        ).stdout.strip()
-        date = subprocess.run(
-            ["git", "log", "-1", "--format=%cs"],
-            cwd=str(base),
-            capture_output=True,
-            text=True,
-            timeout=3,
-        ).stdout.strip()
+        sha = _git_stdout(["git", "rev-parse", "--short", "HEAD"], base)
+        date = _git_stdout(["git", "log", "-1", "--format=%cs"], base)
     except Exception:  # noqa: BLE001 - a missing/!git environment must never break the app
         return ""
-    if not sha:
+    if not _SHORT_SHA_RE.fullmatch(sha) or not _DATE_RE.fullmatch(date):
         return ""
-    return f"{sha} · {date}" if date else sha
+    return f"{sha} · {date}"
