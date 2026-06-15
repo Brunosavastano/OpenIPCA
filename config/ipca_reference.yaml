@@ -217,8 +217,8 @@ facts:
     unit: "texto"
     source: "https://www.bcb.gov.br/controleinflacao/nucleosinflacao"
     interpretation: >-
-      EX0 é um núcleo por exclusão calculado pelo Banco Central: parte dos preços
-      livres do IPCA, excluindo a alimentação no domicílio, para mostrar a
+      EX0 é um núcleo por exclusão calculado pelo Banco Central: inclui todos os
+      preços livres do IPCA, exceto alimentação no domicílio, para mostrar a
       tendência de fundo.
 
   - id: ev_ref_nucleo_ex3
@@ -226,9 +226,9 @@ facts:
     unit: "texto"
     source: "https://www.bcb.gov.br/controleinflacao/nucleosinflacao"
     interpretation: >-
-      EX3 é um núcleo por exclusão do Banco Central, derivado do EX2: combina os
-      componentes de serviços e bens industriais (excluindo a alimentação no
-      domicílio) e é um dos núcleos mais acompanhados pela autoridade monetária.
+      EX3 é um núcleo por exclusão do Banco Central, derivado do EX2: é composto
+      pelos núcleos de serviços e bens industriais presentes no EX2, exceto
+      alimentação no domicílio.
 
   - id: ev_ref_nucleo_ms
     metric: "Núcleo MS (médias aparadas com suavização)"
