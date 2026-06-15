@@ -20,6 +20,7 @@ from ipca_dashboard.charts import (  # noqa: E402
     diffusion_line,
     heatmap_groups,
     ipca_diffusion_scatter,
+    momentum_line,
     stacked_contribution,
     subitem_sparkline,
     waterfall_latest,
@@ -90,7 +91,7 @@ CSS = """
   /* KPI tiles — custom grid (st.markdown HTML). Equal height via the grid; each
      tile = label + (?) tooltip, mono value, plain colored delta, muted note. */
   .kpi-grid {
-    display: grid; grid-template-columns: repeat(6, 1fr);
+    display: grid; grid-template-columns: repeat(7, 1fr);
     grid-auto-rows: 1fr; gap: 10px; margin: 2px 0 6px;
   }
   @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -538,6 +539,7 @@ _KPI_NOTES = {
     "IPCA m/m": "vs. mês anterior",
     "IPCA 12m": "vs. mês anterior",
     "IPCA MM3M": "vs. mês anterior",
+    "IPCA 3m anual. SA": "vs. mês anterior",
     "Média núcleos MM3M": "vs. mês anterior",
     "Difusão MM3M": "vs. mês anterior",
     "Alertas ativos": "",
@@ -616,6 +618,7 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     ipca_mom = ipca["mom"] if ipca is not None else None
     ipca_12m = ipca["rolling_12m"] if ipca is not None else None
     ipca_mm3m = ipca["moving_average_3m"] if ipca is not None else None
+    ipca_saar_sa = ipca.get("annualized_3m_sa") if ipca is not None else None
     core_mm3m = core_row["moving_average_3m"] if core_row is not None else None
     diff_mm3m = diffusion["moving_average_3m"] if diffusion is not None else None
 
@@ -637,6 +640,15 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
             "IPCA MM3M",
             fmt(ipca_mm3m),
             delta_pp(ipca_mm3m, ipca_prev["moving_average_3m"] if ipca_prev is not None else None),
+        ),
+        _kpi_tile(
+            "IPCA 3m anual. SA",
+            "IPCA 3m SA",
+            fmt(ipca_saar_sa),
+            delta_pp(
+                ipca_saar_sa,
+                ipca_prev.get("annualized_3m_sa") if ipca_prev is not None else None,
+            ),
         ),
         _kpi_tile(
             "Média núcleos MM3M",
@@ -696,6 +708,18 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     with right:
         st.plotly_chart(diffusion_line(bcb), use_container_width=True)
     st.plotly_chart(core_lines(cores, "bcb_compact", "moving_average_3m"), use_container_width=True)
+
+    st.plotly_chart(momentum_line(bcb), use_container_width=True)
+    ipca_sa = (
+        bcb.loc[bcb["series_short_name"] == "IPCA", "mom_sa"]
+        if "mom_sa" in bcb.columns
+        else None
+    )
+    if ipca_sa is not None and ipca_sa.notna().any():
+        st.caption(
+            "Ajuste sazonal via STL: o fator sazonal do mês mais recente é estimativa e "
+            "revisa quando entram novos dados. Não é número oficial do IBGE/BCB."
+        )
 
     render_active_alerts(alerts)
 
@@ -890,14 +914,31 @@ def page_cores(data: dict[str, pd.DataFrame]) -> None:
 
     # Metric selector reuses the single-source METRIC_LABELS (same labels the
     # chart titles use, so they never diverge). Default to MM3M.
-    metric_options = [m for m in ("moving_average_3m", "rolling_12m", "mom", "three_month_saar")]
+    # SA options only when the column exists in the processed data (older parquet,
+    # or a build without statsmodels, simply won't offer them — no KeyError).
+    metric_options = [
+        m
+        for m in (
+            "moving_average_3m",
+            "annualized_3m_sa",
+            "mom_sa",
+            "rolling_12m",
+            "mom",
+            "three_month_saar",
+        )
+        if m in cores.columns
+    ]
     metric = st.selectbox(
         "Métrica",
         metric_options,
         index=0,
         format_func=lambda key: METRIC_LABELS.get(key, key),
     )
-    st.caption("Momentum sem ajuste sazonal (NSA). Versão com ajuste sazonal (SA) chega no v0.2.")
+    st.caption(
+        "Ajuste sazonal (SA) via STL: o fator sazonal do mês mais recente é estimativa e "
+        "revisa quando entram novos dados. NSA = sem ajuste sazonal; nenhum é número "
+        "oficial do IBGE/BCB."
+    )
     st.plotly_chart(core_lines(cores, selected, metric), use_container_width=True)
     st.plotly_chart(core_fan(cores, selected, metric), use_container_width=True)
 
@@ -964,9 +1005,19 @@ def page_methodology(data: dict[str, pd.DataFrame]) -> None:
         **Contribuição mensal.** `peso_mensal * variacao_mensal / 100`, em pontos percentuais.
 
         **Momentum de curto prazo.** A interface usa MM3M (média móvel de 3 meses da
-        variação m/m) porque as séries mensais são brutas, sem ajuste sazonal (NSA).
-        A coluna `three_month_saar` segue disponível para auditoria/exploração, mas deve
-        ser lida como 3m anualizado NSA experimental, não como SAAR.
+        variação m/m), que é bruta, sem ajuste sazonal (NSA). A coluna `three_month_saar`
+        segue disponível para auditoria, mas deve ser lida como 3m anualizado NSA
+        experimental, não como SAAR.
+
+        **Ajuste sazonal (SA).** Para headline e núcleos, calculamos uma série
+        dessazonalizada via **STL** (`statsmodels.tsa.seasonal.STL`, decomposição aditiva,
+        `robust=True`): `SA = observado − componente_sazonal`. A partir dela vem o
+        `mom_sa` (m/m SA) e o `annualized_3m_sa` (3m anualizado SA — o "SAAR" legítimo,
+        porque agora há ajuste sazonal). **Caveat:** o fator sazonal do mês mais recente é
+        uma estimativa que **revisa** quando entram novos dados, e este é um ajuste próprio
+        via STL — **não** o X-13ARIMA-SEATS oficial nem um número do IBGE/BCB. O STL roda
+        só no build-time (pipeline) e é persistido; se a dependência faltar, a série SA
+        fica vazia e o painel NSA continua correto.
 
         **Núcleos.** A média dos núcleos é calculada a partir do conjunto selecionado em `config/core_sets.yaml`.
 

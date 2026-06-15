@@ -84,7 +84,9 @@ def test_refresh_workflow_regenerates_ai_artifacts_with_secret_key():
     # never lag the panel.
     assert "ipca_dashboard.ai.cli" in text
     assert "ipca_dashboard.ai.qa_replay" in text
-    assert 'pip install -e ".[ai]"' in text
+    # AI extras for brief/replay regen + the build-time pipeline extra (statsmodels)
+    # so the monthly refresh recomputes the STL seasonal adjustment.
+    assert 'pip install -e ".[ai,pipeline]"' in text
     # The key comes from Actions secrets, NEVER a literal in the repo.
     assert "${{ secrets.OPENAI_API_KEY }}" in text
     # The regenerated AI artifacts are staged for the combined commit.

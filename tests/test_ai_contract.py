@@ -92,6 +92,18 @@ def test_build_evidence_table_includes_regime_and_contributions():
     assert any(i.startswith("ev_contrib_top_pos") for i in ids)
 
 
+def test_headline_evidence_carries_seasonally_adjusted_momentum():
+    bcb = _bcb().copy()
+    bcb.loc[bcb["series_short_name"] == "IPCA", "annualized_3m_sa"] = 5.20
+    table = get_headline(bcb)
+    sa = next(e for e in table if e.evidence_id == "ev_headline_saar_sa")
+    assert sa.value == 5.20  # cited number must come from this evidence's value
+    assert "STL" in sa.source  # honest provenance, not BCB/IBGE official
+    # and it reaches the full evidence table the brief/Q&A consume
+    full = build_evidence_table(bcb, _items(), _cores(), pd.DataFrame())
+    assert "ev_headline_saar_sa" in {e.evidence_id for e in full}
+
+
 def test_regime_tool_does_not_mix_months():
     bcb = _bcb()
     bcb.loc[bcb["series_short_name"] == "Difusao", "date"] = pd.Timestamp("2024-02-01")

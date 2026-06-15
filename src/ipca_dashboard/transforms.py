@@ -6,10 +6,69 @@ import pandas as pd
 
 MONTHLY_LIKE_GROUPS = {"headline", "aggregates", "cores", "underlying"}
 
+_STL_PERIOD = 12
+# 3 full seasonal cycles. Headline/cores carry 150+ months, so real data is never
+# trimmed — this is just an honesty guard against deseasonalising a short series.
+_STL_MIN_OBS = 36
+
+
+def _load_stl():
+    """Return statsmodels' STL class, or ``None`` if statsmodels is unavailable.
+
+    Isolated so seasonal adjustment degrades gracefully (SA -> NaN) when the
+    build-time ``pipeline`` extra isn't installed — the pipeline/app must never
+    crash over it — and so tests can monkeypatch it to simulate the lib's absence.
+    """
+    try:
+        from statsmodels.tsa.seasonal import STL
+    except Exception:  # noqa: BLE001 - any import failure must fall back to NSA
+        return None
+    return STL
+
 
 def calc_3m_saar(series: pd.Series) -> pd.Series:
     gross = 1 + pd.to_numeric(series, errors="coerce") / 100
     return 100 * (gross.rolling(3, min_periods=3).apply(np.prod, raw=True) ** 4 - 1)
+
+
+def seasonally_adjust(
+    series: pd.Series, *, period: int = _STL_PERIOD, min_obs: int = _STL_MIN_OBS
+) -> pd.Series:
+    """Seasonally adjust a monthly rate via additive STL: ``observed - seasonal``.
+
+    The m/m variation is already an additive rate, so additive STL is the right
+    model. ``robust=True`` keeps the 2020-22 shock from distorting the seasonal
+    factors, and the result is deterministic given the input (keeps the metric
+    auditable).
+
+    Fail-soft by design: if statsmodels is missing, there are fewer than
+    ``min_obs`` valid points, or the series has an interior gap STL cannot span,
+    the whole series comes back as NaN — never raises, never blocks the pipeline.
+    """
+    original_index = series.index
+    values = pd.to_numeric(pd.Series(series).reset_index(drop=True), errors="coerce")
+    out = pd.Series(np.nan, index=original_index, dtype=float)
+
+    stl_cls = _load_stl()
+    if stl_cls is None:
+        return out
+
+    valid = values.dropna()
+    if len(valid) < max(min_obs, 2 * period + 1):
+        return out
+    lo, hi = int(valid.index[0]), int(valid.index[-1])
+    block = values.iloc[lo : hi + 1]
+    if block.isna().any():  # interior gap — refuse rather than interpolate silently
+        return out
+
+    try:
+        fitted = stl_cls(block.to_numpy(dtype=float), period=period, robust=True).fit()
+    except Exception:  # noqa: BLE001 - any STL failure falls back to NSA (NaN)
+        return out
+
+    sa = block.to_numpy(dtype=float) - np.asarray(fitted.seasonal, dtype=float)
+    out.iloc[lo : hi + 1] = sa
+    return out
 
 
 def calc_rolling_12m(series: pd.Series) -> pd.Series:
@@ -86,9 +145,13 @@ def transform_bcb_series(raw: pd.DataFrame) -> pd.DataFrame:
         if is_monthly_rate:
             group["rolling_12m"] = calc_rolling_12m(group["mom"])
             group["three_month_saar"] = calc_3m_saar(group["mom"])
+            group["mom_sa"] = seasonally_adjust(group["mom"])
+            group["annualized_3m_sa"] = calc_3m_saar(group["mom_sa"])
         else:
             group["rolling_12m"] = np.nan
             group["three_month_saar"] = np.nan
+            group["mom_sa"] = np.nan
+            group["annualized_3m_sa"] = np.nan
         group["moving_average_3m"] = group["mom"].rolling(3, min_periods=3).mean()
         group["moving_average_6m"] = group["mom"].rolling(6, min_periods=6).mean()
         group["zscore_60m"] = rolling_zscore(group["mom"])
@@ -106,6 +169,8 @@ def transform_bcb_series(raw: pd.DataFrame) -> pd.DataFrame:
         "mom",
         "rolling_12m",
         "three_month_saar",
+        "mom_sa",
+        "annualized_3m_sa",
         "moving_average_3m",
         "moving_average_6m",
         "zscore_60m",
@@ -120,6 +185,12 @@ def build_core_metrics(bcb: pd.DataFrame, core_sets_config: dict) -> pd.DataFram
     cores = bcb[bcb["series_group"] == "cores"].copy()
     if cores.empty:
         return pd.DataFrame()
+    # Tolerate a bcb that predates seasonal adjustment (older parquet / hand-built
+    # fixtures): the member subset references these columns, and the mean row always
+    # computes its own SA below.
+    for col in ("mom_sa", "annualized_3m_sa"):
+        if col not in cores.columns:
+            cores[col] = np.nan
 
     frames: list[pd.DataFrame] = []
     for set_name, metadata in core_sets.items():
@@ -140,6 +211,8 @@ def build_core_metrics(bcb: pd.DataFrame, core_sets_config: dict) -> pd.DataFram
                     "mom",
                     "rolling_12m",
                     "three_month_saar",
+                    "mom_sa",
+                    "annualized_3m_sa",
                     "moving_average_3m",
                     "zscore_60m",
                     "percentile_since_2012",
@@ -176,6 +249,8 @@ def build_core_metrics(bcb: pd.DataFrame, core_sets_config: dict) -> pd.DataFram
         mean["core_name"] = "Média"
         mean["rolling_12m"] = calc_rolling_12m(mean["mom"])
         mean["three_month_saar"] = calc_3m_saar(mean["mom"])
+        mean["mom_sa"] = seasonally_adjust(mean["mom"])
+        mean["annualized_3m_sa"] = calc_3m_saar(mean["mom_sa"])
         mean["moving_average_3m"] = mean["mom"].rolling(3, min_periods=3).mean()
         mean["zscore_60m"] = rolling_zscore(mean["mom"])
         mean["percentile_since_2012"] = expanding_percentile(mean["mom"])
@@ -189,6 +264,8 @@ def build_core_metrics(bcb: pd.DataFrame, core_sets_config: dict) -> pd.DataFram
                     "mom",
                     "rolling_12m",
                     "three_month_saar",
+                    "mom_sa",
+                    "annualized_3m_sa",
                     "moving_average_3m",
                     "zscore_60m",
                     "percentile_since_2012",

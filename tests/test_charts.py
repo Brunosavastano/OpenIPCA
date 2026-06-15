@@ -10,6 +10,7 @@ from ipca_dashboard.charts import (
     diffusion_line,
     heatmap_groups,
     load_chart_theme,
+    momentum_line,
     stacked_contribution,
     waterfall_latest,
 )
@@ -52,6 +53,38 @@ def test_core_fan_title_has_no_raw_metric_key():
     assert "moving_average_3m" not in fig.layout.title.text
     assert "média de 3 meses" in fig.layout.title.text
     assert fig.data[-1].line.color == charts._TEXT_COLOR
+
+
+def test_momentum_line_shows_nsa_and_sa_traces():
+    df = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2024-01-01", "2024-02-01", "2024-03-01"]),
+            "series_short_name": ["IPCA"] * 3,
+            "mom": [0.40, 0.55, 0.30],
+            "mom_sa": [0.42, 0.38, 0.40],
+        }
+    )
+    fig = momentum_line(df)
+    assert len(fig.data) == 2
+    names = " ".join(tr.name for tr in fig.data)
+    assert "NSA" in names and "SA" in names
+    # The seasonally adjusted line is the hero (theme text color), like diffusion's MM3M.
+    sa_trace = next(tr for tr in fig.data if "ajuste sazonal" in tr.name)
+    assert sa_trace.line.color == charts._TEXT_COLOR
+
+
+def test_momentum_line_degrades_when_sa_column_is_absent():
+    df = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2024-01-01", "2024-02-01", "2024-03-01"]),
+            "series_short_name": ["IPCA"] * 3,
+            "mom": [0.40, 0.55, 0.30],
+        }
+    )
+    fig = momentum_line(df)
+    assert len(fig.data) == 1
+    assert fig.data[0].name == "m/m (NSA)"
+    assert "ajuste sazonal" not in fig.layout.title.text
 
 
 def test_apply_layout_subtitle_is_embedded():
