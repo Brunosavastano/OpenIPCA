@@ -65,5 +65,47 @@ def test_sha_from_dotgit_resolves_a_loose_ref(tmp_path):
     git_dir = tmp_path / ".git"
     (git_dir / "refs" / "heads").mkdir(parents=True)
     (git_dir / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
-    (git_dir / "refs" / "heads" / "main").write_text("abcdef1234567890\n", encoding="utf-8")
+    (git_dir / "refs" / "heads" / "main").write_text(
+        "abcdef1234567890abcdef1234567890abcdef12\n",
+        encoding="utf-8",
+    )
     assert buildinfo._sha_from_dotgit(tmp_path) == "abcdef1"
+
+
+def test_sha_from_dotgit_resolves_packed_refs(tmp_path):
+    git_dir = tmp_path / ".git"
+    git_dir.mkdir()
+    (git_dir / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    (git_dir / "packed-refs").write_text(
+        "# pack-refs with: peeled fully-peeled sorted\n"
+        "1234567890abcdef1234567890abcdef12345678 refs/heads/main\n",
+        encoding="utf-8",
+    )
+    assert buildinfo._sha_from_dotgit(tmp_path) == "1234567"
+
+
+def test_sha_from_dotgit_resolves_detached_head(tmp_path):
+    git_dir = tmp_path / ".git"
+    git_dir.mkdir()
+    (git_dir / "HEAD").write_text(
+        "fedcba9876543210fedcba9876543210fedcba98\n",
+        encoding="utf-8",
+    )
+    assert buildinfo._sha_from_dotgit(tmp_path) == "fedcba9"
+
+
+def test_sha_from_dotgit_does_not_read_outside_dotgit(tmp_path):
+    git_dir = tmp_path / ".git"
+    git_dir.mkdir()
+    outside = tmp_path / "outside"
+    outside.write_text("abcdef1234567890abcdef1234567890abcdef12\n", encoding="utf-8")
+    (git_dir / "HEAD").write_text("ref: ../outside\n", encoding="utf-8")
+    assert buildinfo._sha_from_dotgit(tmp_path) == ""
+
+
+def test_sha_from_dotgit_rejects_invalid_sha(tmp_path):
+    git_dir = tmp_path / ".git"
+    (git_dir / "refs" / "heads").mkdir(parents=True)
+    (git_dir / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    (git_dir / "refs" / "heads" / "main").write_text("not-a-sha\n", encoding="utf-8")
+    assert buildinfo._sha_from_dotgit(tmp_path) == ""
