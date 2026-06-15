@@ -19,6 +19,7 @@ from ipca_dashboard.ai.providers.no_ai import NoAIProvider
 from ipca_dashboard.ai.tools import (
     _num,
     build_evidence_table,
+    get_cores,
     get_headline,
     get_seasonal_adjustment,
 )
@@ -100,19 +101,30 @@ def test_build_evidence_table_includes_regime_and_contributions():
 def test_seasonal_adjustment_evidence_is_qa_only_not_in_brief():
     bcb = _bcb().copy()
     bcb.loc[bcb["series_short_name"] == "IPCA", "annualized_3m_sa"] = 5.20
+    cores = _cores().copy()
+    cores["annualized_3m_sa"] = 4.80
     # SA momentum is exposed by its own tool (the Q&A path uses it), STL-sourced.
-    sa = next(
-        e for e in get_seasonal_adjustment(bcb, _cores()) if e.evidence_id == "ev_headline_saar_sa"
-    )
+    sa_items = get_seasonal_adjustment(bcb, cores)
+    sa = next(e for e in sa_items if e.evidence_id == "ev_headline_saar_sa")
+    core_sa = next(e for e in sa_items if e.evidence_id == "ev_core_mean_saar_sa")
     assert sa.value == 5.20  # a cited number must come from this evidence's value
+    assert core_sa.value == 4.80
     assert "STL" in sa.source  # honest provenance, not BCB/IBGE official
     # ...but it must NOT leak into the brief's evidence table (lean-brief discipline).
-    brief = build_evidence_table(bcb, _items(), _cores(), pd.DataFrame())
+    brief = build_evidence_table(bcb, _items(), cores, pd.DataFrame())
     brief_ids = {e.evidence_id for e in brief}
     assert "ev_headline_saar_sa" not in brief_ids
     assert "ev_core_mean_saar_sa" not in brief_ids
-    # get_headline no longer carries SA either.
+    # get_headline/get_cores no longer carry SA either.
     assert "ev_headline_saar_sa" not in {e.evidence_id for e in get_headline(bcb)}
+    assert "ev_core_mean_saar_sa" not in {e.evidence_id for e in get_cores(bcb, cores)}
+
+
+def test_seasonal_adjustment_evidence_degrades_to_none_when_columns_are_absent():
+    items = get_seasonal_adjustment(_bcb(), _cores())
+    by_id = {e.evidence_id: e for e in items}
+    assert by_id["ev_headline_saar_sa"].value is None
+    assert by_id["ev_core_mean_saar_sa"].value is None
 
 
 def test_regime_tool_does_not_mix_months():
