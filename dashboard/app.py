@@ -34,6 +34,7 @@ from ipca_dashboard.ai.trace import (  # noqa: E402
     load_brief_metadata,
     load_trace_summary,
 )
+from ipca_dashboard.buildinfo import build_stamp  # noqa: E402
 from ipca_dashboard.config import OUTPUTS_DIR, PROCESSED_DIR, load_yaml  # noqa: E402
 from ipca_dashboard.diagnostics import classify_latest_regime  # noqa: E402
 from ipca_dashboard.glossary import (  # noqa: E402
@@ -1171,6 +1172,13 @@ def _status_strip_right(data: dict[str, pd.DataFrame]) -> str:
     return " · ".join(parts) or "openipca.streamlit.app"
 
 
+@st.cache_data(show_spinner=False)
+def _cached_build_stamp() -> str:
+    # Cached so we don't shell out to git on every rerun; the cache clears on app
+    # restart, so a new deploy refreshes the stamp.
+    return build_stamp()
+
+
 def main() -> None:
     try:
         data = load_data(processed_signature())
@@ -1206,6 +1214,11 @@ def main() -> None:
         key="nav_page",
         label_visibility="collapsed",
     )
+    # Glanceable "what's deployed" marker (short commit + date) — also the quickest
+    # way to confirm an auto-deploy landed: it changes the moment a new commit is live.
+    stamp = _cached_build_stamp()
+    if stamp:
+        st.sidebar.caption(f"build {stamp}")
     st.markdown(
         "<div class='status-strip'>"
         f"<span class='strip-left'><span class='dot'></span>{escape(page.upper())}</span>"
