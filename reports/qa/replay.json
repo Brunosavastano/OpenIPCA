@@ -2,14 +2,14 @@
   "schema_version": "brief_v1",
   "prompt_version": "ask_ipca_v2",
   "reference_month": "2026-05",
-  "generated_at": "2026-06-14T13:30:11+00:00",
+  "generated_at": "2026-06-15T22:14:35+00:00",
   "pairs": [
     {
       "question": "O que mais puxou a inflação do IPCA neste mês?",
-      "answer": "O principal puxador da inflação do IPCA em 2026-05 foi Alimentação e bebidas, com contribuição de 0,29 p.p. para o IPCA de 0,58% no mês. Depois vieram Habitação, com 0,19 p.p., e Saúde e cuidados pessoais, com 0,12 p.p. Na direção contrária, Transportes ajudou a aliviar o índice, com contribuição de -0,09 p.p. Minha leitura cética: não foi apenas um choque isolado, porque a difusão ficou em 64,99% dos subitens, sinal de pressão relativamente espalhada. Ao mesmo tempo, o regime é “Quadro misto”: há itens puxando forte, mas também algum alívio em Transportes.",
+      "answer": "O maior puxador do IPCA deste mês foi Alimentação e bebidas, com contribuição de 0,29 p.p. para a alta mensal de 0,58%. Depois vieram Habitação, com 0,19 p.p., e Saúde e cuidados pessoais, com 0,12 p.p. Do outro lado, Transportes aliviou o índice, com contribuição de -0,09 p.p. Leitura cética: o mês não parece ter sido puxado por um único item isolado; além de alimentação liderar, houve pressão relevante em habitação e saúde, enquanto a difusão de 64,99% sugere alta espalhada por muitos subitens. Lembre que contribuição em p.p. mede quanto cada grupo puxou o IPCA cheio, não apenas quanto seus preços variaram.",
       "claims": [
         {
-          "text": "O principal puxador da inflação do IPCA em 2026-05 foi Alimentação e bebidas, com contribuição de 0,29 p.p. para o IPCA de 0,58% no mês.",
+          "text": "O maior puxador do IPCA deste mês foi Alimentação e bebidas, com contribuição de 0,29 p.p. para a alta mensal de 0,58%.",
           "type": "number",
           "evidence_ids": [
             "ev_contrib_top_pos_0",
@@ -17,7 +17,7 @@
           ]
         },
         {
-          "text": "Habitação contribuiu com 0,19 p.p. e Saúde e cuidados pessoais contribuiu com 0,12 p.p.",
+          "text": "Depois vieram Habitação, com 0,19 p.p., e Saúde e cuidados pessoais, com 0,12 p.p.",
           "type": "number",
           "evidence_ids": [
             "ev_contrib_top_pos_1",
@@ -25,17 +25,498 @@
           ]
         },
         {
-          "text": "Transportes atuou como alívio, com contribuição de -0,09 p.p.",
+          "text": "Do outro lado, Transportes aliviou o índice, com contribuição de -0,09 p.p.",
           "type": "number",
           "evidence_ids": [
             "ev_contrib_top_neg_0"
           ]
         },
         {
-          "text": "A difusão de 64,99% dos subitens sugere que a pressão não ficou restrita a um único grupo.",
+          "text": "O mês não parece ter sido puxado por um único item isolado; além de alimentação liderar, houve pressão relevante em habitação e saúde.",
           "type": "interpretation",
           "evidence_ids": [
-            "ev_diffusion_mom"
+            "ev_contrib_top_pos_0",
+            "ev_contrib_top_pos_1",
+            "ev_contrib_top_pos_2"
+          ]
+        },
+        {
+          "text": "A difusão de 64,99% sugere alta espalhada por muitos subitens.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_diffusion_mom",
+            "ev_ref_difusao"
+          ]
+        },
+        {
+          "text": "Contribuição em p.p. mede quanto cada grupo puxou o IPCA cheio, não apenas quanto seus preços variaram.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_ref_variacao_contrib"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "ev_headline_mom",
+          "metric": "IPCA m/m",
+          "value": 0.58,
+          "unit": "%",
+          "date": "2026-05",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_headline_12m",
+          "metric": "IPCA 12m",
+          "value": 4.72,
+          "unit": "%",
+          "date": "2026-05",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_headline_mm3",
+          "metric": "IPCA MM3M (NSA)",
+          "value": 0.71,
+          "unit": "%",
+          "date": "2026-05",
+          "source": "BCB/SGS",
+          "interpretation": "média móvel 3m da variação m/m, sem ajuste sazonal"
+        },
+        {
+          "evidence_id": "ev_headline_percentile",
+          "metric": "IPCA m/m percentil",
+          "value": 67.92,
+          "unit": "percentile",
+          "date": "2026-05",
+          "source": "BCB/SGS",
+          "interpretation": "percentil da história desde 2012 (janela expansiva, midrank)"
+        },
+        {
+          "evidence_id": "ev_diffusion_mom",
+          "metric": "Difusão m/m",
+          "value": 64.99,
+          "unit": "% de subitens",
+          "date": "2026-05",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_diffusion_mm3",
+          "metric": "Difusão MM3M",
+          "value": 65.87,
+          "unit": "% de subitens",
+          "date": "2026-05",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_diffusion_mm3_percentile",
+          "metric": "Difusão MM3M percentil",
+          "value": 72.81,
+          "unit": "percentile",
+          "date": "2026-05",
+          "source": "BCB/SGS",
+          "interpretation": "percentil da história desde 2012 (janela expansiva, midrank)"
+        },
+        {
+          "evidence_id": "ev_core_mean_mom",
+          "metric": "Média núcleos m/m (bcb_compact)",
+          "value": 0.45,
+          "unit": "%",
+          "date": "2026-05",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_core_mean_mm3",
+          "metric": "Média núcleos MM3M (bcb_compact)",
+          "value": 0.46,
+          "unit": "%",
+          "date": "2026-05",
+          "source": "BCB/SGS",
+          "interpretation": ""
+        },
+        {
+          "evidence_id": "ev_contrib_top_pos_0",
+          "metric": "Contribuição: Alimentação e bebidas",
+          "value": 0.29,
+          "unit": "p.p.",
+          "date": "2026-05",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "pressão altista"
+        },
+        {
+          "evidence_id": "ev_contrib_top_pos_1",
+          "metric": "Contribuição: Habitação",
+          "value": 0.19,
+          "unit": "p.p.",
+          "date": "2026-05",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "pressão altista"
+        },
+        {
+          "evidence_id": "ev_contrib_top_pos_2",
+          "metric": "Contribuição: Saúde e cuidados pessoais",
+          "value": 0.12,
+          "unit": "p.p.",
+          "date": "2026-05",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "pressão altista"
+        },
+        {
+          "evidence_id": "ev_contrib_top_neg_0",
+          "metric": "Contribuição: Transportes",
+          "value": -0.09,
+          "unit": "p.p.",
+          "date": "2026-05",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "alívio / menor pressão"
+        },
+        {
+          "evidence_id": "ev_contrib_top_neg_1",
+          "metric": "Contribuição: Educação",
+          "value": 0.0,
+          "unit": "p.p.",
+          "date": "2026-05",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "alívio / menor pressão"
+        },
+        {
+          "evidence_id": "ev_contrib_top_neg_2",
+          "metric": "Contribuição: Artigos de residência",
+          "value": 0.0,
+          "unit": "p.p.",
+          "date": "2026-05",
+          "source": "IBGE/SIDRA 7060",
+          "interpretation": "alívio / menor pressão"
+        },
+        {
+          "evidence_id": "ev_alert_0",
+          "metric": "Alerta: core_mean_3m_saar_high",
+          "value": 5.64,
+          "unit": "",
+          "date": "2026-05",
+          "source": "BCB/SGS",
+          "interpretation": "high"
+        },
+        {
+          "evidence_id": "ev_alert_1",
+          "metric": "Alerta: core_any_3m_saar_critical",
+          "value": 6.59,
+          "unit": "",
+          "date": "2026-05",
+          "source": "BCB/SGS",
+          "interpretation": "critical"
+        },
+        {
+          "evidence_id": "ev_regime",
+          "metric": "Regime inflacionário",
+          "value": "Quadro misto",
+          "unit": "label",
+          "date": "2026-05",
+          "source": "OpenIPCA (determinístico)",
+          "interpretation": "regime_v1_mixed"
+        },
+        {
+          "evidence_id": "ev_headline_saar_sa",
+          "metric": "IPCA 3m anualizado (SA)",
+          "value": 5.59,
+          "unit": "% a.a.",
+          "date": "2026-05",
+          "source": "OpenIPCA (STL sobre BCB/SGS)",
+          "interpretation": "momentum dessazonalizado (STL), 3m anualizado; o fator sazonal do mês mais recente é estimativa e revisa quando entram novos dados"
+        },
+        {
+          "evidence_id": "ev_core_mean_saar_sa",
+          "metric": "Média núcleos 3m anualizado SA (bcb_compact)",
+          "value": 4.39,
+          "unit": "% a.a.",
+          "date": "2026-05",
+          "source": "OpenIPCA (STL sobre BCB/SGS)",
+          "interpretation": "momentum dessazonalizado (STL); fator sazonal recente revisa"
+        },
+        {
+          "evidence_id": "ev_ref_nome",
+          "metric": "O que é o IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "IPCA é a sigla de Índice Nacional de Preços ao Consumidor Amplo, o índice oficial de inflação do Brasil, calculado e divulgado pelo IBGE (Instituto Brasileiro de Geografia e Estatística). É a referência usada no regime de metas de inflação perseguido pelo Banco Central."
+        },
+        {
+          "evidence_id": "ev_ref_base",
+          "metric": "Período-base do IPCA",
+          "value": 100,
+          "unit": "índice (base)",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA é um número-índice com base em dezembro de 1993 igualada a 100; as variações percentuais (no mês, no ano, em doze meses) são calculadas sobre esse encadeamento."
+        },
+        {
+          "evidence_id": "ev_ref_renda_min",
+          "metric": "Renda mínima da população-alvo do IPCA",
+          "value": 1,
+          "unit": "salário mínimo",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA mede a inflação de famílias com rendimento a partir de um salário mínimo, de qualquer fonte de renda, residentes nas áreas urbanas cobertas."
+        },
+        {
+          "evidence_id": "ev_ref_renda_max",
+          "metric": "Renda máxima da população-alvo do IPCA",
+          "value": 40,
+          "unit": "salários mínimos",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O teto da faixa de renda da população-alvo do IPCA é de quarenta salários mínimos; essa faixa abrange a maior parte das famílias urbanas brasileiras."
+        },
+        {
+          "evidence_id": "ev_ref_cobertura",
+          "metric": "Abrangência geográfica do IPCA",
+          "value": 16,
+          "unit": "áreas",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA é coletado em dezesseis áreas urbanas do país — regiões metropolitanas e municípios, incluindo o Distrito Federal —, entre elas São Paulo, Rio de Janeiro, Belo Horizonte, Porto Alegre, Curitiba, Salvador, Recife, Fortaleza, Belém, Vitória, Brasília, Goiânia, Campo Grande, Rio Branco, São Luís e Aracaju."
+        },
+        {
+          "evidence_id": "ev_ref_pesos_pof",
+          "metric": "Origem dos pesos do IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "Os pesos de cada produto e serviço na cesta do IPCA vêm da Pesquisa de Orçamentos Familiares (POF) do IBGE, que mede a estrutura de gastos das famílias; a estrutura vigente baseia-se na POF de 2017-2018, incorporada a partir de janeiro de 2020, e é atualizada quando uma nova POF entra em vigor."
+        },
+        {
+          "evidence_id": "ev_ref_grupos",
+          "metric": "Grupos do IPCA",
+          "value": 9,
+          "unit": "grupos",
+          "date": "",
+          "source": "https://sidra.ibge.gov.br/tabela/7060",
+          "interpretation": "A cesta do IPCA se organiza em nove grupos: Alimentação e bebidas, Habitação, Artigos de residência, Vestuário, Transportes, Saúde e cuidados pessoais, Despesas pessoais, Educação e Comunicação. Cada grupo se subdivide em subgrupos, itens e subitens."
+        },
+        {
+          "evidence_id": "ev_ref_calendario",
+          "metric": "Divulgação do IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA tem periodicidade mensal e é divulgado pelo IBGE em datas definidas no calendário oficial, geralmente na primeira quinzena do mês seguinte ao de referência (com frequência por volta da segunda semana). As datas exatas constam do calendário de divulgações do IBGE."
+        },
+        {
+          "evidence_id": "ev_ref_inpc",
+          "metric": "INPC (índice relacionado)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O INPC (Índice Nacional de Preços ao Consumidor) usa a mesma coleta do IPCA, mas mede a inflação de famílias de renda mais baixa — de um a cinco salários mínimos —, mais sensíveis a itens básicos como alimentação, transporte e medicamentos."
+        },
+        {
+          "evidence_id": "ev_ref_ipca15",
+          "metric": "IPCA-15 (prévia)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O IPCA-15 é uma prévia do IPCA: a principal diferença é o período de coleta de preços, que vai aproximadamente do dia dezesseis do mês anterior ao dia quinze do mês de referência; pode haver também diferença de abrangência geográfica em relação ao IPCA cheio."
+        },
+        {
+          "evidence_id": "ev_ref_ipcae",
+          "metric": "IPCA-E",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O IPCA-E é o acumulado trimestral do IPCA-15."
+        },
+        {
+          "evidence_id": "ev_ref_variacao_contrib",
+          "metric": "Variação (%) x Contribuição (p.p.)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "Variação (%) é quanto o preço de um grupo ou item mudou; contribuição (p.p.) é quanto ele puxou do IPCA cheio, calculada como variação vezes peso dividido por cem. Um item pode variar muito e contribuir pouco se tiver peso pequeno."
+        },
+        {
+          "evidence_id": "ev_ref_periodos",
+          "metric": "Variação no mês, no ano e em 12 meses",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "A variação no mês (m/m) compara com o mês anterior; a acumulada no ano encadeia de janeiro até o mês de referência; a acumulada em doze meses encadeia os últimos doze meses (não é soma simples) e é a medida mais usada para dizer \"a inflação está em tanto por cento\"."
+        },
+        {
+          "evidence_id": "ev_ref_nucleos",
+          "metric": "Núcleos de inflação",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "Núcleos são versões do IPCA que excluem ou suavizam os itens mais voláteis (como alimentos in natura e energia) para revelar a tendência de fundo da inflação; o Banco Central acompanha vários núcleos."
+        },
+        {
+          "evidence_id": "ev_ref_difusao",
+          "metric": "Difusão",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao",
+          "interpretation": "A difusão é o percentual (não ponderado) dos subitens efetivamente pesquisados do IPCA que tiveram variação de preço positiva no período; difusão alta indica inflação espalhada por muitos subitens — sinal mais preocupante do que uma alta concentrada em poucos."
+        },
+        {
+          "evidence_id": "ev_ref_mm3m",
+          "metric": "MM3M (média móvel de 3 meses)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "A MM3M é a média móvel de três meses da variação mensal; suaviza o ruído de um mês isolado para mostrar o ritmo recente. No app é apresentada sem ajuste sazonal."
+        },
+        {
+          "evidence_id": "ev_ref_nsa",
+          "metric": "Sem ajuste sazonal (NSA) e por que não anualizar",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "As variações do IPCA são brutas, sem ajuste sazonal (NSA). Por isso o app não anualiza a série mensal (não usa \"SAAR\"): anualizar uma série não ajustada elevaria o padrão sazonal e poderia enganar. Ajuste sazonal está planejado para uma versão futura."
+        },
+        {
+          "evidence_id": "ev_ref_percentil",
+          "metric": "Percentil histórico",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "O percentil compara o valor do mês com a história da própria série desde 2012, de forma expansiva (com tratamento de empates), indicando se o resultado está alto ou baixo frente ao histórico disponível."
+        },
+        {
+          "evidence_id": "ev_ref_regime",
+          "metric": "Regime inflacionário",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "O regime é um rótulo determinístico (regra fixa, não gerado por IA) que resume o mês combinando o nível da inflação com o quanto ela está espalhada, comparando com a história desde 2012."
+        },
+        {
+          "evidence_id": "ev_ref_fontes",
+          "metric": "Fontes de dados do app",
+          "value": 7060,
+          "unit": "tabela SIDRA",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "Os números do app vêm de fontes oficiais: IBGE/SIDRA (tabela 7060) para a decomposição por grupos, subgrupos, itens e subitens e para os pesos; e BCB/SGS para o headline, agregados, núcleos e a difusão oficial."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ex0",
+          "metric": "Núcleo EX0",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "EX0 é um núcleo por exclusão calculado pelo Banco Central: inclui todos os preços livres do IPCA, exceto alimentação no domicílio, para mostrar a tendência de fundo."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ex3",
+          "metric": "Núcleo EX3",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "EX3 é um núcleo por exclusão do Banco Central, derivado do EX2: é composto pelos núcleos de serviços e bens industriais presentes no EX2, exceto alimentação no domicílio."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ms",
+          "metric": "Núcleo MS (médias aparadas com suavização)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "MS é um núcleo de médias aparadas com suavização: descarta os itens de maior e menor variação no mês e suaviza itens cujos preços mudam com pouca frequência."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_dp",
+          "metric": "Núcleo DP (dupla ponderação)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "DP é o núcleo de dupla ponderação: dá menos peso aos itens mais voláteis, em vez de excluí-los, para suavizar choques."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_p55",
+          "metric": "Núcleo P55 (percentil)",
+          "value": 55,
+          "unit": "percentil",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "P55 é um núcleo de percentil: usa a variação do item na posição 55% da distribuição do mês, uma medida robusta de tendência central."
+        }
+      ],
+      "provider": "openai",
+      "mode": "ai"
+    },
+    {
+      "question": "A inflação está espalhada ou concentrada? Como está a difusão?",
+      "answer": "Está mais espalhada do que confortável, mas não é uma alta totalmente homogênea. A difusão no mês foi 64,99% e a MM3M ficou em 65,87%, no percentil 72,81 do histórico disponível. Difusão é o percentual não ponderado dos subitens do IPCA que subiram; quando ela está alta, a inflação tende a ser mais disseminada e menos explicada por poucos choques isolados. Ao mesmo tempo, a contribuição do mês ainda teve focos claros: Alimentação e bebidas puxou 0,29 p.p., Habitação 0,19 p.p. e Saúde e cuidados pessoais 0,12 p.p., enquanto Transportes aliviou com -0,09 p.p. Os núcleos também sugerem pressão de fundo: média dos núcleos em 0,45% no mês e 0,46% na MM3M. Minha leitura: a inflação está disseminada o suficiente para preocupar, embora com liderança setorial visível; eu seria cético com a tese de que é apenas um choque concentrado. O regime resumido é “Quadro misto”.",
+      "claims": [
+        {
+          "text": "A difusão no mês foi 64,99%, a MM3M ficou em 65,87% e está no percentil 72,81 do histórico disponível.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_diffusion_mom",
+            "ev_diffusion_mm3",
+            "ev_diffusion_mm3_percentile"
+          ]
+        },
+        {
+          "text": "Difusão é o percentual não ponderado dos subitens efetivamente pesquisados do IPCA que tiveram variação positiva; difusão alta indica inflação espalhada por muitos subitens.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_ref_difusao"
+          ]
+        },
+        {
+          "text": "Alimentação e bebidas contribuiu 0,29 p.p., Habitação 0,19 p.p., Saúde e cuidados pessoais 0,12 p.p. e Transportes -0,09 p.p.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_contrib_top_pos_0",
+            "ev_contrib_top_pos_1",
+            "ev_contrib_top_pos_2",
+            "ev_contrib_top_neg_0"
+          ]
+        },
+        {
+          "text": "A média dos núcleos foi 0,45% no mês e 0,46% na MM3M.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_core_mean_mom",
+            "ev_core_mean_mm3"
+          ]
+        },
+        {
+          "text": "A inflação está disseminada o suficiente para preocupar, mas ainda com liderança setorial visível, portanto não parece apenas um choque concentrado.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_diffusion_mom",
+            "ev_diffusion_mm3",
+            "ev_diffusion_mm3_percentile",
+            "ev_contrib_top_pos_0",
+            "ev_contrib_top_pos_1",
+            "ev_contrib_top_pos_2",
+            "ev_contrib_top_neg_0",
+            "ev_core_mean_mom",
+            "ev_core_mean_mm3"
           ]
         },
         {
@@ -209,67 +690,304 @@
           "date": "2026-05",
           "source": "OpenIPCA (determinístico)",
           "interpretation": "regime_v1_mixed"
+        },
+        {
+          "evidence_id": "ev_headline_saar_sa",
+          "metric": "IPCA 3m anualizado (SA)",
+          "value": 5.59,
+          "unit": "% a.a.",
+          "date": "2026-05",
+          "source": "OpenIPCA (STL sobre BCB/SGS)",
+          "interpretation": "momentum dessazonalizado (STL), 3m anualizado; o fator sazonal do mês mais recente é estimativa e revisa quando entram novos dados"
+        },
+        {
+          "evidence_id": "ev_core_mean_saar_sa",
+          "metric": "Média núcleos 3m anualizado SA (bcb_compact)",
+          "value": 4.39,
+          "unit": "% a.a.",
+          "date": "2026-05",
+          "source": "OpenIPCA (STL sobre BCB/SGS)",
+          "interpretation": "momentum dessazonalizado (STL); fator sazonal recente revisa"
+        },
+        {
+          "evidence_id": "ev_ref_nome",
+          "metric": "O que é o IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "IPCA é a sigla de Índice Nacional de Preços ao Consumidor Amplo, o índice oficial de inflação do Brasil, calculado e divulgado pelo IBGE (Instituto Brasileiro de Geografia e Estatística). É a referência usada no regime de metas de inflação perseguido pelo Banco Central."
+        },
+        {
+          "evidence_id": "ev_ref_base",
+          "metric": "Período-base do IPCA",
+          "value": 100,
+          "unit": "índice (base)",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA é um número-índice com base em dezembro de 1993 igualada a 100; as variações percentuais (no mês, no ano, em doze meses) são calculadas sobre esse encadeamento."
+        },
+        {
+          "evidence_id": "ev_ref_renda_min",
+          "metric": "Renda mínima da população-alvo do IPCA",
+          "value": 1,
+          "unit": "salário mínimo",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA mede a inflação de famílias com rendimento a partir de um salário mínimo, de qualquer fonte de renda, residentes nas áreas urbanas cobertas."
+        },
+        {
+          "evidence_id": "ev_ref_renda_max",
+          "metric": "Renda máxima da população-alvo do IPCA",
+          "value": 40,
+          "unit": "salários mínimos",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O teto da faixa de renda da população-alvo do IPCA é de quarenta salários mínimos; essa faixa abrange a maior parte das famílias urbanas brasileiras."
+        },
+        {
+          "evidence_id": "ev_ref_cobertura",
+          "metric": "Abrangência geográfica do IPCA",
+          "value": 16,
+          "unit": "áreas",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA é coletado em dezesseis áreas urbanas do país — regiões metropolitanas e municípios, incluindo o Distrito Federal —, entre elas São Paulo, Rio de Janeiro, Belo Horizonte, Porto Alegre, Curitiba, Salvador, Recife, Fortaleza, Belém, Vitória, Brasília, Goiânia, Campo Grande, Rio Branco, São Luís e Aracaju."
+        },
+        {
+          "evidence_id": "ev_ref_pesos_pof",
+          "metric": "Origem dos pesos do IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "Os pesos de cada produto e serviço na cesta do IPCA vêm da Pesquisa de Orçamentos Familiares (POF) do IBGE, que mede a estrutura de gastos das famílias; a estrutura vigente baseia-se na POF de 2017-2018, incorporada a partir de janeiro de 2020, e é atualizada quando uma nova POF entra em vigor."
+        },
+        {
+          "evidence_id": "ev_ref_grupos",
+          "metric": "Grupos do IPCA",
+          "value": 9,
+          "unit": "grupos",
+          "date": "",
+          "source": "https://sidra.ibge.gov.br/tabela/7060",
+          "interpretation": "A cesta do IPCA se organiza em nove grupos: Alimentação e bebidas, Habitação, Artigos de residência, Vestuário, Transportes, Saúde e cuidados pessoais, Despesas pessoais, Educação e Comunicação. Cada grupo se subdivide em subgrupos, itens e subitens."
+        },
+        {
+          "evidence_id": "ev_ref_calendario",
+          "metric": "Divulgação do IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA tem periodicidade mensal e é divulgado pelo IBGE em datas definidas no calendário oficial, geralmente na primeira quinzena do mês seguinte ao de referência (com frequência por volta da segunda semana). As datas exatas constam do calendário de divulgações do IBGE."
+        },
+        {
+          "evidence_id": "ev_ref_inpc",
+          "metric": "INPC (índice relacionado)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O INPC (Índice Nacional de Preços ao Consumidor) usa a mesma coleta do IPCA, mas mede a inflação de famílias de renda mais baixa — de um a cinco salários mínimos —, mais sensíveis a itens básicos como alimentação, transporte e medicamentos."
+        },
+        {
+          "evidence_id": "ev_ref_ipca15",
+          "metric": "IPCA-15 (prévia)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O IPCA-15 é uma prévia do IPCA: a principal diferença é o período de coleta de preços, que vai aproximadamente do dia dezesseis do mês anterior ao dia quinze do mês de referência; pode haver também diferença de abrangência geográfica em relação ao IPCA cheio."
+        },
+        {
+          "evidence_id": "ev_ref_ipcae",
+          "metric": "IPCA-E",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O IPCA-E é o acumulado trimestral do IPCA-15."
+        },
+        {
+          "evidence_id": "ev_ref_variacao_contrib",
+          "metric": "Variação (%) x Contribuição (p.p.)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "Variação (%) é quanto o preço de um grupo ou item mudou; contribuição (p.p.) é quanto ele puxou do IPCA cheio, calculada como variação vezes peso dividido por cem. Um item pode variar muito e contribuir pouco se tiver peso pequeno."
+        },
+        {
+          "evidence_id": "ev_ref_periodos",
+          "metric": "Variação no mês, no ano e em 12 meses",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "A variação no mês (m/m) compara com o mês anterior; a acumulada no ano encadeia de janeiro até o mês de referência; a acumulada em doze meses encadeia os últimos doze meses (não é soma simples) e é a medida mais usada para dizer \"a inflação está em tanto por cento\"."
+        },
+        {
+          "evidence_id": "ev_ref_nucleos",
+          "metric": "Núcleos de inflação",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "Núcleos são versões do IPCA que excluem ou suavizam os itens mais voláteis (como alimentos in natura e energia) para revelar a tendência de fundo da inflação; o Banco Central acompanha vários núcleos."
+        },
+        {
+          "evidence_id": "ev_ref_difusao",
+          "metric": "Difusão",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao",
+          "interpretation": "A difusão é o percentual (não ponderado) dos subitens efetivamente pesquisados do IPCA que tiveram variação de preço positiva no período; difusão alta indica inflação espalhada por muitos subitens — sinal mais preocupante do que uma alta concentrada em poucos."
+        },
+        {
+          "evidence_id": "ev_ref_mm3m",
+          "metric": "MM3M (média móvel de 3 meses)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "A MM3M é a média móvel de três meses da variação mensal; suaviza o ruído de um mês isolado para mostrar o ritmo recente. No app é apresentada sem ajuste sazonal."
+        },
+        {
+          "evidence_id": "ev_ref_nsa",
+          "metric": "Sem ajuste sazonal (NSA) e por que não anualizar",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "As variações do IPCA são brutas, sem ajuste sazonal (NSA). Por isso o app não anualiza a série mensal (não usa \"SAAR\"): anualizar uma série não ajustada elevaria o padrão sazonal e poderia enganar. Ajuste sazonal está planejado para uma versão futura."
+        },
+        {
+          "evidence_id": "ev_ref_percentil",
+          "metric": "Percentil histórico",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "O percentil compara o valor do mês com a história da própria série desde 2012, de forma expansiva (com tratamento de empates), indicando se o resultado está alto ou baixo frente ao histórico disponível."
+        },
+        {
+          "evidence_id": "ev_ref_regime",
+          "metric": "Regime inflacionário",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "O regime é um rótulo determinístico (regra fixa, não gerado por IA) que resume o mês combinando o nível da inflação com o quanto ela está espalhada, comparando com a história desde 2012."
+        },
+        {
+          "evidence_id": "ev_ref_fontes",
+          "metric": "Fontes de dados do app",
+          "value": 7060,
+          "unit": "tabela SIDRA",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "Os números do app vêm de fontes oficiais: IBGE/SIDRA (tabela 7060) para a decomposição por grupos, subgrupos, itens e subitens e para os pesos; e BCB/SGS para o headline, agregados, núcleos e a difusão oficial."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ex0",
+          "metric": "Núcleo EX0",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "EX0 é um núcleo por exclusão calculado pelo Banco Central: inclui todos os preços livres do IPCA, exceto alimentação no domicílio, para mostrar a tendência de fundo."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ex3",
+          "metric": "Núcleo EX3",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "EX3 é um núcleo por exclusão do Banco Central, derivado do EX2: é composto pelos núcleos de serviços e bens industriais presentes no EX2, exceto alimentação no domicílio."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ms",
+          "metric": "Núcleo MS (médias aparadas com suavização)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "MS é um núcleo de médias aparadas com suavização: descarta os itens de maior e menor variação no mês e suaviza itens cujos preços mudam com pouca frequência."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_dp",
+          "metric": "Núcleo DP (dupla ponderação)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "DP é o núcleo de dupla ponderação: dá menos peso aos itens mais voláteis, em vez de excluí-los, para suavizar choques."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_p55",
+          "metric": "Núcleo P55 (percentil)",
+          "value": 55,
+          "unit": "percentil",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "P55 é um núcleo de percentil: usa a variação do item na posição 55% da distribuição do mês, uma medida robusta de tendência central."
         }
       ],
       "provider": "openai",
       "mode": "ai"
     },
     {
-      "question": "A inflação está espalhada ou concentrada? Como está a difusão?",
-      "answer": "Está mais espalhada do que concentrada, embora com focos claros. Difusão é a parcela de subitens em alta: em 2026-05, ela ficou em 64.99% no mês e 65.87% na MM3M, com a MM3M no percentil 72.81 da amostra desde 2012. Isso sugere inflação disseminada em nível relativamente alto, não apenas um choque isolado. Ao mesmo tempo, a composição mostra bolsões relevantes: Alimentação e bebidas contribuiu 0.29 p.p., Habitação 0.19 p.p. e Saúde e cuidados pessoais 0.12 p.p., enquanto Transportes aliviou com -0.09 p.p.; portanto, não é uma alta uniforme em todos os grupos. Os núcleos também não parecem benignos: a média dos núcleos ficou em 0.45% no mês e 0.46% na MM3M, reforçando cautela sobre persistência. Minha leitura: difusão alta, inflação razoavelmente espalhada, mas com contribuição ainda muito dependente de alguns grupos; por isso o regime é melhor descrito como Quadro misto.",
+      "question": "Como estão os núcleos do IPCA em relação ao headline?",
+      "answer": "Os núcleos estão melhores que o IPCA cheio no dado mais recente, mas não estão benignos. Em maio de 2026, o headline veio em 0,58% m/m, enquanto a média dos núcleos ficou em 0,45% m/m. No ritmo suavizado, a diferença é mais clara: o IPCA MM3M está em 0,71%, contra 0,46% da média dos núcleos. No momentum dessazonalizado, o headline está em 5,59% a.a. e a média dos núcleos em 4,39% a.a.\n\nA leitura cética é: o núcleo abaixo do headline sugere que parte da pressão do mês está em componentes mais voláteis ou específicos do índice cheio, mas a tendência subjacente ainda não é confortável. Há alerta de média de núcleos em nível “high” e de algum núcleo em nível “critical”, e a difusão segue elevada, o que indica inflação espalhada por muitos subitens. Portanto, eu classificaria como: núcleos menos pressionados que o headline, mas ainda incompatíveis com uma leitura tranquila de desinflação.",
       "claims": [
         {
-          "text": "Em 2026-05, a difusão ficou em 64.99% no mês e 65.87% na MM3M, com a MM3M no percentil 72.81 da amostra desde 2012.",
+          "text": "Em maio de 2026, o IPCA cheio foi 0,58% m/m e a média dos núcleos foi 0,45% m/m.",
           "type": "number",
           "evidence_ids": [
-            "ev_diffusion_mom",
-            "ev_diffusion_mm3",
-            "ev_diffusion_mm3_percentile"
+            "ev_headline_mom",
+            "ev_core_mean_mom"
           ]
         },
         {
-          "text": "A difusão elevada sugere que a inflação está relativamente espalhada, e não restrita a um choque isolado.",
-          "type": "interpretation",
-          "evidence_ids": [
-            "ev_diffusion_mom",
-            "ev_diffusion_mm3",
-            "ev_diffusion_mm3_percentile"
-          ]
-        },
-        {
-          "text": "Alimentação e bebidas contribuiu 0.29 p.p., Habitação 0.19 p.p. e Saúde e cuidados pessoais 0.12 p.p., enquanto Transportes contribuiu -0.09 p.p.",
+          "text": "O IPCA MM3M está em 0,71% e a média dos núcleos MM3M está em 0,46%.",
           "type": "number",
           "evidence_ids": [
-            "ev_contrib_top_pos_0",
-            "ev_contrib_top_pos_1",
-            "ev_contrib_top_pos_2",
-            "ev_contrib_top_neg_0"
-          ]
-        },
-        {
-          "text": "A composição mostra focos claros de pressão e algum alívio em Transportes, então a alta não é uniforme entre grupos.",
-          "type": "interpretation",
-          "evidence_ids": [
-            "ev_contrib_top_pos_0",
-            "ev_contrib_top_pos_1",
-            "ev_contrib_top_pos_2",
-            "ev_contrib_top_neg_0"
-          ]
-        },
-        {
-          "text": "A média dos núcleos ficou em 0.45% no mês e 0.46% na MM3M.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_core_mean_mom",
+            "ev_headline_mm3",
             "ev_core_mean_mm3"
           ]
         },
         {
-          "text": "Núcleos ainda firmes reforçam cautela sobre persistência inflacionária.",
+          "text": "No momentum dessazonalizado, o IPCA está em 5,59% a.a. e a média dos núcleos está em 4,39% a.a.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_headline_saar_sa",
+            "ev_core_mean_saar_sa"
+          ]
+        },
+        {
+          "text": "Núcleos são medidas que excluem ou suavizam itens mais voláteis para captar a tendência de fundo da inflação.",
           "type": "interpretation",
           "evidence_ids": [
-            "ev_core_mean_mom",
-            "ev_core_mean_mm3"
+            "ev_ref_nucleos"
+          ]
+        },
+        {
+          "text": "Há alerta de média de núcleos em nível high e de algum núcleo em nível critical.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_alert_0",
+            "ev_alert_1"
+          ]
+        },
+        {
+          "text": "A difusão está em 64,99% no mês e 65,87% na MM3M, sugerindo inflação ainda espalhada por muitos subitens.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_diffusion_mom",
+            "ev_diffusion_mm3",
+            "ev_ref_difusao"
           ]
         },
         {
@@ -443,55 +1161,338 @@
           "date": "2026-05",
           "source": "OpenIPCA (determinístico)",
           "interpretation": "regime_v1_mixed"
+        },
+        {
+          "evidence_id": "ev_headline_saar_sa",
+          "metric": "IPCA 3m anualizado (SA)",
+          "value": 5.59,
+          "unit": "% a.a.",
+          "date": "2026-05",
+          "source": "OpenIPCA (STL sobre BCB/SGS)",
+          "interpretation": "momentum dessazonalizado (STL), 3m anualizado; o fator sazonal do mês mais recente é estimativa e revisa quando entram novos dados"
+        },
+        {
+          "evidence_id": "ev_core_mean_saar_sa",
+          "metric": "Média núcleos 3m anualizado SA (bcb_compact)",
+          "value": 4.39,
+          "unit": "% a.a.",
+          "date": "2026-05",
+          "source": "OpenIPCA (STL sobre BCB/SGS)",
+          "interpretation": "momentum dessazonalizado (STL); fator sazonal recente revisa"
+        },
+        {
+          "evidence_id": "ev_ref_nome",
+          "metric": "O que é o IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "IPCA é a sigla de Índice Nacional de Preços ao Consumidor Amplo, o índice oficial de inflação do Brasil, calculado e divulgado pelo IBGE (Instituto Brasileiro de Geografia e Estatística). É a referência usada no regime de metas de inflação perseguido pelo Banco Central."
+        },
+        {
+          "evidence_id": "ev_ref_base",
+          "metric": "Período-base do IPCA",
+          "value": 100,
+          "unit": "índice (base)",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA é um número-índice com base em dezembro de 1993 igualada a 100; as variações percentuais (no mês, no ano, em doze meses) são calculadas sobre esse encadeamento."
+        },
+        {
+          "evidence_id": "ev_ref_renda_min",
+          "metric": "Renda mínima da população-alvo do IPCA",
+          "value": 1,
+          "unit": "salário mínimo",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA mede a inflação de famílias com rendimento a partir de um salário mínimo, de qualquer fonte de renda, residentes nas áreas urbanas cobertas."
+        },
+        {
+          "evidence_id": "ev_ref_renda_max",
+          "metric": "Renda máxima da população-alvo do IPCA",
+          "value": 40,
+          "unit": "salários mínimos",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O teto da faixa de renda da população-alvo do IPCA é de quarenta salários mínimos; essa faixa abrange a maior parte das famílias urbanas brasileiras."
+        },
+        {
+          "evidence_id": "ev_ref_cobertura",
+          "metric": "Abrangência geográfica do IPCA",
+          "value": 16,
+          "unit": "áreas",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA é coletado em dezesseis áreas urbanas do país — regiões metropolitanas e municípios, incluindo o Distrito Federal —, entre elas São Paulo, Rio de Janeiro, Belo Horizonte, Porto Alegre, Curitiba, Salvador, Recife, Fortaleza, Belém, Vitória, Brasília, Goiânia, Campo Grande, Rio Branco, São Luís e Aracaju."
+        },
+        {
+          "evidence_id": "ev_ref_pesos_pof",
+          "metric": "Origem dos pesos do IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "Os pesos de cada produto e serviço na cesta do IPCA vêm da Pesquisa de Orçamentos Familiares (POF) do IBGE, que mede a estrutura de gastos das famílias; a estrutura vigente baseia-se na POF de 2017-2018, incorporada a partir de janeiro de 2020, e é atualizada quando uma nova POF entra em vigor."
+        },
+        {
+          "evidence_id": "ev_ref_grupos",
+          "metric": "Grupos do IPCA",
+          "value": 9,
+          "unit": "grupos",
+          "date": "",
+          "source": "https://sidra.ibge.gov.br/tabela/7060",
+          "interpretation": "A cesta do IPCA se organiza em nove grupos: Alimentação e bebidas, Habitação, Artigos de residência, Vestuário, Transportes, Saúde e cuidados pessoais, Despesas pessoais, Educação e Comunicação. Cada grupo se subdivide em subgrupos, itens e subitens."
+        },
+        {
+          "evidence_id": "ev_ref_calendario",
+          "metric": "Divulgação do IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA tem periodicidade mensal e é divulgado pelo IBGE em datas definidas no calendário oficial, geralmente na primeira quinzena do mês seguinte ao de referência (com frequência por volta da segunda semana). As datas exatas constam do calendário de divulgações do IBGE."
+        },
+        {
+          "evidence_id": "ev_ref_inpc",
+          "metric": "INPC (índice relacionado)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O INPC (Índice Nacional de Preços ao Consumidor) usa a mesma coleta do IPCA, mas mede a inflação de famílias de renda mais baixa — de um a cinco salários mínimos —, mais sensíveis a itens básicos como alimentação, transporte e medicamentos."
+        },
+        {
+          "evidence_id": "ev_ref_ipca15",
+          "metric": "IPCA-15 (prévia)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O IPCA-15 é uma prévia do IPCA: a principal diferença é o período de coleta de preços, que vai aproximadamente do dia dezesseis do mês anterior ao dia quinze do mês de referência; pode haver também diferença de abrangência geográfica em relação ao IPCA cheio."
+        },
+        {
+          "evidence_id": "ev_ref_ipcae",
+          "metric": "IPCA-E",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O IPCA-E é o acumulado trimestral do IPCA-15."
+        },
+        {
+          "evidence_id": "ev_ref_variacao_contrib",
+          "metric": "Variação (%) x Contribuição (p.p.)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "Variação (%) é quanto o preço de um grupo ou item mudou; contribuição (p.p.) é quanto ele puxou do IPCA cheio, calculada como variação vezes peso dividido por cem. Um item pode variar muito e contribuir pouco se tiver peso pequeno."
+        },
+        {
+          "evidence_id": "ev_ref_periodos",
+          "metric": "Variação no mês, no ano e em 12 meses",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "A variação no mês (m/m) compara com o mês anterior; a acumulada no ano encadeia de janeiro até o mês de referência; a acumulada em doze meses encadeia os últimos doze meses (não é soma simples) e é a medida mais usada para dizer \"a inflação está em tanto por cento\"."
+        },
+        {
+          "evidence_id": "ev_ref_nucleos",
+          "metric": "Núcleos de inflação",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "Núcleos são versões do IPCA que excluem ou suavizam os itens mais voláteis (como alimentos in natura e energia) para revelar a tendência de fundo da inflação; o Banco Central acompanha vários núcleos."
+        },
+        {
+          "evidence_id": "ev_ref_difusao",
+          "metric": "Difusão",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao",
+          "interpretation": "A difusão é o percentual (não ponderado) dos subitens efetivamente pesquisados do IPCA que tiveram variação de preço positiva no período; difusão alta indica inflação espalhada por muitos subitens — sinal mais preocupante do que uma alta concentrada em poucos."
+        },
+        {
+          "evidence_id": "ev_ref_mm3m",
+          "metric": "MM3M (média móvel de 3 meses)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "A MM3M é a média móvel de três meses da variação mensal; suaviza o ruído de um mês isolado para mostrar o ritmo recente. No app é apresentada sem ajuste sazonal."
+        },
+        {
+          "evidence_id": "ev_ref_nsa",
+          "metric": "Sem ajuste sazonal (NSA) e por que não anualizar",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "As variações do IPCA são brutas, sem ajuste sazonal (NSA). Por isso o app não anualiza a série mensal (não usa \"SAAR\"): anualizar uma série não ajustada elevaria o padrão sazonal e poderia enganar. Ajuste sazonal está planejado para uma versão futura."
+        },
+        {
+          "evidence_id": "ev_ref_percentil",
+          "metric": "Percentil histórico",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "O percentil compara o valor do mês com a história da própria série desde 2012, de forma expansiva (com tratamento de empates), indicando se o resultado está alto ou baixo frente ao histórico disponível."
+        },
+        {
+          "evidence_id": "ev_ref_regime",
+          "metric": "Regime inflacionário",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "O regime é um rótulo determinístico (regra fixa, não gerado por IA) que resume o mês combinando o nível da inflação com o quanto ela está espalhada, comparando com a história desde 2012."
+        },
+        {
+          "evidence_id": "ev_ref_fontes",
+          "metric": "Fontes de dados do app",
+          "value": 7060,
+          "unit": "tabela SIDRA",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "Os números do app vêm de fontes oficiais: IBGE/SIDRA (tabela 7060) para a decomposição por grupos, subgrupos, itens e subitens e para os pesos; e BCB/SGS para o headline, agregados, núcleos e a difusão oficial."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ex0",
+          "metric": "Núcleo EX0",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "EX0 é um núcleo por exclusão calculado pelo Banco Central: inclui todos os preços livres do IPCA, exceto alimentação no domicílio, para mostrar a tendência de fundo."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ex3",
+          "metric": "Núcleo EX3",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "EX3 é um núcleo por exclusão do Banco Central, derivado do EX2: é composto pelos núcleos de serviços e bens industriais presentes no EX2, exceto alimentação no domicílio."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ms",
+          "metric": "Núcleo MS (médias aparadas com suavização)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "MS é um núcleo de médias aparadas com suavização: descarta os itens de maior e menor variação no mês e suaviza itens cujos preços mudam com pouca frequência."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_dp",
+          "metric": "Núcleo DP (dupla ponderação)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "DP é o núcleo de dupla ponderação: dá menos peso aos itens mais voláteis, em vez de excluí-los, para suavizar choques."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_p55",
+          "metric": "Núcleo P55 (percentil)",
+          "value": 55,
+          "unit": "percentil",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "P55 é um núcleo de percentil: usa a variação do item na posição 55% da distribuição do mês, uma medida robusta de tendência central."
         }
       ],
       "provider": "openai",
       "mode": "ai"
     },
     {
-      "question": "Como estão os núcleos do IPCA em relação ao headline?",
-      "answer": "Os núcleos estão mais comportados que o headline na comparação direta, mas eu não leria isso como benigno. No mensal, o IPCA cheio subiu 0,58% m/m, enquanto a média dos núcleos avançou 0,45% m/m. Na MM3M, que suaviza a leitura mensal, o headline está em 0,71% e a média dos núcleos em 0,46%. Isso sugere que parte da pressão recente está fora dos núcleos, mas os núcleos ainda rodam em ritmo desconfortável: há alerta de média dos núcleos em 5,64 e de algum núcleo em 6,59. Além disso, a difusão não parece baixa, então a leitura não é de alívio generalizado. Minha leitura: núcleos abaixo do headline, mas ainda consistentes com um quadro misto e cauteloso, não com inflação subjacente claramente domada.",
+      "question": "Qual é o regime inflacionário atual e o que ele significa?",
+      "answer": "O regime inflacionário atual é “Quadro misto”. Isso significa que o diagnóstico não é de inflação claramente benigna, mas também não é um quadro uniformemente crítico: há pressão relevante no IPCA cheio e a inflação está relativamente espalhada, enquanto alguns componentes ainda dão alívio.\n\nA leitura que sustenta esse rótulo é a seguinte: o IPCA mensal veio em 0,58%, o acumulado em 12 meses está em 4,72% e o ritmo recente do IPCA está em 0,71% na MM3M. A difusão está elevada: 64,99% dos subitens subiram no mês, e a difusão em MM3M está no percentil 72,81 da história desde 2012. Isso importa porque difusão alta quer dizer que a alta de preços não está restrita a poucos itens, o que costuma tornar a desinflação mais difícil.\n\nAo mesmo tempo, a composição não é totalmente adversa: Alimentação e bebidas, Habitação e Saúde e cuidados pessoais puxaram o índice para cima, com contribuições de 0,29 p.p., 0,19 p.p. e 0,12 p.p.; Transportes, por outro lado, aliviou com -0,09 p.p. Os núcleos — medidas que tentam captar a tendência de fundo excluindo ou suavizando itens voláteis — também recomendam cautela: a média dos núcleos foi 0,45% no mês e 0,46% na MM3M.\n\nEm termos práticos: “Quadro misto” quer dizer inflação ainda desconfortável e disseminada, mas sem uma evidência única de deterioração generalizada em todos os blocos. Eu leria isso como um regime que exige cautela: não autoriza comemorar desinflação consolidada, mas também pede olhar a composição antes de concluir que houve piora ampla.",
       "claims": [
         {
-          "text": "No mensal, o IPCA cheio subiu 0,58% m/m, enquanto a média dos núcleos avançou 0,45% m/m.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_headline_mom",
-            "ev_core_mean_mom"
-          ]
-        },
-        {
-          "text": "Na MM3M, o headline está em 0,71% e a média dos núcleos em 0,46%.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_headline_mm3",
-            "ev_core_mean_mm3"
-          ]
-        },
-        {
-          "text": "Há alerta de média dos núcleos em 5,64 e de algum núcleo em 6,59.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_alert_0",
-            "ev_alert_1"
-          ]
-        },
-        {
-          "text": "A difusão não parece baixa, o que limita uma leitura benigna dos núcleos.",
-          "type": "interpretation",
-          "evidence_ids": [
-            "ev_diffusion_mom",
-            "ev_diffusion_mm3",
-            "ev_diffusion_mm3_percentile"
-          ]
-        },
-        {
-          "text": "O regime inflacionário é de quadro misto.",
+          "text": "O regime inflacionário atual é “Quadro misto”.",
           "type": "regime",
           "evidence_ids": [
             "ev_regime"
           ],
           "rule_id": "regime_v1_mixed"
+        },
+        {
+          "text": "O regime é um rótulo determinístico que resume o mês combinando o nível da inflação com o quanto ela está espalhada, comparando com a história desde 2012.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_ref_regime"
+          ]
+        },
+        {
+          "text": "O IPCA mensal veio em 0,58%, o acumulado em 12 meses está em 4,72% e o ritmo recente do IPCA está em 0,71% na MM3M.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_headline_mom",
+            "ev_headline_12m",
+            "ev_headline_mm3",
+            "ev_ref_mm3m"
+          ]
+        },
+        {
+          "text": "A difusão está elevada: 64,99% dos subitens subiram no mês, e a difusão em MM3M está no percentil 72,81 da história desde 2012.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_diffusion_mom",
+            "ev_diffusion_mm3_percentile",
+            "ev_ref_difusao",
+            "ev_ref_percentil"
+          ]
+        },
+        {
+          "text": "Difusão alta quer dizer que a alta de preços não está restrita a poucos itens, o que costuma tornar a desinflação mais difícil.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_ref_difusao"
+          ]
+        },
+        {
+          "text": "Alimentação e bebidas, Habitação e Saúde e cuidados pessoais puxaram o índice para cima, com contribuições de 0,29 p.p., 0,19 p.p. e 0,12 p.p.; Transportes, por outro lado, aliviou com -0,09 p.p.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_contrib_top_pos_0",
+            "ev_contrib_top_pos_1",
+            "ev_contrib_top_pos_2",
+            "ev_contrib_top_neg_0"
+          ]
+        },
+        {
+          "text": "Núcleos são medidas que tentam captar a tendência de fundo excluindo ou suavizando itens voláteis.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_ref_nucleos"
+          ]
+        },
+        {
+          "text": "A média dos núcleos foi 0,45% no mês e 0,46% na MM3M.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_core_mean_mom",
+            "ev_core_mean_mm3",
+            "ev_ref_mm3m"
+          ]
+        },
+        {
+          "text": "“Quadro misto” quer dizer inflação ainda desconfortável e disseminada, mas sem uma evidência única de deterioração generalizada em todos os blocos.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_regime",
+            "ev_diffusion_mom",
+            "ev_diffusion_mm3_percentile",
+            "ev_contrib_top_pos_0",
+            "ev_contrib_top_pos_1",
+            "ev_contrib_top_pos_2",
+            "ev_contrib_top_neg_0"
+          ]
         }
       ],
       "evidence": [
@@ -656,72 +1657,268 @@
           "date": "2026-05",
           "source": "OpenIPCA (determinístico)",
           "interpretation": "regime_v1_mixed"
+        },
+        {
+          "evidence_id": "ev_headline_saar_sa",
+          "metric": "IPCA 3m anualizado (SA)",
+          "value": 5.59,
+          "unit": "% a.a.",
+          "date": "2026-05",
+          "source": "OpenIPCA (STL sobre BCB/SGS)",
+          "interpretation": "momentum dessazonalizado (STL), 3m anualizado; o fator sazonal do mês mais recente é estimativa e revisa quando entram novos dados"
+        },
+        {
+          "evidence_id": "ev_core_mean_saar_sa",
+          "metric": "Média núcleos 3m anualizado SA (bcb_compact)",
+          "value": 4.39,
+          "unit": "% a.a.",
+          "date": "2026-05",
+          "source": "OpenIPCA (STL sobre BCB/SGS)",
+          "interpretation": "momentum dessazonalizado (STL); fator sazonal recente revisa"
+        },
+        {
+          "evidence_id": "ev_ref_nome",
+          "metric": "O que é o IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "IPCA é a sigla de Índice Nacional de Preços ao Consumidor Amplo, o índice oficial de inflação do Brasil, calculado e divulgado pelo IBGE (Instituto Brasileiro de Geografia e Estatística). É a referência usada no regime de metas de inflação perseguido pelo Banco Central."
+        },
+        {
+          "evidence_id": "ev_ref_base",
+          "metric": "Período-base do IPCA",
+          "value": 100,
+          "unit": "índice (base)",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA é um número-índice com base em dezembro de 1993 igualada a 100; as variações percentuais (no mês, no ano, em doze meses) são calculadas sobre esse encadeamento."
+        },
+        {
+          "evidence_id": "ev_ref_renda_min",
+          "metric": "Renda mínima da população-alvo do IPCA",
+          "value": 1,
+          "unit": "salário mínimo",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA mede a inflação de famílias com rendimento a partir de um salário mínimo, de qualquer fonte de renda, residentes nas áreas urbanas cobertas."
+        },
+        {
+          "evidence_id": "ev_ref_renda_max",
+          "metric": "Renda máxima da população-alvo do IPCA",
+          "value": 40,
+          "unit": "salários mínimos",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O teto da faixa de renda da população-alvo do IPCA é de quarenta salários mínimos; essa faixa abrange a maior parte das famílias urbanas brasileiras."
+        },
+        {
+          "evidence_id": "ev_ref_cobertura",
+          "metric": "Abrangência geográfica do IPCA",
+          "value": 16,
+          "unit": "áreas",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA é coletado em dezesseis áreas urbanas do país — regiões metropolitanas e municípios, incluindo o Distrito Federal —, entre elas São Paulo, Rio de Janeiro, Belo Horizonte, Porto Alegre, Curitiba, Salvador, Recife, Fortaleza, Belém, Vitória, Brasília, Goiânia, Campo Grande, Rio Branco, São Luís e Aracaju."
+        },
+        {
+          "evidence_id": "ev_ref_pesos_pof",
+          "metric": "Origem dos pesos do IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "Os pesos de cada produto e serviço na cesta do IPCA vêm da Pesquisa de Orçamentos Familiares (POF) do IBGE, que mede a estrutura de gastos das famílias; a estrutura vigente baseia-se na POF de 2017-2018, incorporada a partir de janeiro de 2020, e é atualizada quando uma nova POF entra em vigor."
+        },
+        {
+          "evidence_id": "ev_ref_grupos",
+          "metric": "Grupos do IPCA",
+          "value": 9,
+          "unit": "grupos",
+          "date": "",
+          "source": "https://sidra.ibge.gov.br/tabela/7060",
+          "interpretation": "A cesta do IPCA se organiza em nove grupos: Alimentação e bebidas, Habitação, Artigos de residência, Vestuário, Transportes, Saúde e cuidados pessoais, Despesas pessoais, Educação e Comunicação. Cada grupo se subdivide em subgrupos, itens e subitens."
+        },
+        {
+          "evidence_id": "ev_ref_calendario",
+          "metric": "Divulgação do IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA tem periodicidade mensal e é divulgado pelo IBGE em datas definidas no calendário oficial, geralmente na primeira quinzena do mês seguinte ao de referência (com frequência por volta da segunda semana). As datas exatas constam do calendário de divulgações do IBGE."
+        },
+        {
+          "evidence_id": "ev_ref_inpc",
+          "metric": "INPC (índice relacionado)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O INPC (Índice Nacional de Preços ao Consumidor) usa a mesma coleta do IPCA, mas mede a inflação de famílias de renda mais baixa — de um a cinco salários mínimos —, mais sensíveis a itens básicos como alimentação, transporte e medicamentos."
+        },
+        {
+          "evidence_id": "ev_ref_ipca15",
+          "metric": "IPCA-15 (prévia)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O IPCA-15 é uma prévia do IPCA: a principal diferença é o período de coleta de preços, que vai aproximadamente do dia dezesseis do mês anterior ao dia quinze do mês de referência; pode haver também diferença de abrangência geográfica em relação ao IPCA cheio."
+        },
+        {
+          "evidence_id": "ev_ref_ipcae",
+          "metric": "IPCA-E",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O IPCA-E é o acumulado trimestral do IPCA-15."
+        },
+        {
+          "evidence_id": "ev_ref_variacao_contrib",
+          "metric": "Variação (%) x Contribuição (p.p.)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "Variação (%) é quanto o preço de um grupo ou item mudou; contribuição (p.p.) é quanto ele puxou do IPCA cheio, calculada como variação vezes peso dividido por cem. Um item pode variar muito e contribuir pouco se tiver peso pequeno."
+        },
+        {
+          "evidence_id": "ev_ref_periodos",
+          "metric": "Variação no mês, no ano e em 12 meses",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "A variação no mês (m/m) compara com o mês anterior; a acumulada no ano encadeia de janeiro até o mês de referência; a acumulada em doze meses encadeia os últimos doze meses (não é soma simples) e é a medida mais usada para dizer \"a inflação está em tanto por cento\"."
+        },
+        {
+          "evidence_id": "ev_ref_nucleos",
+          "metric": "Núcleos de inflação",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "Núcleos são versões do IPCA que excluem ou suavizam os itens mais voláteis (como alimentos in natura e energia) para revelar a tendência de fundo da inflação; o Banco Central acompanha vários núcleos."
+        },
+        {
+          "evidence_id": "ev_ref_difusao",
+          "metric": "Difusão",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao",
+          "interpretation": "A difusão é o percentual (não ponderado) dos subitens efetivamente pesquisados do IPCA que tiveram variação de preço positiva no período; difusão alta indica inflação espalhada por muitos subitens — sinal mais preocupante do que uma alta concentrada em poucos."
+        },
+        {
+          "evidence_id": "ev_ref_mm3m",
+          "metric": "MM3M (média móvel de 3 meses)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "A MM3M é a média móvel de três meses da variação mensal; suaviza o ruído de um mês isolado para mostrar o ritmo recente. No app é apresentada sem ajuste sazonal."
+        },
+        {
+          "evidence_id": "ev_ref_nsa",
+          "metric": "Sem ajuste sazonal (NSA) e por que não anualizar",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "As variações do IPCA são brutas, sem ajuste sazonal (NSA). Por isso o app não anualiza a série mensal (não usa \"SAAR\"): anualizar uma série não ajustada elevaria o padrão sazonal e poderia enganar. Ajuste sazonal está planejado para uma versão futura."
+        },
+        {
+          "evidence_id": "ev_ref_percentil",
+          "metric": "Percentil histórico",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "O percentil compara o valor do mês com a história da própria série desde 2012, de forma expansiva (com tratamento de empates), indicando se o resultado está alto ou baixo frente ao histórico disponível."
+        },
+        {
+          "evidence_id": "ev_ref_regime",
+          "metric": "Regime inflacionário",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "O regime é um rótulo determinístico (regra fixa, não gerado por IA) que resume o mês combinando o nível da inflação com o quanto ela está espalhada, comparando com a história desde 2012."
+        },
+        {
+          "evidence_id": "ev_ref_fontes",
+          "metric": "Fontes de dados do app",
+          "value": 7060,
+          "unit": "tabela SIDRA",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "Os números do app vêm de fontes oficiais: IBGE/SIDRA (tabela 7060) para a decomposição por grupos, subgrupos, itens e subitens e para os pesos; e BCB/SGS para o headline, agregados, núcleos e a difusão oficial."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ex0",
+          "metric": "Núcleo EX0",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "EX0 é um núcleo por exclusão calculado pelo Banco Central: inclui todos os preços livres do IPCA, exceto alimentação no domicílio, para mostrar a tendência de fundo."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ex3",
+          "metric": "Núcleo EX3",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "EX3 é um núcleo por exclusão do Banco Central, derivado do EX2: é composto pelos núcleos de serviços e bens industriais presentes no EX2, exceto alimentação no domicílio."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ms",
+          "metric": "Núcleo MS (médias aparadas com suavização)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "MS é um núcleo de médias aparadas com suavização: descarta os itens de maior e menor variação no mês e suaviza itens cujos preços mudam com pouca frequência."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_dp",
+          "metric": "Núcleo DP (dupla ponderação)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "DP é o núcleo de dupla ponderação: dá menos peso aos itens mais voláteis, em vez de excluí-los, para suavizar choques."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_p55",
+          "metric": "Núcleo P55 (percentil)",
+          "value": 55,
+          "unit": "percentil",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "P55 é um núcleo de percentil: usa a variação do item na posição 55% da distribuição do mês, uma medida robusta de tendência central."
         }
       ],
       "provider": "openai",
       "mode": "ai"
     },
     {
-      "question": "Qual é o regime inflacionário atual e o que ele significa?",
-      "answer": "O regime inflacionário atual é de “Quadro misto”. Isso significa que a inflação não parece claramente benigna, porque há sinais de persistência e espalhamento, mas também não é um quadro uniformemente explosivo: há pressões relevantes em alguns grupos e alívios em outros.\n\nA leitura cética é a seguinte: o IPCA cheio ainda mostra pressão, com alta mensal relevante e inflação acumulada em 12 meses elevada para um ambiente confortável. Além disso, a média móvel de 3 meses indica que a pressão recente não é apenas um ponto isolado. A difusão — a parcela de subitens que está subindo — também está alta, o que sugere inflação relativamente espalhada, não concentrada em poucos itens. Os núcleos — medidas que tentam captar a tendência subjacente, retirando ruídos — reforçam a cautela, pois seguem em ritmo incompatível com uma leitura francamente benigna.\n\nPor outro lado, o quadro é “misto” porque a composição não é homogênea: Alimentação e bebidas, Habitação e Saúde e cuidados pessoais puxaram para cima, enquanto Transportes ajudou a aliviar. Ou seja, há pressão disseminada o suficiente para preocupar, mas com diferenças importantes entre grupos.\n\nEm termos práticos, esse regime significa que a inflação deve ser lida com cautela: não basta olhar só o número cheio do mês. O ponto central é monitorar se os núcleos e a difusão cedem de forma consistente; se não cederem, a inflação tende a parecer mais persistente do que um choque pontual sugeriria.",
+      "question": "Alimentação puxou ou segurou a inflação do mês?",
+      "answer": "Alimentação puxou a inflação do mês, não segurou. A contribuição de Alimentação e bebidas foi de 0,29 p.p. para um IPCA de 0,58%, o que a coloca como a principal pressão altista entre os grupos listados. Em contraste, quem ajudou a segurar foi Transportes, com contribuição de -0,09 p.p. Vale lembrar: contribuição em p.p. mede quanto o grupo adiciona ao IPCA cheio, combinando variação de preços e peso na cesta.",
       "claims": [
         {
-          "text": "O regime inflacionário atual é “Quadro misto” em 2026-05.",
-          "type": "regime",
-          "evidence_ids": [
-            "ev_regime"
-          ],
-          "rule_id": "regime_v1_mixed"
-        },
-        {
-          "text": "O IPCA subiu 0.58% no mês e acumula 4.72% em 12 meses em 2026-05.",
+          "text": "Alimentação e bebidas puxou a inflação do mês, com contribuição de 0,29 p.p. para um IPCA de 0,58%.",
           "type": "number",
           "evidence_ids": [
-            "ev_headline_mom",
-            "ev_headline_12m"
+            "ev_contrib_top_pos_0",
+            "ev_headline_mom"
           ]
         },
         {
-          "text": "A média móvel de 3 meses do IPCA está em 0.71% em 2026-05, sugerindo que a pressão recente não depende apenas de uma única leitura mensal.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_headline_mm3"
-          ]
-        },
-        {
-          "text": "O IPCA mensal está no percentil 67.92 da amostra desde 2012, o que indica uma leitura historicamente acima do meio da distribuição recente.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_headline_percentile"
-          ]
-        },
-        {
-          "text": "A difusão foi de 64.99% dos subitens no mês, enquanto a difusão em média móvel de 3 meses foi de 65.87% e ficou no percentil 72.81.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_diffusion_mom",
-            "ev_diffusion_mm3",
-            "ev_diffusion_mm3_percentile"
-          ]
-        },
-        {
-          "text": "A média dos núcleos subiu 0.45% no mês e 0.46% na média móvel de 3 meses em 2026-05.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_core_mean_mom",
-            "ev_core_mean_mm3"
-          ]
-        },
-        {
-          "text": "Os alertas de núcleos mostram 5.64 com interpretação high e 6.59 com interpretação critical, reforçando que a tendência subjacente exige cautela.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_alert_0",
-            "ev_alert_1"
-          ]
-        },
-        {
-          "text": "As maiores contribuições altistas vieram de Alimentação e bebidas, com 0.29 p.p., Habitação, com 0.19 p.p., e Saúde e cuidados pessoais, com 0.12 p.p.",
+          "text": "Entre os grupos listados, Alimentação e bebidas aparece como pressão altista mais relevante, à frente de Habitação, com 0,19 p.p., e Saúde e cuidados pessoais, com 0,12 p.p.",
           "type": "number",
           "evidence_ids": [
             "ev_contrib_top_pos_0",
@@ -730,28 +1927,17 @@
           ]
         },
         {
-          "text": "Transportes contribuiu com -0.09 p.p., funcionando como alívio parcial no mês.",
+          "text": "Transportes atuou no sentido oposto, com contribuição de -0,09 p.p., ajudando a segurar o índice cheio.",
           "type": "number",
           "evidence_ids": [
             "ev_contrib_top_neg_0"
           ]
         },
         {
-          "text": "A classificação como quadro misto decorre da combinação entre pressão no índice cheio, difusão elevada, núcleos ainda pressionados e composição heterogênea entre grupos.",
+          "text": "Contribuição em p.p. mede quanto cada grupo adiciona ao IPCA cheio, combinando sua variação de preços com seu peso na cesta.",
           "type": "interpretation",
           "evidence_ids": [
-            "ev_headline_mom",
-            "ev_headline_12m",
-            "ev_headline_mm3",
-            "ev_diffusion_mom",
-            "ev_diffusion_mm3",
-            "ev_core_mean_mom",
-            "ev_core_mean_mm3",
-            "ev_contrib_top_pos_0",
-            "ev_contrib_top_pos_1",
-            "ev_contrib_top_pos_2",
-            "ev_contrib_top_neg_0",
-            "ev_regime"
+            "ev_ref_variacao_contrib"
           ]
         }
       ],
@@ -917,210 +2103,249 @@
           "date": "2026-05",
           "source": "OpenIPCA (determinístico)",
           "interpretation": "regime_v1_mixed"
-        }
-      ],
-      "provider": "openai",
-      "mode": "ai"
-    },
-    {
-      "question": "Alimentação puxou ou segurou a inflação do mês?",
-      "answer": "Alimentação puxou a inflação do mês, não segurou. O grupo Alimentação e bebidas contribuiu com 0,29 p.p. para um IPCA de 0,58%, aparecendo como pressão altista relevante. Mas a leitura não é de inflação apenas de alimentos: Habitação somou 0,19 p.p. e Saúde e cuidados pessoais somou 0,12 p.p., enquanto Transportes aliviou com -0,09 p.p. Portanto, alimentação foi protagonista altista, dentro de um quadro misto de pressões e alívios.",
-      "claims": [
-        {
-          "text": "Alimentação puxou a inflação do mês, não segurou.",
-          "type": "interpretation",
-          "evidence_ids": [
-            "ev_contrib_top_pos_0"
-          ]
         },
         {
-          "text": "O grupo Alimentação e bebidas contribuiu com 0,29 p.p. para um IPCA de 0,58%, aparecendo como pressão altista relevante.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_contrib_top_pos_0",
-            "ev_headline_mom"
-          ]
-        },
-        {
-          "text": "Habitação somou 0,19 p.p. e Saúde e cuidados pessoais somou 0,12 p.p., enquanto Transportes aliviou com -0,09 p.p.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_contrib_top_pos_1",
-            "ev_contrib_top_pos_2",
-            "ev_contrib_top_neg_0"
-          ]
-        },
-        {
-          "text": "A leitura é de quadro misto, com pressões e alívios convivendo no mês.",
-          "type": "regime",
-          "evidence_ids": [
-            "ev_regime"
-          ],
-          "rule_id": "regime_v1_mixed"
-        }
-      ],
-      "evidence": [
-        {
-          "evidence_id": "ev_headline_mom",
-          "metric": "IPCA m/m",
-          "value": 0.58,
-          "unit": "%",
+          "evidence_id": "ev_headline_saar_sa",
+          "metric": "IPCA 3m anualizado (SA)",
+          "value": 5.59,
+          "unit": "% a.a.",
           "date": "2026-05",
-          "source": "BCB/SGS",
-          "interpretation": ""
+          "source": "OpenIPCA (STL sobre BCB/SGS)",
+          "interpretation": "momentum dessazonalizado (STL), 3m anualizado; o fator sazonal do mês mais recente é estimativa e revisa quando entram novos dados"
         },
         {
-          "evidence_id": "ev_headline_12m",
-          "metric": "IPCA 12m",
-          "value": 4.72,
-          "unit": "%",
+          "evidence_id": "ev_core_mean_saar_sa",
+          "metric": "Média núcleos 3m anualizado SA (bcb_compact)",
+          "value": 4.39,
+          "unit": "% a.a.",
           "date": "2026-05",
-          "source": "BCB/SGS",
-          "interpretation": ""
+          "source": "OpenIPCA (STL sobre BCB/SGS)",
+          "interpretation": "momentum dessazonalizado (STL); fator sazonal recente revisa"
         },
         {
-          "evidence_id": "ev_headline_mm3",
-          "metric": "IPCA MM3M (NSA)",
-          "value": 0.71,
-          "unit": "%",
-          "date": "2026-05",
-          "source": "BCB/SGS",
-          "interpretation": "média móvel 3m da variação m/m, sem ajuste sazonal"
+          "evidence_id": "ev_ref_nome",
+          "metric": "O que é o IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "IPCA é a sigla de Índice Nacional de Preços ao Consumidor Amplo, o índice oficial de inflação do Brasil, calculado e divulgado pelo IBGE (Instituto Brasileiro de Geografia e Estatística). É a referência usada no regime de metas de inflação perseguido pelo Banco Central."
         },
         {
-          "evidence_id": "ev_headline_percentile",
-          "metric": "IPCA m/m percentil",
-          "value": 67.92,
-          "unit": "percentile",
-          "date": "2026-05",
-          "source": "BCB/SGS",
-          "interpretation": "percentil da história desde 2012 (janela expansiva, midrank)"
+          "evidence_id": "ev_ref_base",
+          "metric": "Período-base do IPCA",
+          "value": 100,
+          "unit": "índice (base)",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA é um número-índice com base em dezembro de 1993 igualada a 100; as variações percentuais (no mês, no ano, em doze meses) são calculadas sobre esse encadeamento."
         },
         {
-          "evidence_id": "ev_diffusion_mom",
-          "metric": "Difusão m/m",
-          "value": 64.99,
-          "unit": "% de subitens",
-          "date": "2026-05",
-          "source": "BCB/SGS",
-          "interpretation": ""
+          "evidence_id": "ev_ref_renda_min",
+          "metric": "Renda mínima da população-alvo do IPCA",
+          "value": 1,
+          "unit": "salário mínimo",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA mede a inflação de famílias com rendimento a partir de um salário mínimo, de qualquer fonte de renda, residentes nas áreas urbanas cobertas."
         },
         {
-          "evidence_id": "ev_diffusion_mm3",
-          "metric": "Difusão MM3M",
-          "value": 65.87,
-          "unit": "% de subitens",
-          "date": "2026-05",
-          "source": "BCB/SGS",
-          "interpretation": ""
+          "evidence_id": "ev_ref_renda_max",
+          "metric": "Renda máxima da população-alvo do IPCA",
+          "value": 40,
+          "unit": "salários mínimos",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O teto da faixa de renda da população-alvo do IPCA é de quarenta salários mínimos; essa faixa abrange a maior parte das famílias urbanas brasileiras."
         },
         {
-          "evidence_id": "ev_diffusion_mm3_percentile",
-          "metric": "Difusão MM3M percentil",
-          "value": 72.81,
-          "unit": "percentile",
-          "date": "2026-05",
-          "source": "BCB/SGS",
-          "interpretation": "percentil da história desde 2012 (janela expansiva, midrank)"
+          "evidence_id": "ev_ref_cobertura",
+          "metric": "Abrangência geográfica do IPCA",
+          "value": 16,
+          "unit": "áreas",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA é coletado em dezesseis áreas urbanas do país — regiões metropolitanas e municípios, incluindo o Distrito Federal —, entre elas São Paulo, Rio de Janeiro, Belo Horizonte, Porto Alegre, Curitiba, Salvador, Recife, Fortaleza, Belém, Vitória, Brasília, Goiânia, Campo Grande, Rio Branco, São Luís e Aracaju."
         },
         {
-          "evidence_id": "ev_core_mean_mom",
-          "metric": "Média núcleos m/m (bcb_compact)",
-          "value": 0.45,
-          "unit": "%",
-          "date": "2026-05",
-          "source": "BCB/SGS",
-          "interpretation": ""
+          "evidence_id": "ev_ref_pesos_pof",
+          "metric": "Origem dos pesos do IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "Os pesos de cada produto e serviço na cesta do IPCA vêm da Pesquisa de Orçamentos Familiares (POF) do IBGE, que mede a estrutura de gastos das famílias; a estrutura vigente baseia-se na POF de 2017-2018, incorporada a partir de janeiro de 2020, e é atualizada quando uma nova POF entra em vigor."
         },
         {
-          "evidence_id": "ev_core_mean_mm3",
-          "metric": "Média núcleos MM3M (bcb_compact)",
-          "value": 0.46,
-          "unit": "%",
-          "date": "2026-05",
-          "source": "BCB/SGS",
-          "interpretation": ""
+          "evidence_id": "ev_ref_grupos",
+          "metric": "Grupos do IPCA",
+          "value": 9,
+          "unit": "grupos",
+          "date": "",
+          "source": "https://sidra.ibge.gov.br/tabela/7060",
+          "interpretation": "A cesta do IPCA se organiza em nove grupos: Alimentação e bebidas, Habitação, Artigos de residência, Vestuário, Transportes, Saúde e cuidados pessoais, Despesas pessoais, Educação e Comunicação. Cada grupo se subdivide em subgrupos, itens e subitens."
         },
         {
-          "evidence_id": "ev_contrib_top_pos_0",
-          "metric": "Contribuição: Alimentação e bebidas",
-          "value": 0.29,
-          "unit": "p.p.",
-          "date": "2026-05",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "pressão altista"
+          "evidence_id": "ev_ref_calendario",
+          "metric": "Divulgação do IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA tem periodicidade mensal e é divulgado pelo IBGE em datas definidas no calendário oficial, geralmente na primeira quinzena do mês seguinte ao de referência (com frequência por volta da segunda semana). As datas exatas constam do calendário de divulgações do IBGE."
         },
         {
-          "evidence_id": "ev_contrib_top_pos_1",
-          "metric": "Contribuição: Habitação",
-          "value": 0.19,
-          "unit": "p.p.",
-          "date": "2026-05",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "pressão altista"
+          "evidence_id": "ev_ref_inpc",
+          "metric": "INPC (índice relacionado)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O INPC (Índice Nacional de Preços ao Consumidor) usa a mesma coleta do IPCA, mas mede a inflação de famílias de renda mais baixa — de um a cinco salários mínimos —, mais sensíveis a itens básicos como alimentação, transporte e medicamentos."
         },
         {
-          "evidence_id": "ev_contrib_top_pos_2",
-          "metric": "Contribuição: Saúde e cuidados pessoais",
-          "value": 0.12,
-          "unit": "p.p.",
-          "date": "2026-05",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "pressão altista"
+          "evidence_id": "ev_ref_ipca15",
+          "metric": "IPCA-15 (prévia)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O IPCA-15 é uma prévia do IPCA: a principal diferença é o período de coleta de preços, que vai aproximadamente do dia dezesseis do mês anterior ao dia quinze do mês de referência; pode haver também diferença de abrangência geográfica em relação ao IPCA cheio."
         },
         {
-          "evidence_id": "ev_contrib_top_neg_0",
-          "metric": "Contribuição: Transportes",
-          "value": -0.09,
-          "unit": "p.p.",
-          "date": "2026-05",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "alívio / menor pressão"
+          "evidence_id": "ev_ref_ipcae",
+          "metric": "IPCA-E",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O IPCA-E é o acumulado trimestral do IPCA-15."
         },
         {
-          "evidence_id": "ev_contrib_top_neg_1",
-          "metric": "Contribuição: Educação",
-          "value": 0.0,
-          "unit": "p.p.",
-          "date": "2026-05",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "alívio / menor pressão"
+          "evidence_id": "ev_ref_variacao_contrib",
+          "metric": "Variação (%) x Contribuição (p.p.)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "Variação (%) é quanto o preço de um grupo ou item mudou; contribuição (p.p.) é quanto ele puxou do IPCA cheio, calculada como variação vezes peso dividido por cem. Um item pode variar muito e contribuir pouco se tiver peso pequeno."
         },
         {
-          "evidence_id": "ev_contrib_top_neg_2",
-          "metric": "Contribuição: Artigos de residência",
-          "value": 0.0,
-          "unit": "p.p.",
-          "date": "2026-05",
-          "source": "IBGE/SIDRA 7060",
-          "interpretation": "alívio / menor pressão"
+          "evidence_id": "ev_ref_periodos",
+          "metric": "Variação no mês, no ano e em 12 meses",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "A variação no mês (m/m) compara com o mês anterior; a acumulada no ano encadeia de janeiro até o mês de referência; a acumulada em doze meses encadeia os últimos doze meses (não é soma simples) e é a medida mais usada para dizer \"a inflação está em tanto por cento\"."
         },
         {
-          "evidence_id": "ev_alert_0",
-          "metric": "Alerta: core_mean_3m_saar_high",
-          "value": 5.64,
-          "unit": "",
-          "date": "2026-05",
-          "source": "BCB/SGS",
-          "interpretation": "high"
+          "evidence_id": "ev_ref_nucleos",
+          "metric": "Núcleos de inflação",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "Núcleos são versões do IPCA que excluem ou suavizam os itens mais voláteis (como alimentos in natura e energia) para revelar a tendência de fundo da inflação; o Banco Central acompanha vários núcleos."
         },
         {
-          "evidence_id": "ev_alert_1",
-          "metric": "Alerta: core_any_3m_saar_critical",
-          "value": 6.59,
-          "unit": "",
-          "date": "2026-05",
-          "source": "BCB/SGS",
-          "interpretation": "critical"
+          "evidence_id": "ev_ref_difusao",
+          "metric": "Difusão",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao",
+          "interpretation": "A difusão é o percentual (não ponderado) dos subitens efetivamente pesquisados do IPCA que tiveram variação de preço positiva no período; difusão alta indica inflação espalhada por muitos subitens — sinal mais preocupante do que uma alta concentrada em poucos."
         },
         {
-          "evidence_id": "ev_regime",
+          "evidence_id": "ev_ref_mm3m",
+          "metric": "MM3M (média móvel de 3 meses)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "A MM3M é a média móvel de três meses da variação mensal; suaviza o ruído de um mês isolado para mostrar o ritmo recente. No app é apresentada sem ajuste sazonal."
+        },
+        {
+          "evidence_id": "ev_ref_nsa",
+          "metric": "Sem ajuste sazonal (NSA) e por que não anualizar",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "As variações do IPCA são brutas, sem ajuste sazonal (NSA). Por isso o app não anualiza a série mensal (não usa \"SAAR\"): anualizar uma série não ajustada elevaria o padrão sazonal e poderia enganar. Ajuste sazonal está planejado para uma versão futura."
+        },
+        {
+          "evidence_id": "ev_ref_percentil",
+          "metric": "Percentil histórico",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "O percentil compara o valor do mês com a história da própria série desde 2012, de forma expansiva (com tratamento de empates), indicando se o resultado está alto ou baixo frente ao histórico disponível."
+        },
+        {
+          "evidence_id": "ev_ref_regime",
           "metric": "Regime inflacionário",
-          "value": "Quadro misto",
-          "unit": "label",
-          "date": "2026-05",
-          "source": "OpenIPCA (determinístico)",
-          "interpretation": "regime_v1_mixed"
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "O regime é um rótulo determinístico (regra fixa, não gerado por IA) que resume o mês combinando o nível da inflação com o quanto ela está espalhada, comparando com a história desde 2012."
+        },
+        {
+          "evidence_id": "ev_ref_fontes",
+          "metric": "Fontes de dados do app",
+          "value": 7060,
+          "unit": "tabela SIDRA",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "Os números do app vêm de fontes oficiais: IBGE/SIDRA (tabela 7060) para a decomposição por grupos, subgrupos, itens e subitens e para os pesos; e BCB/SGS para o headline, agregados, núcleos e a difusão oficial."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ex0",
+          "metric": "Núcleo EX0",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "EX0 é um núcleo por exclusão calculado pelo Banco Central: inclui todos os preços livres do IPCA, exceto alimentação no domicílio, para mostrar a tendência de fundo."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ex3",
+          "metric": "Núcleo EX3",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "EX3 é um núcleo por exclusão do Banco Central, derivado do EX2: é composto pelos núcleos de serviços e bens industriais presentes no EX2, exceto alimentação no domicílio."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ms",
+          "metric": "Núcleo MS (médias aparadas com suavização)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "MS é um núcleo de médias aparadas com suavização: descarta os itens de maior e menor variação no mês e suaviza itens cujos preços mudam com pouca frequência."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_dp",
+          "metric": "Núcleo DP (dupla ponderação)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "DP é o núcleo de dupla ponderação: dá menos peso aos itens mais voláteis, em vez de excluí-los, para suavizar choques."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_p55",
+          "metric": "Núcleo P55 (percentil)",
+          "value": 55,
+          "unit": "percentil",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "P55 é um núcleo de percentil: usa a variação do item na posição 55% da distribuição do mês, uma medida robusta de tendência central."
         }
       ],
       "provider": "openai",
@@ -1128,33 +2353,41 @@
     },
     {
       "question": "Como está a inflação acumulada em 12 meses?",
-      "answer": "O IPCA acumulado em doze meses está em 4,72% em maio. A leitura não é benignamente desinflacionária: o dado mensal foi de 0,58% e a média móvel de três meses está em 0,71%, o que sugere ritmo corrente ainda pressionado. A difusão — parcela de subitens com alta — também está elevada, em 64,99% no mês e 65,87% na média móvel, indicando que a pressão não está totalmente concentrada em poucos itens. Em resumo: o acumulado em doze meses está moderado, mas os sinais de curto prazo recomendam cautela.",
+      "answer": "Em 2026-05, a inflação medida pelo IPCA acumulada em 12 meses estava em 4,72%. Em termos qualitativos, eu leria isso como uma inflação ainda incômoda: o dado cheio não está isolado, porque o IPCA do mês foi 0,58%, a média móvel de 3 meses ficou em 0,71% e a difusão alcançou 64,99% dos subitens, sugerindo pressão relativamente espalhada. Ainda assim, o regime resumido pela tabela é de “Quadro misto”, não de deterioração inequívoca.",
       "claims": [
         {
-          "text": "O IPCA acumulado em doze meses está em 4,72% em maio.",
+          "text": "Em 2026-05, a inflação medida pelo IPCA acumulada em 12 meses estava em 4,72%.",
           "type": "number",
           "evidence_ids": [
             "ev_headline_12m"
           ]
         },
         {
-          "text": "O dado mensal foi de 0,58% e a média móvel de três meses está em 0,71%, sugerindo ritmo corrente ainda pressionado.",
+          "text": "A acumulada em 12 meses encadeia os últimos doze meses e é a medida mais usada para dizer quanto está a inflação, não sendo uma soma simples das variações mensais.",
           "type": "interpretation",
           "evidence_ids": [
-            "ev_headline_mom",
-            "ev_headline_mm3"
+            "ev_ref_periodos"
           ]
         },
         {
-          "text": "A difusão está em 64,99% no mês e 65,87% na média móvel, indicando pressão relativamente espalhada entre subitens.",
+          "text": "O IPCA do mês foi 0,58%, a média móvel de 3 meses ficou em 0,71% e a difusão alcançou 64,99% dos subitens.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_headline_mom",
+            "ev_headline_mm3",
+            "ev_diffusion_mom"
+          ]
+        },
+        {
+          "text": "A leitura sugere inflação ainda incômoda e relativamente espalhada, pois a difusão mede a parcela de subitens com alta de preços no período.",
           "type": "interpretation",
           "evidence_ids": [
             "ev_diffusion_mom",
-            "ev_diffusion_mm3"
+            "ev_ref_difusao"
           ]
         },
         {
-          "text": "O regime inflacionário é classificado como Quadro misto.",
+          "text": "O regime inflacionário é “Quadro misto”.",
           "type": "regime",
           "evidence_ids": [
             "ev_regime"
@@ -1324,6 +2557,249 @@
           "date": "2026-05",
           "source": "OpenIPCA (determinístico)",
           "interpretation": "regime_v1_mixed"
+        },
+        {
+          "evidence_id": "ev_headline_saar_sa",
+          "metric": "IPCA 3m anualizado (SA)",
+          "value": 5.59,
+          "unit": "% a.a.",
+          "date": "2026-05",
+          "source": "OpenIPCA (STL sobre BCB/SGS)",
+          "interpretation": "momentum dessazonalizado (STL), 3m anualizado; o fator sazonal do mês mais recente é estimativa e revisa quando entram novos dados"
+        },
+        {
+          "evidence_id": "ev_core_mean_saar_sa",
+          "metric": "Média núcleos 3m anualizado SA (bcb_compact)",
+          "value": 4.39,
+          "unit": "% a.a.",
+          "date": "2026-05",
+          "source": "OpenIPCA (STL sobre BCB/SGS)",
+          "interpretation": "momentum dessazonalizado (STL); fator sazonal recente revisa"
+        },
+        {
+          "evidence_id": "ev_ref_nome",
+          "metric": "O que é o IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "IPCA é a sigla de Índice Nacional de Preços ao Consumidor Amplo, o índice oficial de inflação do Brasil, calculado e divulgado pelo IBGE (Instituto Brasileiro de Geografia e Estatística). É a referência usada no regime de metas de inflação perseguido pelo Banco Central."
+        },
+        {
+          "evidence_id": "ev_ref_base",
+          "metric": "Período-base do IPCA",
+          "value": 100,
+          "unit": "índice (base)",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA é um número-índice com base em dezembro de 1993 igualada a 100; as variações percentuais (no mês, no ano, em doze meses) são calculadas sobre esse encadeamento."
+        },
+        {
+          "evidence_id": "ev_ref_renda_min",
+          "metric": "Renda mínima da população-alvo do IPCA",
+          "value": 1,
+          "unit": "salário mínimo",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA mede a inflação de famílias com rendimento a partir de um salário mínimo, de qualquer fonte de renda, residentes nas áreas urbanas cobertas."
+        },
+        {
+          "evidence_id": "ev_ref_renda_max",
+          "metric": "Renda máxima da população-alvo do IPCA",
+          "value": 40,
+          "unit": "salários mínimos",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O teto da faixa de renda da população-alvo do IPCA é de quarenta salários mínimos; essa faixa abrange a maior parte das famílias urbanas brasileiras."
+        },
+        {
+          "evidence_id": "ev_ref_cobertura",
+          "metric": "Abrangência geográfica do IPCA",
+          "value": 16,
+          "unit": "áreas",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA é coletado em dezesseis áreas urbanas do país — regiões metropolitanas e municípios, incluindo o Distrito Federal —, entre elas São Paulo, Rio de Janeiro, Belo Horizonte, Porto Alegre, Curitiba, Salvador, Recife, Fortaleza, Belém, Vitória, Brasília, Goiânia, Campo Grande, Rio Branco, São Luís e Aracaju."
+        },
+        {
+          "evidence_id": "ev_ref_pesos_pof",
+          "metric": "Origem dos pesos do IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "Os pesos de cada produto e serviço na cesta do IPCA vêm da Pesquisa de Orçamentos Familiares (POF) do IBGE, que mede a estrutura de gastos das famílias; a estrutura vigente baseia-se na POF de 2017-2018, incorporada a partir de janeiro de 2020, e é atualizada quando uma nova POF entra em vigor."
+        },
+        {
+          "evidence_id": "ev_ref_grupos",
+          "metric": "Grupos do IPCA",
+          "value": 9,
+          "unit": "grupos",
+          "date": "",
+          "source": "https://sidra.ibge.gov.br/tabela/7060",
+          "interpretation": "A cesta do IPCA se organiza em nove grupos: Alimentação e bebidas, Habitação, Artigos de residência, Vestuário, Transportes, Saúde e cuidados pessoais, Despesas pessoais, Educação e Comunicação. Cada grupo se subdivide em subgrupos, itens e subitens."
+        },
+        {
+          "evidence_id": "ev_ref_calendario",
+          "metric": "Divulgação do IPCA",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html",
+          "interpretation": "O IPCA tem periodicidade mensal e é divulgado pelo IBGE em datas definidas no calendário oficial, geralmente na primeira quinzena do mês seguinte ao de referência (com frequência por volta da segunda semana). As datas exatas constam do calendário de divulgações do IBGE."
+        },
+        {
+          "evidence_id": "ev_ref_inpc",
+          "metric": "INPC (índice relacionado)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O INPC (Índice Nacional de Preços ao Consumidor) usa a mesma coleta do IPCA, mas mede a inflação de famílias de renda mais baixa — de um a cinco salários mínimos —, mais sensíveis a itens básicos como alimentação, transporte e medicamentos."
+        },
+        {
+          "evidence_id": "ev_ref_ipca15",
+          "metric": "IPCA-15 (prévia)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O IPCA-15 é uma prévia do IPCA: a principal diferença é o período de coleta de preços, que vai aproximadamente do dia dezesseis do mês anterior ao dia quinze do mês de referência; pode haver também diferença de abrangência geográfica em relação ao IPCA cheio."
+        },
+        {
+          "evidence_id": "ev_ref_ipcae",
+          "metric": "IPCA-E",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.ibge.gov.br/explica/inflacao.php",
+          "interpretation": "O IPCA-E é o acumulado trimestral do IPCA-15."
+        },
+        {
+          "evidence_id": "ev_ref_variacao_contrib",
+          "metric": "Variação (%) x Contribuição (p.p.)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "Variação (%) é quanto o preço de um grupo ou item mudou; contribuição (p.p.) é quanto ele puxou do IPCA cheio, calculada como variação vezes peso dividido por cem. Um item pode variar muito e contribuir pouco se tiver peso pequeno."
+        },
+        {
+          "evidence_id": "ev_ref_periodos",
+          "metric": "Variação no mês, no ano e em 12 meses",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "A variação no mês (m/m) compara com o mês anterior; a acumulada no ano encadeia de janeiro até o mês de referência; a acumulada em doze meses encadeia os últimos doze meses (não é soma simples) e é a medida mais usada para dizer \"a inflação está em tanto por cento\"."
+        },
+        {
+          "evidence_id": "ev_ref_nucleos",
+          "metric": "Núcleos de inflação",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "Núcleos são versões do IPCA que excluem ou suavizam os itens mais voláteis (como alimentos in natura e energia) para revelar a tendência de fundo da inflação; o Banco Central acompanha vários núcleos."
+        },
+        {
+          "evidence_id": "ev_ref_difusao",
+          "metric": "Difusão",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao",
+          "interpretation": "A difusão é o percentual (não ponderado) dos subitens efetivamente pesquisados do IPCA que tiveram variação de preço positiva no período; difusão alta indica inflação espalhada por muitos subitens — sinal mais preocupante do que uma alta concentrada em poucos."
+        },
+        {
+          "evidence_id": "ev_ref_mm3m",
+          "metric": "MM3M (média móvel de 3 meses)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "A MM3M é a média móvel de três meses da variação mensal; suaviza o ruído de um mês isolado para mostrar o ritmo recente. No app é apresentada sem ajuste sazonal."
+        },
+        {
+          "evidence_id": "ev_ref_nsa",
+          "metric": "Sem ajuste sazonal (NSA) e por que não anualizar",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "As variações do IPCA são brutas, sem ajuste sazonal (NSA). Por isso o app não anualiza a série mensal (não usa \"SAAR\"): anualizar uma série não ajustada elevaria o padrão sazonal e poderia enganar. Ajuste sazonal está planejado para uma versão futura."
+        },
+        {
+          "evidence_id": "ev_ref_percentil",
+          "metric": "Percentil histórico",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "O percentil compara o valor do mês com a história da própria série desde 2012, de forma expansiva (com tratamento de empates), indicando se o resultado está alto ou baixo frente ao histórico disponível."
+        },
+        {
+          "evidence_id": "ev_ref_regime",
+          "metric": "Regime inflacionário",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "O regime é um rótulo determinístico (regra fixa, não gerado por IA) que resume o mês combinando o nível da inflação com o quanto ela está espalhada, comparando com a história desde 2012."
+        },
+        {
+          "evidence_id": "ev_ref_fontes",
+          "metric": "Fontes de dados do app",
+          "value": 7060,
+          "unit": "tabela SIDRA",
+          "date": "",
+          "source": "OpenIPCA — methodology.md",
+          "interpretation": "Os números do app vêm de fontes oficiais: IBGE/SIDRA (tabela 7060) para a decomposição por grupos, subgrupos, itens e subitens e para os pesos; e BCB/SGS para o headline, agregados, núcleos e a difusão oficial."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ex0",
+          "metric": "Núcleo EX0",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "EX0 é um núcleo por exclusão calculado pelo Banco Central: inclui todos os preços livres do IPCA, exceto alimentação no domicílio, para mostrar a tendência de fundo."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ex3",
+          "metric": "Núcleo EX3",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "EX3 é um núcleo por exclusão do Banco Central, derivado do EX2: é composto pelos núcleos de serviços e bens industriais presentes no EX2, exceto alimentação no domicílio."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_ms",
+          "metric": "Núcleo MS (médias aparadas com suavização)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "MS é um núcleo de médias aparadas com suavização: descarta os itens de maior e menor variação no mês e suaviza itens cujos preços mudam com pouca frequência."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_dp",
+          "metric": "Núcleo DP (dupla ponderação)",
+          "value": null,
+          "unit": "texto",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "DP é o núcleo de dupla ponderação: dá menos peso aos itens mais voláteis, em vez de excluí-los, para suavizar choques."
+        },
+        {
+          "evidence_id": "ev_ref_nucleo_p55",
+          "metric": "Núcleo P55 (percentil)",
+          "value": 55,
+          "unit": "percentil",
+          "date": "",
+          "source": "https://www.bcb.gov.br/controleinflacao/nucleosinflacao",
+          "interpretation": "P55 é um núcleo de percentil: usa a variação do item na posição 55% da distribuição do mês, uma medida robusta de tendência central."
         }
       ],
       "provider": "openai",
