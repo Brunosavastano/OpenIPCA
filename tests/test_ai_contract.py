@@ -525,3 +525,63 @@ def test_numeric_reference_fact_grounds_its_own_figure_but_not_a_fake_one():
     }
     with pytest.raises(GuardrailError):
         validate_ai_output(bad, evidence)  # 99 is not the cited value
+
+
+def test_broadened_window_phrasings_are_labels_not_figures():
+    # The actual false positive that silently rejected valid live Q&A answers:
+    # the model phrases the rolling window many ways, and the bare integer of a
+    # KNOWN window (3/6/12/24 + meses) is a label, not a data figure.
+    from ipca_dashboard.ai.guardrails import _numbers_in
+
+    assert _numbers_in("no acumulado de 12 meses") == []
+    assert _numbers_in("o núcleo de 3 meses") == []
+    assert _numbers_in("nos últimos 6 meses") == []
+    assert _numbers_in("na média de 24 meses") == []
+    assert _numbers_in("o IPCA subiu 0.67% nos últimos 12 meses") == [0.67]
+    assert _numbers_in("acelerou 1.20% em 3 meses") == [1.2]
+    # Only the real windows are dropped — arbitrary/large counts STILL grounded,
+    # so a model cannot smuggle "in the last N months ..." past the guardrail.
+    assert _numbers_in("em 9 meses") == [9.0]
+    assert _numbers_in("há 5 meses") == [5.0]
+    assert _numbers_in("em 112 meses") == [112.0]  # window int only at a boundary
+    # A fake DATA figure adjacent to a window word is still caught.
+    assert 7.77 in _numbers_in("subiu 7.77% em 12 meses")
+
+
+def test_window_phrasing_does_not_block_a_valid_number_claim():
+    # Fix outcome: a claim that correctly cites its data but writes the window as
+    # "acumulado de 12 meses" must NOT be rejected (this was the live-Q&A bug).
+    evidence = evidence_table_to_dicts(get_headline(_bcb()))  # 12m = 4.50
+    good = {
+        "claims": [
+            {
+                "text": "O IPCA ficou em 4.50% no acumulado de 12 meses.",
+                "type": "number",
+                "evidence_ids": ["ev_headline_12m"],
+            }
+        ],
+        "short_brief": "x",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+    validate_ai_output(good, evidence)  # must NOT raise
+
+
+def test_window_phrasing_still_catches_a_fake_number():
+    # Guardrail integrity: broadening windows must not let a fake figure through
+    # just because it sits next to "12 meses".
+    evidence = evidence_table_to_dicts(get_headline(_bcb()))  # 12m = 4.50
+    bad = {
+        "claims": [
+            {
+                "text": "O IPCA ficou em 7.77% no acumulado de 12 meses.",
+                "type": "number",
+                "evidence_ids": ["ev_headline_12m"],
+            }
+        ],
+        "short_brief": "x",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+    with pytest.raises(GuardrailError):
+        validate_ai_output(bad, evidence)

@@ -120,11 +120,18 @@ _COMPACT_INJECTION_PATTERNS = [
 # dates like "2024-03" / "03-2024".
 _NUMBER_RE = re.compile(r"(?<![A-Za-z\d-])-?\d+(?:[.,]\d+)?(?![A-Za-z]|[\d-])")
 
-# Known window phrases used as metric labels, not data figures. Keep this narrow:
-# arbitrary counts like "9 meses" or "2 anos" must still be grounded.
+# Metric-window labels, not data figures. The integer in "<window> meses" is the
+# lookback length of a rolling metric (12m, MM3M, MM6M, the 24-month charts), so
+# "12 meses" / "3 meses" must not be treated as ungrounded numbers — that false
+# positive was silently rejecting valid live Q&A answers (the model phrases the
+# window many ways: "acumulado de 12 meses", "núcleo de 3 meses", "nos últimos 6
+# meses"). Restricted to the windows the product actually uses (3, 6, 12, 24):
+# arbitrary counts like "9 meses" or "2 anos" must STILL be grounded, so a model
+# cannot smuggle an unsupported "in the last N ..." claim. The data values
+# themselves (4,39%, 0,67 p.p.) carry units and are grounded as usual — only the
+# bare window integer bound to a month-word is dropped.
 _KNOWN_WINDOW_PHRASE = re.compile(
-    r"\bem\s+12\s+(?:meses|mes|m[eê]s)\b|"
-    r"\bm[eé]dia(?:\s+m[oó]vel)?\s+de\s+3\s+(?:meses|mes|m[eê]s)\b",
+    r"\b(?:3|6|12|24)\s+(?:meses|m[eê]s)\b",
     re.IGNORECASE,
 )
 
