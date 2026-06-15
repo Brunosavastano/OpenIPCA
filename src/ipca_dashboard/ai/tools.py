@@ -18,6 +18,9 @@ from ipca_dashboard.regime import classify_inflation_regime
 
 SOURCE_SGS = "BCB/SGS"
 SOURCE_SIDRA = "IBGE/SIDRA 7060"
+# Seasonal adjustment is computed by OpenIPCA (STL over the BCB/SGS series), not an
+# official BCB/IBGE figure — the distinct source keeps that honest in every citation.
+SOURCE_STL = "OpenIPCA (STL sobre BCB/SGS)"
 
 
 def _latest_row(bcb: pd.DataFrame, name: str) -> pd.Series | None:
@@ -71,6 +74,16 @@ def get_headline(bcb: pd.DataFrame) -> list[Evidence]:
             month,
             SOURCE_SGS,
             "percentil da história desde 2012 (janela expansiva, midrank)",
+        ),
+        Evidence(
+            "ev_headline_saar_sa",
+            "IPCA 3m anualizado (SA)",
+            _num(row.get("annualized_3m_sa")),
+            "% a.a.",
+            month,
+            SOURCE_STL,
+            "momentum dessazonalizado (STL), 3m anualizado; o fator sazonal do mês "
+            "mais recente é estimativa e revisa quando entram novos dados",
         ),
     ]
 
@@ -146,6 +159,16 @@ def get_cores(
             month,
             SOURCE_SGS,
             interp,
+        ),
+        Evidence(
+            "ev_core_mean_saar_sa",
+            f"Média núcleos 3m anualizado SA ({core_set})",
+            _num(row.get("annualized_3m_sa")),
+            "% a.a.",
+            month,
+            SOURCE_STL,
+            (interp + "; " if interp else "")
+            + "momentum dessazonalizado (STL); fator sazonal recente revisa",
         ),
     ]
 

@@ -192,7 +192,7 @@ BCB/SGS (`config/series_sgs.yaml`) e IBGE/SIDRA tabela 7060 (`config/sidra_7060.
 ### 4.4 Dessazonalização e momentum *(decisão nova)*
 - **Problema:** as variações mensais da SIDRA/SGS são brutas (NSA). Anualizar 3m de série NSA eleva o padrão sazonal à 4ª potência e pode enganar; e "SAAR" significa *Seasonally Adjusted* — usar a sigla sobre NSA é incorreto.
 - **Decisão v0.1:** **não anualizar série NSA.** Mostrar **acumulado 3m** e/ou **MM3M**, rotulados claramente. Remover o rótulo "saar" onde não houver ajuste sazonal. Caveat **visível na UI** (não escondido em `methodology.md`).
-- **Decisão v0.2:** ajuste sazonal via **STL** (`statsmodels.tsa.seasonal.STL`, Python-puro) para headline + núcleos; só então oferecer "3m anualizado (SA)". X-13ARIMA-SEATS fica como opção avançada futura. Não vender como "BCB-like" sem caveat.
+- **Entregue (v0.x):** ajuste sazonal via **STL** (`statsmodels.tsa.seasonal.STL`, aditivo, `robust=True`) para **headline + núcleos**, computado no build-time (pipeline) e persistido em parquet. Expõe `mom_sa` (m/m SA) e `annualized_3m_sa` ("3m anualizado SA" — o SAAR legítimo, pois agora há ajuste sazonal), citável pela IA (`ev_headline_saar_sa`, `ev_core_mean_saar_sa`). **Caveat visível na UI:** o fator sazonal da cauda é estimativa que **revisa**; é STL próprio, **não** X-13ARIMA-SEATS oficial nem número do IBGE/BCB. `statsmodels` fica só no extra de build (`pipeline`/`dev`), **fora do `requirements.txt`** — o app lê parquet, então o Streamlit Cloud segue enxuto; se a lib faltar, SA degrada para NaN e o painel NSA continua correto. X-13ARIMA-SEATS continua opção avançada futura. Não vender como "BCB-like" sem caveat.
 
 ### 4.5 Núcleos
 - Presets em `config/core_sets.yaml`. Default `bcb_compact` = EX0, EX3, MS, DP, P55.
@@ -340,7 +340,7 @@ Lint/format: `ruff` (`select = ["E","F","I","UP","B","SIM"]`, line-length 100). 
 ## 12. Roadmap
 
 - **v0.1.0-public** — 6 bugs bloqueantes; difusão/percentil centralizados; freshness; staging strict; relabel de momentum + caveat NSA; OSS mínimo; página executiva limpa; **brief determinístico + um brief de IA aterrado com trace persistido**; regime classifier mínimo; artefato estático + hero via `make release-report` **manual**; brief em AI Replay Mode + Pergunte ao IPCA ao vivo com rede auditada. (Ver §16 para o corte Must/Should/Nice.)
-- **v0.2.0-ai-agentic** — **Ask the IPCA** agêntico aterrado (Q&A multi-passo com tool-use; replay como rede); STL (SA) + 3m anualizado SA; **detecção de release diária + PR automático**; `OllamaProvider`/segundo provider; eval harness completo; observabilidade de IA; capability tiers ativos; evidência clicável; tema/components polidos.
+- **v0.2.0-ai-agentic** — **Ask the IPCA** agêntico aterrado (Q&A multi-passo com tool-use; replay como rede); ~~STL (SA) + 3m anualizado SA~~ **(entregue em v0.x, §4.4)**; **detecção de release diária + PR automático**; `OllamaProvider`/segundo provider; eval harness completo; observabilidade de IA; capability tiers ativos; evidência clicável; tema/components polidos.
 - **v0.3.0-research-workflow** — `alerts_history.parquet` + cooldown + status (new/repeated/resolved/suppressed); comparação manual com Focus/consenso; calendário de divulgação; export HTML/PDF; heatmap de difusão por grupo.
 - **v1.0.0** — API pública estável do pacote; migração opcional p/ namespace `openipca` com alias; cobertura mínima definida; possível frontend premium se houver tração.
 
@@ -417,10 +417,11 @@ Corte de escopo para não re-inflar o projeto. **Só "Must" bloqueia o lançamen
 - Evidência clicável (chips); estrutura `reports/latest/`; `test-ai-contract` separado de `eval-model`; tema/components.
 
 **NICE / DEFER (v0.2+):**
-- Ask the IPCA **agêntico** (Q&A multi-passo com tool-use); detecção diária + PR automático; STL (SA); `OllamaProvider`/2º provider; Trust Panel; badges por elemento; taxonomia de 7 regimes; cooldown/histórico de alertas.
+- Ask the IPCA **agêntico** (Q&A multi-passo com tool-use); detecção diária + PR automático; `OllamaProvider`/2º provider; Trust Panel; badges por elemento; taxonomia de 7 regimes; cooldown/histórico de alertas. *(STL (SA) saiu do defer — entregue em v0.x, §4.4.)*
 - **Corpus de referência AMPLO com retrieval/embeddings** (RAG): a versão enxuta e curada (`config/ipca_reference.yaml`, ~30 fatos citáveis injetados no Q&A) já entra em v0.1; a versão grande, que exigiria recuperação seletiva (logo, infra nova), fica para v0.2.
 
 **Regras anti-overengineering (do projeto):**
 1. Ideia nova entra como **Nice** por default; só vira Must com justificativa explícita.
 2. Rodada de revisão de spec **não adiciona Must** — só corta ou esclarece.
 3. App leve: Streamlit + pandas, **sem infra nova**; IA = artefato gerado por script, **sem serving**.
+   - *Nota (ajuste sazonal, §4.4):* `statsmodels` entrou como única dependência numérica pesada, **só em build-time** (o pipeline computa o STL e persiste em parquet; o app lê parquet). Não é "infra"/serving e fica fora do `requirements.txt` do Cloud — a regra 3 segue respeitada.

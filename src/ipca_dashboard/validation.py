@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from ipca_dashboard.transforms import MONTHLY_LIKE_GROUPS
+
 
 def validation_row(check: str, status: str, value: float | str, details: str) -> dict[str, object]:
     return {"check": check, "status": status, "value": value, "details": details}
@@ -243,12 +245,50 @@ def validate_sgs_history_depth(bcb: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def validate_stl_coverage(bcb: pd.DataFrame) -> pd.DataFrame:
+    """Warn (never block) when seasonal adjustment didn't land for the headline.
+
+    SA is computed at build time via STL (transforms.seasonally_adjust) and is
+    fail-soft: if the ``pipeline`` build extra (statsmodels) is missing, the series
+    is too short, or STL errors, ``mom_sa`` comes back all-NaN. That must NOT stop
+    the monthly refresh — the NSA panel stays correct — so this check is warn-only
+    and deliberately OUT of pipeline.STRICT_REQUIRED_PASS_CHECKS.
+    """
+    if bcb.empty or "mom_sa" not in bcb.columns:
+        return pd.DataFrame(
+            [validation_row("stl_coverage", "warn", 0, "BCB vazio ou sem coluna mom_sa.")]
+        )
+    ipca = bcb[bcb["series_short_name"] == "IPCA"].sort_values("date")
+    has_headline_sa = bool(not ipca.empty and pd.notna(ipca["mom_sa"].iloc[-1]))
+    monthly_like = bcb[bcb["series_group"].isin(MONTHLY_LIKE_GROUPS)]
+    covered = int(
+        monthly_like.groupby("series_short_name")["mom_sa"]
+        .apply(lambda s: bool(s.notna().any()))
+        .sum()
+    )
+    return pd.DataFrame(
+        [
+            validation_row(
+                "stl_coverage",
+                "pass" if has_headline_sa else "warn",
+                covered,
+                (
+                    f"Ajuste sazonal (STL) no IPCA headline: {has_headline_sa}; "
+                    f"{covered} séries monthly-like com SA. Warn não bloqueia o refresh "
+                    "(o painel NSA permanece correto se o STL não rodar)."
+                ),
+            )
+        ]
+    )
+
+
 def validate_all(bcb: pd.DataFrame, items: pd.DataFrame, core_sets_config: dict) -> pd.DataFrame:
     return pd.concat(
         [
             validate_bcb_series(bcb, core_sets_config),
             validate_critical_series_freshness(bcb),
             validate_sgs_history_depth(bcb),
+            validate_stl_coverage(bcb),
             validate_ipca_items(items),
         ],
         ignore_index=True,

@@ -22,6 +22,16 @@ dependencies = [
 dev = [
   "pytest>=8.0",
   "ruff>=0.6",
+  # Tests cover the STL seasonal adjustment, so CI needs statsmodels too.
+  "statsmodels>=0.14",
+]
+# Build-time only: the STL seasonal adjustment (transforms.seasonally_adjust) runs
+# in the pipeline and is persisted to parquet. The Streamlit Cloud app reads only
+# parquet, so statsmodels stays OUT of requirements.txt (the deploy install stays
+# lean) and lives here, installed by the data-refresh workflow. If it's ever
+# missing, SA degrades gracefully to NaN — the pipeline never breaks.
+pipeline = [
+  "statsmodels>=0.14",
 ]
 # Optional AI providers (BYOK). Not in CI; the app works fully without these.
 # The app is model-agnostic — this extra just makes one hosted provider available.

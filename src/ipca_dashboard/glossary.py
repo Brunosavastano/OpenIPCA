@@ -35,6 +35,12 @@ CARD_TERMS: dict[str, str] = {
         "Quão espalhada está a alta de preços: % de itens da cesta que subiram "
         "(média de 3 meses). Alto = inflação disseminada; baixo = concentrada em poucos itens."
     ),
+    "IPCA 3m anual. SA": (
+        "Ritmo da inflação já descontados os efeitos típicos da época do ano: a "
+        "variação dos últimos 3 meses, anualizada, com ajuste sazonal (método STL). "
+        "É a melhor leitura de 'a que velocidade a inflação corre agora'. O fator "
+        "sazonal do mês mais recente é estimativa e pode ser revisado."
+    ),
     "Alertas ativos": (
         "Quantos sinais de atenção a metodologia acendeu neste mês (ex.: núcleos altos, "
         "inflação muito espalhada). Cada alerta é uma regra objetiva, não opinião."
@@ -78,7 +84,14 @@ CONCEPTS: dict[str, str] = {
     ),
     "nsa": (
         "NSA (sem ajuste sazonal): o número não foi corrigido para efeitos típicos da "
-        "época do ano. A versão com ajuste sazonal está planejada para uma próxima versão."
+        "época do ano. A versão com ajuste sazonal (SA), via STL, está disponível ao lado."
+    ),
+    "ajuste sazonal": (
+        "Ajuste sazonal (SA): remove do número os efeitos que se repetem todo ano "
+        "(matrícula escolar em fevereiro, contas de energia, etc.) para mostrar a "
+        "inflação 'limpa' do calendário. Aqui é feito com o método STL. A correção do "
+        "mês mais recente é uma estimativa e pode mudar quando entram novos dados — não "
+        "é um número oficial do IBGE/BCB."
     ),
     "regime": (
         "Regime inflacionário: um rótulo que resume o quadro do mês combinando o nível "
@@ -158,6 +171,8 @@ METRIC_LABELS: dict[str, str] = {
     "rolling_12m": "em 12 meses",
     "moving_average_3m": "média de 3 meses (MM3M, sem ajuste sazonal)",
     "three_month_saar": "3 meses anualizado (NSA, experimental)",
+    "mom_sa": "no mês com ajuste sazonal (SA)",
+    "annualized_3m_sa": "3 meses anualizado com ajuste sazonal (SA)",
 }
 
 

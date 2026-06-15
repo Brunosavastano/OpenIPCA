@@ -57,7 +57,28 @@ MM3M_t = média(x_t, x_{t-1}, x_{t-2})            # m/m, sem ajuste sazonal
 3m anualizado (NSA) = 100 * [((1 + x_t/100)(1 + x_{t-1}/100)(1 + x_{t-2}/100))^4 - 1]
 ```
 
-Uma versão **anualizada com ajuste sazonal (SA)**, via STL, está planejada para o v0.2.
+### Ajuste sazonal (SA) via STL
+
+Para **headline e núcleos**, calculamos uma série dessazonalizada com **STL**
+(`statsmodels.tsa.seasonal.STL`, decomposição aditiva, `period=12`, `robust=True`). A m/m
+já é uma taxa aditiva, então o ajuste sazonal aditivo é o modelo correto, e `robust=True`
+impede que o choque de 2020–22 distorça os fatores sazonais. O resultado é determinístico
+dada a entrada (auditável).
+
+```text
+mom_sa = observado − componente_sazonal(STL)     # m/m com ajuste sazonal
+annualized_3m_sa = 100 * [((1 + s_t/100)(1 + s_{t-1}/100)(1 + s_{t-2}/100))^4 - 1]
+                                                 # s = mom_sa; agora "SAAR" é legítimo
+```
+
+**Caveat (importante).** O fator sazonal do mês mais recente é uma **estimativa que revisa**
+quando entram novos dados — leia o `annualized_3m_sa` da ponta como provisório. É um ajuste
+**próprio via STL**, não o X-13ARIMA-SEATS oficial nem um número do IBGE/BCB.
+
+**Operacional.** O STL roda só no **build-time** (pipeline) e é persistido em parquet; o app
+apenas lê parquet. Por isso `statsmodels` vive no extra de build (`pipeline`/`dev`) e **não**
+no `requirements.txt` do deploy. Se a dependência faltar, a série SA fica vazia (NaN) e o
+painel NSA continua correto — o pipeline nunca quebra por causa do ajuste sazonal.
 
 ### Média dos núcleos
 

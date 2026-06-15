@@ -412,6 +412,45 @@ def diffusion_line(bcb: pd.DataFrame) -> go.Figure:
     return apply_layout(fig, "Difusão do IPCA: mensal, MM3M e percentis", "% de subitens")
 
 
+def momentum_line(bcb: pd.DataFrame) -> go.Figure:
+    """IPCA monthly variation: raw (NSA) vs seasonally adjusted (STL).
+
+    Shows exactly what seasonal adjustment does — it strips the calendar swings
+    from the month-to-month reading, so the SA line is the honest momentum signal.
+    The most-recent SA factor is an estimate that revises as new data arrives
+    (caveat carried on the methodology page and in the glossary).
+    """
+    data = bcb[bcb["series_short_name"] == "IPCA"].sort_values("date")
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=data["date"],
+            y=data["mom"],
+            name="m/m (NSA)",
+            line=dict(color=_INFO, width=1.3),
+        )
+    )
+    # The SA line only exists once the pipeline (build-time STL) has populated it.
+    # On older parquet — or if statsmodels was missing at build — the column may be
+    # absent/all-NaN; degrade to the NSA-only chart instead of failing.
+    has_sa = "mom_sa" in data.columns and data["mom_sa"].notna().any()
+    if has_sa:
+        fig.add_trace(
+            go.Scatter(
+                x=data["date"],
+                y=data["mom_sa"],
+                name="m/m com ajuste sazonal (SA)",
+                line=dict(color=_TEXT_COLOR, width=2.4),
+            )
+        )
+    title = (
+        "Momento do IPCA: variação mensal bruta (NSA) vs ajuste sazonal (SA)"
+        if has_sa
+        else "Momento do IPCA: variação mensal (NSA)"
+    )
+    return apply_layout(fig, title, "% m/m")
+
+
 def ipca_diffusion_scatter(bcb: pd.DataFrame) -> go.Figure:
     ipca = bcb[bcb["series_short_name"] == "IPCA"][["date", "mom"]].rename(
         columns={"mom": "ipca_mom"}
