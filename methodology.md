@@ -132,4 +132,5 @@ Os relatórios ficam em `outputs/audit/` e não substituem os Parquets usados pe
 - A decomposição granular depende da estrutura SIDRA 7060, iniciada em 2020 para a estrutura atual do IPCA.
 - A contribuição 12m encadeada é uma aproximação técnica baseada no índice headline reconstruído.
 - Percentis expansivos sao sensiveis ao periodo inicial escolhido; a base pública coleta SGS desde 2012-01 (pós-crise de 2008, regime de metas maduro), e essa escolha está exposta aqui em vez de embutida.
-- O sistema não realiza dessazonalização nem modelos preditivos no MVP.
+- O sistema realiza ajuste sazonal próprio via STL para headline e núcleos, com
+  caveat de revisão na cauda; não realiza modelos preditivos no MVP.

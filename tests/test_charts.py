@@ -73,6 +73,20 @@ def test_momentum_line_shows_nsa_and_sa_traces():
     assert sa_trace.line.color == charts._TEXT_COLOR
 
 
+def test_momentum_line_degrades_when_sa_column_is_absent():
+    df = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2024-01-01", "2024-02-01", "2024-03-01"]),
+            "series_short_name": ["IPCA"] * 3,
+            "mom": [0.40, 0.55, 0.30],
+        }
+    )
+    fig = momentum_line(df)
+    assert len(fig.data) == 1
+    assert fig.data[0].name == "m/m (NSA)"
+    assert "ajuste sazonal" not in fig.layout.title.text
+
+
 def test_apply_layout_subtitle_is_embedded():
     fig = apply_layout(go.Figure(), "T", subtitle="🔴 cima · 🔵 baixo")
     assert "cima" in fig.layout.title.text and "<sub>" in fig.layout.title.text

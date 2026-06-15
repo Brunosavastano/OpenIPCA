@@ -104,6 +104,7 @@ def test_parser_defaults_pin_sgs_2012_and_sidra_2020():
 
 def test_strict_checks_include_history_depth_tripwire():
     assert "sgs_history_depth" in pipeline.STRICT_REQUIRED_PASS_CHECKS
+    assert "stl_coverage" not in pipeline.STRICT_REQUIRED_PASS_CHECKS
 
 
 def test_fetch_command_passes_separate_starts(monkeypatch, tmp_path):
