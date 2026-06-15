@@ -452,3 +452,76 @@ def test_window_words_and_dates_are_not_treated_as_figures():
     assert _numbers_in("o IPCA acelerou por 9 meses") == [9.0]
     assert _numbers_in("o IPCA ficou em 2 anos") == [2.0]
     assert 9.99 in _numbers_in("o IPCA foi 9.99%")  # fake still caught
+
+
+def test_reference_fact_grounds_a_qualitative_methodology_claim():
+    # The corpus mechanism: a qualitative claim citing a reference evidence item
+    # (no numbers) grounds — this is what lets the Q&A answer methodology questions.
+    evidence = [
+        {
+            "evidence_id": "ev_ref_pesos",
+            "metric": "Pesos do IPCA",
+            "value": None,
+            "unit": "texto",
+            "date": "",
+            "source": "https://www.ibge.gov.br/...",
+            "interpretation": "Os pesos vêm da POF.",
+        }
+    ]
+    good = {
+        "claims": [
+            {
+                "text": "Os pesos do IPCA vêm da Pesquisa de Orçamentos Familiares (POF).",
+                "type": "interpretation",
+                "evidence_ids": ["ev_ref_pesos"],
+            }
+        ],
+        "short_brief": "x",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+    validate_ai_output(good, evidence)  # must NOT raise
+
+
+def test_numeric_reference_fact_grounds_its_own_figure_but_not_a_fake_one():
+    # A reference figure is citable when it lives in `value` (no guardrail change);
+    # a different number citing the same fact is still rejected.
+    evidence = [
+        {
+            "evidence_id": "ev_ref_cobertura",
+            "metric": "Abrangência do IPCA",
+            "value": 16,
+            "unit": "áreas",
+            "date": "",
+            "source": "https://www.ibge.gov.br/...",
+            "interpretation": "Coletado em dezesseis áreas.",
+        }
+    ]
+    good = {
+        "claims": [
+            {
+                "text": "O IPCA é coletado em 16 áreas do país.",
+                "type": "number",
+                "evidence_ids": ["ev_ref_cobertura"],
+            }
+        ],
+        "short_brief": "x",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+    validate_ai_output(good, evidence)  # 16 matches the cited value -> ok
+
+    bad = {
+        "claims": [
+            {
+                "text": "O IPCA é coletado em 99 áreas do país.",
+                "type": "number",
+                "evidence_ids": ["ev_ref_cobertura"],
+            }
+        ],
+        "short_brief": "x",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+    with pytest.raises(GuardrailError):
+        validate_ai_output(bad, evidence)  # 99 is not the cited value

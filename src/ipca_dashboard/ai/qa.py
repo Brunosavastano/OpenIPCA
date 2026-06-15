@@ -31,6 +31,7 @@ from ipca_dashboard.ai.guardrails import (
 )
 from ipca_dashboard.ai.providers.base import LLMProvider
 from ipca_dashboard.ai.providers.registry import resolve_provider
+from ipca_dashboard.ai.reference import load_reference_evidence
 from ipca_dashboard.ai.schemas import ANSWER_SCHEMA
 from ipca_dashboard.ai.tools import build_evidence_table
 
@@ -63,6 +64,12 @@ QA_SYSTEM = (
     "(3) CONFRONTE com os dados — esse item subiu ou não?; (4) seja explícito sobre "
     "DEFASAGENS (lags) e incerteza; (5) trate como 'hipótese a monitorar', nunca como causa "
     "confirmada. Se os dados contradizem a hipótese, diga isso com clareza.\n\n"
+    "FATOS DE REFERÊNCIA OFICIAIS: a tabela inclui itens com id começando em 'ev_ref_' — "
+    "fatos OFICIAIS sobre o IPCA (o que é, cobertura geográfica e de renda, pesos via POF, "
+    "calendário de divulgação, diferença para INPC/IPCA-15, definição de núcleos e conceitos), "
+    "cada um com sua fonte. Para perguntas conceituais/metodológicas, RESPONDA citando esses "
+    "ev_ref_* como qualquer evidência (registre o id em evidence_ids). Valem as mesmas regras: "
+    "um número só pode ser citado se vier do campo value de uma evidência citada.\n\n"
     "HONESTIDADE SOBRE LIMITES: se a pergunta pede algo que os dados não cobrem (uma causa "
     "externa, uma previsão, um número inexistente na tabela), DIGA explicitamente o que não "
     "pode afirmar — não finja que a pergunta foi outra.\n\n"
@@ -173,9 +180,12 @@ def answer_question(
         config = load_ai_config()
         if provider is None:
             provider = resolve_provider(config.provider if config.is_active else "none")
+        # Numeric evidence of the month (shared with the brief) PLUS the curated
+        # official reference corpus — Q&A only, so the model can ground
+        # methodology/concept answers. The brief path does not load the corpus.
         evidence = evidence_table_to_dicts(
             build_evidence_table(bcb, ipca_items, core_metrics, alerts, core_set)
-        )
+        ) + evidence_table_to_dicts(load_reference_evidence())
     except Exception as exc:  # noqa: BLE001 - AI must never block
         from ipca_dashboard.ai.providers.no_ai import NoAIProvider
 
