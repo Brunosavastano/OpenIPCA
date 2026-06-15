@@ -1,0 +1,249 @@
+# Corpus de referência oficial do IPCA — fatos CITÁVEIS pela IA no "Pergunte ao IPCA".
+#
+# Cada fato vira um item de evidência (ev_ref_*) que o modelo pode citar para
+# responder perguntas metodológicas/conceituais, mantendo o grounding: toda
+# afirmação cita uma fonte. REGRA DE NÚMERO (o guardrail não foi afrouxado):
+# se o fato tem um número que o modelo provavelmente vai citar, o número fica em
+# `value` (citável); a prosa em `interpretation` evita dígitos soltos (use
+# palavras: "nove", "dezesseis", "cem"). Anos (1993, 2017) são ignorados pelo
+# guardrail automaticamente.
+#
+# REVISAR (Bruno): confira a PRECISÃO de cada fato e a fonte antes do merge.
+# Fato oficial errado com selo de fonte é pior que "não tenho esse dado".
+# Texto é redação própria (sem cópia literal); a URL é a fonte oficial.
+
+facts:
+  # --- Identidade e autoridade ---------------------------------------------
+  - id: ev_ref_nome
+    metric: "O que é o IPCA"
+    unit: "texto"
+    source: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html"
+    interpretation: >-
+      IPCA é a sigla de Índice Nacional de Preços ao Consumidor Amplo, o índice
+      oficial de inflação do Brasil, calculado e divulgado pelo IBGE (Instituto
+      Brasileiro de Geografia e Estatística). É a referência usada no regime de
+      metas de inflação perseguido pelo Banco Central.
+
+  - id: ev_ref_base
+    metric: "Período-base do IPCA"
+    value: 100
+    unit: "índice (base)"
+    source: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html"
+    interpretation: >-
+      O IPCA é um número-índice com base em dezembro de 1993 igualada a 100; as
+      variações percentuais (no mês, no ano, em doze meses) são calculadas sobre
+      esse encadeamento.
+
+  # --- População-alvo e abrangência ----------------------------------------
+  - id: ev_ref_renda_min
+    metric: "Renda mínima da população-alvo do IPCA"
+    value: 1
+    unit: "salário mínimo"
+    source: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html"
+    interpretation: >-
+      O IPCA mede a inflação de famílias com rendimento a partir de um salário
+      mínimo, de qualquer fonte de renda, residentes nas áreas urbanas cobertas.
+
+  - id: ev_ref_renda_max
+    metric: "Renda máxima da população-alvo do IPCA"
+    value: 40
+    unit: "salários mínimos"
+    source: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html"
+    interpretation: >-
+      O teto da faixa de renda da população-alvo do IPCA é de quarenta salários
+      mínimos; essa faixa abrange a maior parte das famílias urbanas brasileiras.
+
+  - id: ev_ref_cobertura
+    metric: "Abrangência geográfica do IPCA"
+    value: 16
+    unit: "áreas"
+    source: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html"
+    interpretation: >-
+      O IPCA é coletado em dezesseis áreas: as regiões metropolitanas de Belém,
+      Fortaleza, Recife, Salvador, Belo Horizonte, Vitória, Rio de Janeiro, São
+      Paulo, Curitiba e Porto Alegre, mais os municípios de Goiânia, Campo
+      Grande, Rio Branco, São Luís, Aracaju e o Distrito Federal (Brasília).
+
+  # --- Pesos e estrutura ----------------------------------------------------
+  - id: ev_ref_pesos_pof
+    metric: "Origem dos pesos do IPCA"
+    unit: "texto"
+    source: "https://www.ibge.gov.br/estatisticas/sociais/rendimento-despesa-e-consumo/9050-pesquisa-de-orcamentos-familiares.html"
+    interpretation: >-
+      Os pesos de cada produto e serviço na cesta do IPCA vêm da Pesquisa de
+      Orçamentos Familiares (POF) do IBGE, que mede a estrutura de gastos das
+      famílias; a estrutura vigente baseia-se na POF de 2017-2018 e é atualizada
+      quando uma nova POF é incorporada.
+
+  - id: ev_ref_grupos
+    metric: "Grupos do IPCA"
+    value: 9
+    unit: "grupos"
+    source: "https://sidra.ibge.gov.br/tabela/7060"
+    interpretation: >-
+      A cesta do IPCA se organiza em nove grupos: Alimentação e bebidas,
+      Habitação, Artigos de residência, Vestuário, Transportes, Saúde e cuidados
+      pessoais, Despesas pessoais, Educação e Comunicação. Cada grupo se subdivide
+      em subgrupos, itens e subitens.
+
+  # --- Calendário -----------------------------------------------------------
+  - id: ev_ref_calendario
+    metric: "Divulgação do IPCA"
+    unit: "texto"
+    source: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html"
+    interpretation: >-
+      O IPCA tem periodicidade mensal e é divulgado pelo IBGE por volta da
+      segunda semana do mês seguinte ao de referência (em geral entre os dias dez
+      e doze).
+
+  # --- Índices relacionados -------------------------------------------------
+  - id: ev_ref_inpc
+    metric: "INPC (índice relacionado)"
+    unit: "texto"
+    source: "https://www.ibge.gov.br/explica/inflacao.php"
+    interpretation: >-
+      O INPC (Índice Nacional de Preços ao Consumidor) usa a mesma coleta do IPCA,
+      mas mede a inflação de famílias de renda mais baixa — de um a cinco salários
+      mínimos —, mais sensíveis a itens básicos como alimentação, transporte e
+      medicamentos.
+
+  - id: ev_ref_ipca15
+    metric: "IPCA-15 (prévia)"
+    unit: "texto"
+    source: "https://www.ibge.gov.br/explica/inflacao.php"
+    interpretation: >-
+      O IPCA-15 é uma prévia do IPCA: difere apenas no período de coleta de
+      preços, que vai aproximadamente do dia dezesseis do mês anterior ao dia
+      quinze do mês de referência.
+
+  - id: ev_ref_ipcae
+    metric: "IPCA-E"
+    unit: "texto"
+    source: "https://www.ibge.gov.br/explica/inflacao.php"
+    interpretation: "O IPCA-E é o acumulado trimestral do IPCA-15."
+
+  # --- Conceitos de leitura -------------------------------------------------
+  - id: ev_ref_variacao_contrib
+    metric: "Variação (%) x Contribuição (p.p.)"
+    unit: "texto"
+    source: "OpenIPCA — methodology.md"
+    interpretation: >-
+      Variação (%) é quanto o preço de um grupo ou item mudou; contribuição (p.p.)
+      é quanto ele puxou do IPCA cheio, calculada como variação vezes peso dividido
+      por cem. Um item pode variar muito e contribuir pouco se tiver peso pequeno.
+
+  - id: ev_ref_periodos
+    metric: "Variação no mês, no ano e em 12 meses"
+    unit: "texto"
+    source: "OpenIPCA — methodology.md"
+    interpretation: >-
+      A variação no mês (m/m) compara com o mês anterior; a acumulada no ano
+      encadeia de janeiro até o mês de referência; a acumulada em doze meses
+      encadeia os últimos doze meses (não é soma simples) e é a medida mais usada
+      para dizer "a inflação está em tanto por cento".
+
+  - id: ev_ref_nucleos
+    metric: "Núcleos de inflação"
+    unit: "texto"
+    source: "https://www.bcb.gov.br/controleinflacao/nucleosinflacao"
+    interpretation: >-
+      Núcleos são versões do IPCA que excluem ou suavizam os itens mais voláteis
+      (como alimentos in natura e energia) para revelar a tendência de fundo da
+      inflação; o Banco Central acompanha vários núcleos.
+
+  - id: ev_ref_difusao
+    metric: "Difusão"
+    unit: "texto"
+    source: "https://www.bcb.gov.br/controleinflacao"
+    interpretation: >-
+      A difusão é a parcela dos itens da cesta que subiram de preço no período;
+      difusão alta indica inflação espalhada por muitos itens — sinal mais
+      preocupante do que uma alta concentrada em poucos itens.
+
+  - id: ev_ref_mm3m
+    metric: "MM3M (média móvel de 3 meses)"
+    unit: "texto"
+    source: "OpenIPCA — methodology.md"
+    interpretation: >-
+      A MM3M é a média móvel de três meses da variação mensal; suaviza o ruído de
+      um mês isolado para mostrar o ritmo recente. No app é apresentada sem ajuste
+      sazonal.
+
+  - id: ev_ref_nsa
+    metric: "Sem ajuste sazonal (NSA) e por que não anualizar"
+    unit: "texto"
+    source: "OpenIPCA — methodology.md"
+    interpretation: >-
+      As variações do IPCA são brutas, sem ajuste sazonal (NSA). Por isso o app não
+      anualiza a série mensal (não usa "SAAR"): anualizar uma série não ajustada
+      elevaria o padrão sazonal e poderia enganar. Ajuste sazonal está planejado
+      para uma versão futura.
+
+  - id: ev_ref_percentil
+    metric: "Percentil histórico"
+    unit: "texto"
+    source: "OpenIPCA — methodology.md"
+    interpretation: >-
+      O percentil compara o valor do mês com a história da própria série desde
+      2012, de forma expansiva (com tratamento de empates), indicando se o
+      resultado está alto ou baixo frente ao histórico disponível.
+
+  - id: ev_ref_regime
+    metric: "Regime inflacionário"
+    unit: "texto"
+    source: "OpenIPCA — methodology.md"
+    interpretation: >-
+      O regime é um rótulo determinístico (regra fixa, não gerado por IA) que
+      resume o mês combinando o nível da inflação com o quanto ela está espalhada,
+      comparando com a história desde 2012.
+
+  - id: ev_ref_fontes
+    metric: "Fontes de dados do app"
+    unit: "texto"
+    source: "OpenIPCA — methodology.md"
+    interpretation: >-
+      Os números do app vêm de fontes oficiais: IBGE/SIDRA (tabela 7060) para a
+      decomposição por grupos, subgrupos, itens e subitens e para os pesos; e
+      BCB/SGS para o headline, agregados, núcleos e a difusão oficial.
+
+  # --- Definições dos núcleos do preset default -----------------------------
+  - id: ev_ref_nucleo_ex0
+    metric: "Núcleo EX0"
+    unit: "texto"
+    source: "https://www.bcb.gov.br/controleinflacao/nucleosinflacao"
+    interpretation: >-
+      EX0 é um núcleo por exclusão: remove do IPCA itens muito voláteis (alimentos
+      no domicílio e energia) para mostrar a tendência de fundo.
+
+  - id: ev_ref_nucleo_ex3
+    metric: "Núcleo EX3"
+    unit: "texto"
+    source: "https://www.bcb.gov.br/controleinflacao/nucleosinflacao"
+    interpretation: >-
+      EX3 é um núcleo por exclusão que retira alimentos no domicílio e itens de
+      energia, muito acompanhado pelo Banco Central.
+
+  - id: ev_ref_nucleo_ms
+    metric: "Núcleo MS (médias aparadas com suavização)"
+    unit: "texto"
+    source: "https://www.bcb.gov.br/controleinflacao/nucleosinflacao"
+    interpretation: >-
+      MS é um núcleo de médias aparadas com suavização: descarta os itens de maior
+      e menor variação no mês e suaviza itens cujos preços mudam com pouca
+      frequência.
+
+  - id: ev_ref_nucleo_dp
+    metric: "Núcleo DP (dupla ponderação)"
+    unit: "texto"
+    source: "https://www.bcb.gov.br/controleinflacao/nucleosinflacao"
+    interpretation: >-
+      DP é o núcleo de dupla ponderação: dá menos peso aos itens mais voláteis, em
+      vez de excluí-los, para suavizar choques.
+
+  - id: ev_ref_nucleo_p55
+    metric: "Núcleo P55 (percentil)"
+    unit: "texto"
+    source: "https://www.bcb.gov.br/controleinflacao/nucleosinflacao"
+    interpretation: >-
+      P55 é um núcleo de percentil: usa a variação do item na posição 55% da
+      distribuição do mês, uma medida robusta de tendência central.

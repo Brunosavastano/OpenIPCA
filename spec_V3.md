@@ -167,6 +167,7 @@ Merge é a aprovação humana. A IA nunca fala em público sem revisão. (Detalh
 - **Evidência clicável:** cada afirmação do brief é um chip que aponta para o número/gráfico que a sustenta (`evidence_id` → fonte). "Toda frase auditável com um clique" — sinal AI-native novo e 100% seguro com conteúdo pré-gerado.
 - **Trace de orquestração persistido** (`reports/<mês>/ai_trace.json` + expander "como a IA montou este brief"): o brief é gerado por **uma execução real com tool-use** (rodada uma vez), e o trace (tool calls → evidence_ids → claims) é salvo. É o que torna "a IA orquestra" verdadeiro, não slogan — sem viewer dedicado, só o replay do que já foi gerado.
 - O **output** de IA aparece **por padrão** na página executiva. O **brief** roda em **"AI Replay Mode"** (pré-gerado e auditado); o **Pergunte ao IPCA** responde **ao vivo** (modelo grátis) com **fallback** para respostas pré-geradas e auditadas. Rotular o estado de fallback como "AI Replay Mode", nunca "AI disabled".
+- **Corpus de referência oficial citável** (`config/ipca_reference.yaml`): fatos OFICIAIS do IPCA (o que é, cobertura geográfica/renda, pesos via POF, calendário, IPCA×INPC×IPCA-15, definição de núcleos e conceitos) entram como itens de evidência (`ev_ref_*`, cada um com `source`) **só no contexto do Q&A** (não no brief). Permite responder perguntas metodológicas mantendo o grounding (toda afirmação cita uma fonte; número só do `value`, sem mexer no guardrail). Curado e revisado pelo dono. A versão **ampla com retrieval/embeddings** fica para a v0.2.
 
 **v0.2 — IA agêntica (o showcase real):**
 - **Ask the IPCA**: Q&A com tool-use aterrado sobre a Tool API (3.2). Cada resposta numérica traça a `evidence_id`; recusa fora de escopo; não navega na internet; não aconselha investimento.
@@ -417,6 +418,7 @@ Corte de escopo para não re-inflar o projeto. **Só "Must" bloqueia o lançamen
 
 **NICE / DEFER (v0.2+):**
 - Ask the IPCA **agêntico** (Q&A multi-passo com tool-use); detecção diária + PR automático; STL (SA); `OllamaProvider`/2º provider; Trust Panel; badges por elemento; taxonomia de 7 regimes; cooldown/histórico de alertas.
+- **Corpus de referência AMPLO com retrieval/embeddings** (RAG): a versão enxuta e curada (`config/ipca_reference.yaml`, ~30 fatos citáveis injetados no Q&A) já entra em v0.1; a versão grande, que exigiria recuperação seletiva (logo, infra nova), fica para v0.2.
 
 **Regras anti-overengineering (do projeto):**
 1. Ideia nova entra como **Nice** por default; só vira Must com justificativa explícita.

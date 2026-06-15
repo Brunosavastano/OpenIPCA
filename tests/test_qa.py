@@ -133,6 +133,54 @@ def test_grounded_answer_is_used():
     assert result.trace["question"]
 
 
+# --- official reference corpus (methodology grounding) ----------------------
+
+def test_qa_evidence_includes_reference_corpus():
+    # The Q&A context carries the curated official facts (ev_ref_*) so the model
+    # can ground methodology/concept answers.
+    ids = [e["evidence_id"] for e in _ask(_GroundedProvider()).evidence]
+    assert any(i.startswith("ev_ref_") for i in ids)
+    assert "ev_ref_grupos" in ids
+
+
+def test_brief_evidence_excludes_reference_corpus():
+    # Token/quota discipline: the corpus is Q&A-only; the brief's evidence table
+    # (build_evidence_table) must NOT carry it.
+    from ipca_dashboard.ai.tools import build_evidence_table
+
+    table = build_evidence_table(_bcb(), _items(), pd.DataFrame(), pd.DataFrame())
+    assert not any(e.evidence_id.startswith("ev_ref_") for e in table)
+
+
+def test_reference_corpus_lets_model_ground_a_methodology_answer():
+    # End-to-end: a model citing a real ev_ref_* fact (qualitative) grounds -> ai.
+    class _RefProvider:
+        name = "fake_ref"
+        capabilities = {"structured"}
+
+        def generate_structured(self, messages, schema, *, temperature=0.0):
+            return {
+                "answer": "A cesta do IPCA se organiza em grupos como Alimentação e Transportes.",
+                "claims": [
+                    {
+                        "text": "O IPCA se divide em grupos como Alimentação e Habitação.",
+                        "type": "interpretation",
+                        "evidence_ids": ["ev_ref_grupos"],
+                    }
+                ],
+                "monetary_policy_tone": "cautious",
+                "investment_advice": False,
+            }
+
+    result = answer_question(
+        "Como o IPCA é estruturado em grupos?",
+        _bcb(), _items(), pd.DataFrame(), pd.DataFrame(),
+        provider=_RefProvider(),
+    )
+    assert result.mode == "ai"
+    assert result.claims
+
+
 def test_provider_outage_falls_back_never_raises():
     result = _ask(_BoomProvider())  # in-scope question -> provider called -> boom
     assert result.mode == "fallback"
