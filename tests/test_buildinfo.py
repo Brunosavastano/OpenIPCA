@@ -1,5 +1,6 @@
 """build_stamp: the deploy marker must be best-effort and never raise."""
 
+import re
 import subprocess
 
 from ipca_dashboard import buildinfo
@@ -45,3 +46,24 @@ def test_build_stamp_is_empty_on_timeout(monkeypatch, tmp_path):
 
     monkeypatch.setattr(buildinfo.subprocess, "run", fake_run)
     assert build_stamp(root=tmp_path) == ""
+
+
+def test_build_stamp_falls_back_to_dotgit_without_git_cli(monkeypatch):
+    # Simulate Streamlit Cloud: no git binary on PATH, but .git is present (default
+    # root = this repo). Must still return the short SHA — read straight from .git,
+    # with no " · date" since the CLI (which provides the date) was unavailable.
+    def no_git(*args, **kwargs):
+        raise FileNotFoundError("git not found")
+
+    monkeypatch.setattr(buildinfo.subprocess, "run", no_git)
+    stamp = build_stamp()
+    assert re.fullmatch(r"[0-9a-f]{7}", stamp)
+
+
+def test_sha_from_dotgit_resolves_a_loose_ref(tmp_path):
+    # A minimal .git with HEAD -> a loose ref must resolve to that ref's short SHA.
+    git_dir = tmp_path / ".git"
+    (git_dir / "refs" / "heads").mkdir(parents=True)
+    (git_dir / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    (git_dir / "refs" / "heads" / "main").write_text("abcdef1234567890\n", encoding="utf-8")
+    assert buildinfo._sha_from_dotgit(tmp_path) == "abcdef1"
