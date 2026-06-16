@@ -190,6 +190,27 @@ def test_interpretation_without_evidence_still_rejects_a_number():
         validate_ai_output(bad, evidence)
 
 
+def test_answer_level_number_still_needs_cited_evidence():
+    # Even when a qualitative interpretation has no evidence_id, the user-facing
+    # answer cannot smuggle a number: answer-level grounding still checks numbers
+    # against values cited by claims.
+    evidence = evidence_table_to_dicts(get_headline(_bcb()))
+    bad = {
+        "claims": [
+            {
+                "text": "A leitura qualitativa é de inflação espalhada.",
+                "type": "interpretation",
+                "evidence_ids": [],
+            }
+        ],
+        "answer": "A inflação ficou em 9.99%.",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+    with pytest.raises(GuardrailError):
+        validate_ai_output(bad, evidence)
+
+
 def test_number_claim_allows_multiple_evidence_ids_for_fluent_prose():
     # New contract: a sentence may weave several numbers from several cited
     # evidences. _bcb(): IPCA m/m=0.30, 12m=4.50.
