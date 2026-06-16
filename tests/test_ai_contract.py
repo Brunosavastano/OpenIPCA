@@ -449,10 +449,36 @@ def test_investment_advice_flag_is_rejected():
         validate_ai_output(bad, evidence)
 
 
-def test_scope_guardrail_refuses_off_topic():
+@pytest.mark.parametrize(
+    "off_topic",
+    [
+        "Qual a previsão do tempo amanhã?",
+        "Quem ganhou o jogo de futebol?",
+        "Escreva um poema sobre o mar.",
+        "Qual a capital da França?",
+    ],
+)
+def test_scope_guardrail_refuses_off_topic(off_topic):
+    # No price/consumption/methodology term -> refused before the model (cheap).
     with pytest.raises(GuardrailError):
-        check_scope("Qual a previsão do tempo amanhã?")
-    check_scope("Como está a difusão do IPCA?")  # in scope -> no raise
+        check_scope(off_topic)
+
+
+@pytest.mark.parametrize(
+    "in_scope",
+    [
+        "Como está a difusão do IPCA?",
+        # Legitimate basket questions that lack the word "IPCA" — these used to be
+        # wrongly refused (regression for the broadened allowlist).
+        "Passagem aérea e arroz têm pesos diferentes?",
+        "O café subiu?",
+        "Quanto custa a gasolina?",
+        "A energia ficou mais cara?",
+        "Como os pesos da cesta são definidos?",
+    ],
+)
+def test_scope_guardrail_allows_basket_questions(in_scope):
+    check_scope(in_scope)  # must not raise
 
 
 # --- injection guardrail (input side of the public Q&A box) ----------------

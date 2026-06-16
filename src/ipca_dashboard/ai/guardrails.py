@@ -73,15 +73,69 @@ _FORBIDDEN_PATTERNS = [
     ),
 ]
 
+# Substring hints (matched on accent-stripped lowercase text) that mark a question
+# as in-scope for the public "Pergunte ao IPCA" box. The user is already in the
+# IPCA box, so this is a cheap first gate: anything WITHOUT a price/consumption/
+# methodology term (e.g. "qual a previsão do tempo?") is refused before the model,
+# saving quota and keeping the answers on-brand. Kept generous on purpose — a
+# legitimate basket question ("passagem aérea e arroz têm pesos diferentes?") must
+# pass — but each stem is specific enough not to turn the gate into a no-op (avoid
+# substrings of common unrelated words like "cont", "alta", "cara").
 _IN_SCOPE_HINTS = [
+    # Core IPCA concepts
     "ipca",
     "inflacao",
     "nucleo",
     "difusao",
-    "preco",
     "headline",
     "regime",
     "contribuicao",
+    # Basket / weights / structure
+    "preco",
+    "peso",
+    "cesta",
+    "item",
+    "itens",
+    "subitem",
+    "subgrupo",
+    "grupo",
+    "produto",
+    "servico",
+    # Price movement vocabulary
+    "cust",
+    "caro",
+    "barat",
+    "subi",
+    "caiu",
+    "cair",
+    "queda",
+    "aument",
+    "encarec",
+    "reajust",
+    # Common basket categories
+    "gasolina",
+    "combustivel",
+    "aliment",
+    "comida",
+    "energia",
+    "aluguel",
+    "tarifa",
+    "passagem",
+    "transporte",
+    "saude",
+    "educacao",
+    "vestuario",
+    "remedio",
+    # Sources / methodology
+    "ibge",
+    "pof",
+    "sidra",
+    "sgs",
+    "sazonal",
+    "anualizado",
+    "acumulado",
+    "percentil",
+    "mm3m",
 ]
 
 # Prompt-injection / jailbreak markers. A PUBLIC free-text box invites attempts to
