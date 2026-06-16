@@ -73,15 +73,35 @@ _FORBIDDEN_PATTERNS = [
     ),
 ]
 
-_IN_SCOPE_HINTS = [
-    "ipca",
-    "inflacao",
-    "nucleo",
-    "difusao",
-    "preco",
-    "headline",
-    "regime",
-    "contribuicao",
+# Word-bounded hints (matched on accent-stripped lowercase text) that mark a question
+# as in-scope for the public "Pergunte ao IPCA" box. The user is already in the
+# IPCA box, so this is a cheap first gate: anything WITHOUT a price/consumption/
+# methodology term (e.g. "qual a previsão do tempo?") is refused before the model,
+# saving quota and keeping the answers on-brand. Kept generous on purpose — a
+# legitimate basket question ("passagem aérea e arroz têm pesos diferentes?") must
+# pass — but each stem is specific enough not to turn the gate into a no-op (avoid
+# matches inside common unrelated words like "cont", "alta", "cara").
+_IN_SCOPE_PATTERNS = [
+    # Core IPCA concepts
+    re.compile(r"\b(ipca|inflacao|nucleo\w*|difusao|headline|regime|contribuic\w*)\b"),
+    # Basket / weights / methodology
+    re.compile(
+        r"\b(peso\w*|cesta|produto\w*|servico\w*|subitem\w*|subgrupo\w*|"
+        r"ibge|pof|sidra|sgs|sazonal\w*|anualizado\w*|acumulado\w*|percentil\w*|mm3m)\b"
+    ),
+    re.compile(r"\b(item|itens|grupo\w*)\s+(da|do|de|na|no)\s+(cesta|ipca|inflacao)\b"),
+    # Price movement vocabulary, bounded to whole words / real inflections.
+    re.compile(
+        r"\b(preco\w*|custa|custam|custou|custaram|custos?|car[ao]s?|barat\w*|"
+        r"subiu|subiram|subida\w*|caiu|cairam|queda\w*|aument\w*|encarec\w*|"
+        r"reajust\w*)\b"
+    ),
+    # Common basket categories/items.
+    re.compile(
+        r"\b(gasolina|combustivel\w*|aliment\w*|comida\w*|energia|aluguel|tarifa\w*|"
+        r"passagem\w*|transporte\w*|saude|educacao|vestuario|remedio\w*|cafe|arroz|"
+        r"feijao)\b"
+    ),
 ]
 
 # Prompt-injection / jailbreak markers. A PUBLIC free-text box invites attempts to
@@ -242,7 +262,7 @@ def _require_numbers_in_cited(text: str, cited_values: list[float]) -> None:
 def check_scope(question: str) -> None:
     """Refuse a question that is not about Brazilian inflation."""
     text = _normalize_text(question or "")
-    if not any(hint in text for hint in _IN_SCOPE_HINTS):
+    if not any(pattern.search(text) for pattern in _IN_SCOPE_PATTERNS):
         raise GuardrailError("Out of scope: question is not about Brazilian inflation.")
 
 
