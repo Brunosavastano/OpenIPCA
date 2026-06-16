@@ -456,6 +456,11 @@ def test_investment_advice_flag_is_rejected():
         "Quem ganhou o jogo de futebol?",
         "Escreva um poema sobre o mar.",
         "Qual a capital da França?",
+        "Qual a capital do Cairo?",
+        "Fale sobre o grupo musical Queen.",
+        "O caroço da manga faz mal?",
+        "O que é custódia de ações?",
+        "Como subir escada mais rápido?",
     ],
 )
 def test_scope_guardrail_refuses_off_topic(off_topic):
