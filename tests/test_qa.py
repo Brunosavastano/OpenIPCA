@@ -35,9 +35,9 @@ def _items() -> pd.DataFrame:
     return pd.DataFrame(
         [
             {"date": pd.Timestamp("2024-03-01"), "level": "group", "item_name": "Alimentação",
-             "contribution_mom": 0.18},
+             "classification_code": "1", "weight": 21.59, "contribution_mom": 0.18},
             {"date": pd.Timestamp("2024-03-01"), "level": "group", "item_name": "Transportes",
-             "contribution_mom": -0.05},
+             "classification_code": "2", "weight": 18.30, "contribution_mom": -0.05},
         ]
     )
 
@@ -166,6 +166,22 @@ def test_brief_evidence_excludes_seasonal_adjustment():
 
     table = build_evidence_table(_bcb(), _items(), pd.DataFrame(), pd.DataFrame())
     assert not any(e.evidence_id.endswith("saar_sa") for e in table)
+
+
+def test_qa_evidence_includes_item_weights_when_question_names_an_item():
+    # Question-aware basket weights are injected on the Q&A path so "do items have
+    # different weights?" can ground on ev_weight_* with real numbers. The evidence is
+    # assembled before the provider runs, so a fallback provider is enough to inspect it.
+    res = _ask(_BoomProvider(), "Quanto pesa Transportes no IPCA?")
+    assert any(e["evidence_id"].startswith("ev_weight_") for e in res.evidence)
+
+
+def test_brief_evidence_excludes_item_weights():
+    # Lean-brief discipline: item weights are Q&A-only, never in build_evidence_table.
+    from ipca_dashboard.ai.tools import build_evidence_table
+
+    table = build_evidence_table(_bcb(), _items(), pd.DataFrame(), pd.DataFrame())
+    assert not any(e.evidence_id.startswith("ev_weight_") for e in table)
 
 
 def test_reference_corpus_lets_model_ground_a_methodology_answer():

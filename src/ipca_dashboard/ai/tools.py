@@ -11,6 +11,9 @@ DataFrame inputs (no network, no global state).
 
 from __future__ import annotations
 
+import re
+import unicodedata
+
 import pandas as pd
 
 from ipca_dashboard.ai.evidence import Evidence
@@ -236,6 +239,70 @@ def get_contributions(ipca_items: pd.DataFrame, top_n: int = 3) -> list[Evidence
             )
         )
     return out
+
+
+def _normalize(text: object) -> str:
+    decomposed = unicodedata.normalize("NFKD", str(text or ""))
+    return "".join(c for c in decomposed if not unicodedata.combining(c)).lower()
+
+
+# Levels a user might name in a question. "headline" is excluded on purpose: it's the
+# index itself (weight 100), and "IPCA" would otherwise match every "...no IPCA?".
+_WEIGHT_LEVELS = ("group", "subgroup", "item", "subitem")
+
+
+def get_item_weights(
+    question: str, ipca_items: pd.DataFrame, max_items: int = 6
+) -> list[Evidence]:
+    """Basket weights of the IPCA items NAMED in the question — Q&A ONLY.
+
+    Question-aware and kept OUT of build_evidence_table (the brief path): a weight is
+    only worth a citation when the user asked about a specific item, so the model can
+    answer "arroz pesa 0,50%, passagem aérea 0,67%" with grounded numbers instead of
+    refusing for lack of data. No items / no match -> [] (the model still answers
+    qualitatively — no regression). Matching is word-bounded so "Sal" doesn't fire on
+    "salário", and longest-name-first so "passagem aérea" wins over a bare "passagem".
+    """
+    if ipca_items.empty or "weight" not in ipca_items.columns:
+        return []
+    q = _normalize(question)
+    if not q:
+        return []
+    latest_date = pd.to_datetime(ipca_items["date"]).max()
+    latest = ipca_items[
+        (ipca_items["date"] == latest_date) & (ipca_items["level"].isin(_WEIGHT_LEVELS))
+    ].dropna(subset=["weight"])
+    if latest.empty:
+        return []
+
+    # Map normalized name -> the heaviest row carrying it (dedupe a name that repeats
+    # across levels), then match all names at once with a single word-bounded regex.
+    by_name: dict[str, pd.Series] = {}
+    for _, r in latest.sort_values("weight", ascending=False).iterrows():
+        name = _normalize(r["item_name"])
+        if name and name not in by_name:
+            by_name[name] = r
+    if not by_name:
+        return []
+    names = sorted(by_name, key=len, reverse=True)
+    pattern = re.compile(r"\b(" + "|".join(re.escape(n) for n in names) + r")\b")
+    matched = list(dict.fromkeys(pattern.findall(q)))
+    if not matched:
+        return []
+    month = pd.to_datetime(latest_date).strftime("%Y-%m")
+    rows = sorted((by_name[n] for n in matched), key=lambda r: r["weight"], reverse=True)
+    return [
+        Evidence(
+            f"ev_weight_{r['classification_code']}",
+            f"Peso na cesta: {r['item_name']}",
+            _num(r["weight"]),
+            "%",
+            month,
+            SOURCE_SIDRA,
+            "peso (fatia do orçamento das famílias) do item na cesta do IPCA, mês de referência",
+        )
+        for r in rows[:max_items]
+    ]
 
 
 def get_alerts(alerts: pd.DataFrame) -> list[Evidence]:
