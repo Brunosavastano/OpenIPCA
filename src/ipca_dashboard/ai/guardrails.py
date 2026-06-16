@@ -5,8 +5,11 @@ GuardrailError; callers (CP7) catch it and fall back to the deterministic brief,
 so the AI can never block the product.
 
 Enforced:
-- grounding: every claim cites existing evidence_id(s) (>=1); "regime" also needs
-  a rule_id matching ev_regime.
+- grounding: 'number' and 'regime' claims cite existing evidence_id(s) (>=1);
+  "regime" also needs a rule_id matching ev_regime. A 'interpretation' claim with
+  NO number may stand without a citation (the qualitative reasoning the Q&A prompt
+  invites), but the moment it states a number that number must match a cited
+  evidence value — so the "every NUMBER is traceable" thesis is unchanged.
 - numbers (anti-hallucination): every number in a claim's text must match a value
   of an evidence THAT CLAIM cites — so a sentence may weave several numbers from
   several cited evidences (readable prose), but cannot quote a number from an
@@ -301,8 +304,12 @@ def check_grounding(output: dict, evidence: list[dict]) -> None:
                 raise GuardrailError("A 'number' claim needs >= 1 evidence_id.")
             _require_numbers_in_cited(text, _cited_values(by_id, ids))
         elif ctype == "interpretation":
-            if len(ids) < 1:
-                raise GuardrailError("An 'interpretation' claim needs >= 1 evidence_id.")
+            # A number-free interpretation is the qualitative reasoning the Q&A
+            # prompt explicitly invites — it may stand without an evidence_id. The
+            # moment it states a number, that number must match a cited evidence
+            # value: _require_numbers_in_cited([]) rejects any number when nothing
+            # is cited, and the answer-level number guard below is unchanged. So no
+            # ungrounded NUMBER can slip through; only qualitative prose is freed.
             _require_numbers_in_cited(text, _cited_values(by_id, ids))
         elif ctype == "regime":
             if not claim.get("rule_id"):
