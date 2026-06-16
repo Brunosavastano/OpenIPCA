@@ -150,6 +150,46 @@ def test_grounding_rejects_unknown_evidence_id():
         validate_ai_output(bad, evidence)
 
 
+def test_qualitative_interpretation_without_evidence_is_allowed():
+    # The Q&A prompt invites number-free qualitative reasoning; such a claim may
+    # stand without an evidence_id. Regression: this used to fall back to
+    # INDISPONÍVEL (e.g. "items have different weights in the basket").
+    evidence = evidence_table_to_dicts(get_headline(_bcb()))
+    good = {
+        "claims": [
+            {
+                "text": "Passagem aérea e arroz têm pesos diferentes na cesta do IPCA.",
+                "type": "interpretation",
+                "evidence_ids": [],
+            }
+        ],
+        "answer": "Sim, cada item tem seu próprio peso na cesta do IPCA.",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+    validate_ai_output(good, evidence)  # must NOT raise (qualitative prose is free)
+
+
+def test_interpretation_without_evidence_still_rejects_a_number():
+    # The relaxation frees ONLY number-free prose: a number with no citation is
+    # still ungrounded and must be rejected (the thesis "every number is traceable").
+    evidence = evidence_table_to_dicts(get_headline(_bcb()))
+    bad = {
+        "claims": [
+            {
+                "text": "A inflação acumulou 9.99% em 12 meses.",
+                "type": "interpretation",
+                "evidence_ids": [],
+            }
+        ],
+        "answer": "x",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+    with pytest.raises(GuardrailError):
+        validate_ai_output(bad, evidence)
+
+
 def test_number_claim_allows_multiple_evidence_ids_for_fluent_prose():
     # New contract: a sentence may weave several numbers from several cited
     # evidences. _bcb(): IPCA m/m=0.30, 12m=4.50.
