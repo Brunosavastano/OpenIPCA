@@ -243,7 +243,8 @@ def get_contributions(ipca_items: pd.DataFrame, top_n: int = 3) -> list[Evidence
 
 def _normalize(text: object) -> str:
     decomposed = unicodedata.normalize("NFKD", str(text or ""))
-    return "".join(c for c in decomposed if not unicodedata.combining(c)).lower()
+    stripped = "".join(c for c in decomposed if not unicodedata.combining(c)).lower()
+    return re.sub(r"\s+", " ", stripped).strip()
 
 
 # Levels a user might name in a question. "headline" is excluded on purpose: it's the
@@ -252,6 +253,15 @@ _WEIGHT_LEVELS = ("group", "subgroup", "item", "subitem")
 
 
 def get_item_weights(
+    question: str, ipca_items: pd.DataFrame, max_items: int = 6
+) -> list[Evidence]:
+    try:
+        return _get_item_weights_impl(question, ipca_items, max_items)
+    except Exception:  # noqa: BLE001 - Q&A-only helper must never break the answer path
+        return []
+
+
+def _get_item_weights_impl(
     question: str, ipca_items: pd.DataFrame, max_items: int = 6
 ) -> list[Evidence]:
     """Basket weights of the IPCA items NAMED in the question — Q&A ONLY.
@@ -263,15 +273,22 @@ def get_item_weights(
     qualitatively — no regression). Matching is word-bounded so "Sal" doesn't fire on
     "salário", and longest-name-first so "passagem aérea" wins over a bare "passagem".
     """
-    if ipca_items.empty or "weight" not in ipca_items.columns:
+    required = {"date", "level", "item_name", "classification_code", "weight"}
+    if not isinstance(ipca_items, pd.DataFrame) or ipca_items.empty:
+        return []
+    if not required.issubset(ipca_items.columns):
         return []
     q = _normalize(question)
     if not q:
         return []
-    latest_date = pd.to_datetime(ipca_items["date"]).max()
-    latest = ipca_items[
-        (ipca_items["date"] == latest_date) & (ipca_items["level"].isin(_WEIGHT_LEVELS))
-    ].dropna(subset=["weight"])
+    frame = ipca_items.copy()
+    frame["_date"] = pd.to_datetime(frame["date"], errors="coerce")
+    latest_date = frame["_date"].max()
+    if pd.isna(latest_date):
+        return []
+    latest = frame[
+        (frame["_date"] == latest_date) & (frame["level"].isin(_WEIGHT_LEVELS))
+    ].dropna(subset=["weight", "classification_code", "item_name"])
     if latest.empty:
         return []
 

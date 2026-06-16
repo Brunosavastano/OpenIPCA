@@ -30,6 +30,26 @@ def test_matches_named_items_with_their_weights():
     assert all(e.evidence_id.startswith("ev_weight_") and e.unit == "%" for e in ev)
 
 
+def test_matches_multiword_item_with_extra_spacing_and_string_dates():
+    items = _items()
+    extra = pd.DataFrame(
+        [
+            {
+                "date": pd.Timestamp("2026-05-01"),
+                "classification_code": "5105001",
+                "level": "subitem",
+                "item_name": "Leite longa vida",
+                "weight": 0.42,
+            }
+        ]
+    )
+    items = pd.concat([items, extra], ignore_index=True)
+    items["date"] = items["date"].dt.strftime("%Y-%m-%d")
+    ev = get_item_weights("leite     longa vida", items)
+    assert [e.metric for e in ev] == ["Peso na cesta: Leite longa vida"]
+    assert ev[0].date == "2026-05"
+
+
 def test_no_item_named_returns_empty():
     assert get_item_weights("Como está a difusão da inflação?", _items()) == []
 
@@ -55,3 +75,6 @@ def test_never_raises_on_empty_or_missing_data():
     assert get_item_weights("arroz", pd.DataFrame()) == []
     assert get_item_weights("", _items()) == []
     assert get_item_weights("arroz", _items().drop(columns=["weight"])) == []
+    assert get_item_weights("arroz", _items().drop(columns=["date"])) == []
+    assert get_item_weights("arroz", _items().drop(columns=["item_name"])) == []
+    assert get_item_weights("arroz", _items().drop(columns=["classification_code"])) == []
