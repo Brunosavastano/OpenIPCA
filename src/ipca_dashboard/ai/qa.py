@@ -33,7 +33,11 @@ from ipca_dashboard.ai.providers.base import LLMProvider
 from ipca_dashboard.ai.providers.registry import resolve_provider
 from ipca_dashboard.ai.reference import load_reference_evidence
 from ipca_dashboard.ai.schemas import ANSWER_SCHEMA
-from ipca_dashboard.ai.tools import build_evidence_table, get_seasonal_adjustment
+from ipca_dashboard.ai.tools import (
+    build_evidence_table,
+    get_item_weights,
+    get_seasonal_adjustment,
+)
 
 # v2: the analyst rewrite. The brief providers (OpenAI/Anthropic) used to drop the
 # question entirely and the shared prompt only "narrated" the data; v2 ships a
@@ -70,6 +74,10 @@ QA_SYSTEM = (
     "cada um com sua fonte. Para perguntas conceituais/metodológicas, RESPONDA citando esses "
     "ev_ref_* como qualquer evidência (registre o id em evidence_ids). Valem as mesmas regras: "
     "um número só pode ser citado se vier do campo value de uma evidência citada.\n\n"
+    "PESOS DE ITENS: a tabela pode trazer itens com id 'ev_weight_*' — o peso (% da cesta, no mês "
+    "de referência) dos itens que aparecem na PERGUNTA. Para perguntas sobre peso/importância de "
+    "itens, RESPONDA com os NÚMEROS reais citando esses ids (ex.: 'arroz pesa X% e passagem aérea "
+    "Y%'); valem as mesmas regras de número.\n\n"
     "HONESTIDADE SOBRE LIMITES: se a pergunta pede algo que os dados não cobrem (uma causa "
     "externa, uma previsão, um número inexistente na tabela), DIGA explicitamente o que não "
     "pode afirmar — não finja que a pergunta foi outra.\n\n"
@@ -180,15 +188,16 @@ def answer_question(
         config = load_ai_config()
         if provider is None:
             provider = resolve_provider(config.provider if config.is_active else "none")
-        # Numeric evidence of the month (shared with the brief) PLUS two Q&A-only
-        # additions the brief never sees, to keep that fragile artifact lean: the
-        # seasonally adjusted (STL) momentum, and the curated official reference
-        # corpus for methodology/concept grounding.
+        # Numeric evidence of the month (shared with the brief) PLUS Q&A-only additions
+        # the brief never sees, to keep that fragile artifact lean: the seasonally
+        # adjusted (STL) momentum, the basket weights of items NAMED in the question,
+        # and the curated official reference corpus for methodology/concept grounding.
         evidence = (
             evidence_table_to_dicts(
                 build_evidence_table(bcb, ipca_items, core_metrics, alerts, core_set)
             )
             + evidence_table_to_dicts(get_seasonal_adjustment(bcb, core_metrics, core_set))
+            + evidence_table_to_dicts(get_item_weights(question_text, ipca_items))
             + evidence_table_to_dicts(load_reference_evidence())
         )
     except Exception as exc:  # noqa: BLE001 - AI must never block

@@ -211,6 +211,46 @@ def test_answer_level_number_still_needs_cited_evidence():
         validate_ai_output(bad, evidence)
 
 
+def test_item_weight_number_grounds_on_ev_weight_evidence():
+    # A weight injected as ev_weight_* is a citable value: a claim quoting it grounds;
+    # a wrong figure citing the same id is rejected (the weight number is traceable).
+    evidence = [
+        {
+            "evidence_id": "ev_weight_1101001",
+            "metric": "Peso na cesta: Arroz",
+            "value": 0.50,
+            "unit": "%",
+            "date": "2026-05",
+            "source": "IBGE/SIDRA 7060",
+            "interpretation": "peso do item na cesta",
+        }
+    ]
+    good = {
+        "claims": [
+            {
+                "text": "O arroz pesa 0.50% da cesta.",
+                "type": "number",
+                "evidence_ids": ["ev_weight_1101001"],
+            }
+        ],
+        "answer": "O arroz pesa 0.50% da cesta do IPCA.",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+    validate_ai_output(good, evidence)  # must NOT raise
+    bad = {**good}
+    bad["claims"] = [
+        {
+            "text": "O arroz pesa 9.99% da cesta.",
+            "type": "number",
+            "evidence_ids": ["ev_weight_1101001"],
+        }
+    ]
+    bad["answer"] = "O arroz pesa 9.99% da cesta."
+    with pytest.raises(GuardrailError):
+        validate_ai_output(bad, evidence)
+
+
 def test_number_claim_allows_multiple_evidence_ids_for_fluent_prose():
     # New contract: a sentence may weave several numbers from several cited
     # evidences. _bcb(): IPCA m/m=0.30, 12m=4.50.
