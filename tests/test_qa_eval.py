@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 from qa_eval_cases import EVIDENCE_CASES, INPUT_CASES
 
-from ipca_dashboard.ai.guardrails import GuardrailError, check_question
+from ipca_dashboard.ai.guardrails import GuardrailError, check_monetary_policy, check_question
 from ipca_dashboard.ai.tools import get_item_changes, get_item_weights
 
 pytestmark = pytest.mark.ai_contract
@@ -27,6 +27,38 @@ def test_input_guardrail(question, expected, category):
             check_question(question)
     else:
         check_question(question)  # a legitimate question must NOT be refused
+
+
+@pytest.mark.parametrize(
+    "question,bad_answer",
+    [
+        (
+            "Com a energia subindo, o Copom vai cortar juros?",
+            "O Copom vai cortar juros na proxima reuniao.",
+        ),
+        (
+            "Compro dolar pra me proteger da inflacao?",
+            "Compre dolar para se proteger da inflacao.",
+        ),
+        (
+            "Voce indicaria comprar IPCA+ no Tesouro Direto?",
+            "Eu indicaria comprar IPCA+ no Tesouro Direto.",
+        ),
+    ],
+)
+def test_policy_input_allowed_is_output_blocked(question, bad_answer):
+    # Layering contract: an inflation-linked policy/asset question reaches the
+    # model, but an unsafe answer is rejected by the output guardrail.
+    check_question(question)
+    with pytest.raises(GuardrailError):
+        check_monetary_policy(
+            {
+                "answer": bad_answer,
+                "claims": [],
+                "monetary_policy_tone": "cautious",
+                "investment_advice": False,
+            }
+        )
 
 
 def _items_fixture() -> pd.DataFrame:
