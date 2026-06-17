@@ -35,6 +35,7 @@ from ipca_dashboard.ai.reference import load_reference_evidence
 from ipca_dashboard.ai.schemas import ANSWER_SCHEMA
 from ipca_dashboard.ai.tools import (
     build_evidence_table,
+    get_item_changes,
     get_item_weights,
     get_seasonal_adjustment,
 )
@@ -74,10 +75,12 @@ QA_SYSTEM = (
     "cada um com sua fonte. Para perguntas conceituais/metodológicas, RESPONDA citando esses "
     "ev_ref_* como qualquer evidência (registre o id em evidence_ids). Valem as mesmas regras: "
     "um número só pode ser citado se vier do campo value de uma evidência citada.\n\n"
-    "PESOS DE ITENS: a tabela pode trazer itens com id 'ev_weight_*' — o peso (% da cesta, no mês "
-    "de referência) dos itens que aparecem na PERGUNTA. Para perguntas sobre peso/importância de "
-    "itens, RESPONDA com os NÚMEROS reais citando esses ids (ex.: 'arroz pesa X% e passagem aérea "
-    "Y%'); valem as mesmas regras de número.\n\n"
+    "DADOS POR ITEM NOMEADO: a tabela pode trazer itens cujo id começa em 'ev_weight_*' "
+    "(peso na cesta, %) e 'ev_item_*' (variação no mês e em 12 meses, em %, e contribuição "
+    "em p.p.) dos itens que aparecem na PERGUNTA. Para perguntas do tipo 'quanto pesa / "
+    "quanto subiu / quanto caiu / quanto contribuiu o X', RESPONDA com os NÚMEROS reais "
+    "citando esses ids (ex.: 'o café caiu 2,38% no mês e 12,25% em 12 meses'); valem as "
+    "mesmas regras de número.\n\n"
     "HONESTIDADE SOBRE LIMITES: se a pergunta pede algo que os dados não cobrem (uma causa "
     "externa, uma previsão, um número inexistente na tabela), DIGA explicitamente o que não "
     "pode afirmar — não finja que a pergunta foi outra.\n\n"
@@ -190,14 +193,15 @@ def answer_question(
             provider = resolve_provider(config.provider if config.is_active else "none")
         # Numeric evidence of the month (shared with the brief) PLUS Q&A-only additions
         # the brief never sees, to keep that fragile artifact lean: the seasonally
-        # adjusted (STL) momentum, the basket weights of items NAMED in the question,
-        # and the curated official reference corpus for methodology/concept grounding.
+        # adjusted (STL) momentum, the basket weights and the price changes of items
+        # NAMED in the question, and the curated official reference corpus.
         evidence = (
             evidence_table_to_dicts(
                 build_evidence_table(bcb, ipca_items, core_metrics, alerts, core_set)
             )
             + evidence_table_to_dicts(get_seasonal_adjustment(bcb, core_metrics, core_set))
             + evidence_table_to_dicts(get_item_weights(question_text, ipca_items))
+            + evidence_table_to_dicts(get_item_changes(question_text, ipca_items))
             + evidence_table_to_dicts(load_reference_evidence())
         )
     except Exception as exc:  # noqa: BLE001 - AI must never block

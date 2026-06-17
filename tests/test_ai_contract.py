@@ -251,6 +251,46 @@ def test_item_weight_number_grounds_on_ev_weight_evidence():
         validate_ai_output(bad, evidence)
 
 
+def test_item_change_number_grounds_on_ev_item_evidence():
+    # An item variation injected as ev_item_* is a citable value: a claim quoting it
+    # grounds; a wrong figure citing the same id is rejected.
+    evidence = [
+        {
+            "evidence_id": "ev_item_mom_1101002",
+            "metric": "Variação no mês: Arroz",
+            "value": 1.74,
+            "unit": "%",
+            "date": "2026-05",
+            "source": "IBGE/SIDRA 7060",
+            "interpretation": "m/m do item",
+        }
+    ]
+    good = {
+        "claims": [
+            {
+                "text": "O arroz subiu 1.74% no mês.",
+                "type": "number",
+                "evidence_ids": ["ev_item_mom_1101002"],
+            }
+        ],
+        "answer": "O arroz subiu 1.74% no mês.",
+        "monetary_policy_tone": "cautious",
+        "investment_advice": False,
+    }
+    validate_ai_output(good, evidence)  # must NOT raise
+    bad = {**good}
+    bad["claims"] = [
+        {
+            "text": "O arroz subiu 9.99% no mês.",
+            "type": "number",
+            "evidence_ids": ["ev_item_mom_1101002"],
+        }
+    ]
+    bad["answer"] = "O arroz subiu 9.99% no mês."
+    with pytest.raises(GuardrailError):
+        validate_ai_output(bad, evidence)
+
+
 def test_number_claim_allows_multiple_evidence_ids_for_fluent_prose():
     # New contract: a sentence may weave several numbers from several cited
     # evidences. _bcb(): IPCA m/m=0.30, 12m=4.50.

@@ -184,6 +184,20 @@ def test_brief_evidence_excludes_item_weights():
     assert not any(e.evidence_id.startswith("ev_weight_") for e in table)
 
 
+def test_qa_evidence_includes_item_changes_when_question_names_an_item():
+    # "Quanto subiu o X?" grounds on ev_item_* (m/m, 12m, contribution) of named items.
+    res = _ask(_BoomProvider(), "Quanto subiu Transportes no IPCA?")
+    assert any(e["evidence_id"].startswith("ev_item_") for e in res.evidence)
+
+
+def test_brief_evidence_excludes_item_changes():
+    # Lean-brief discipline: item changes are Q&A-only, never in build_evidence_table.
+    from ipca_dashboard.ai.tools import build_evidence_table
+
+    table = build_evidence_table(_bcb(), _items(), pd.DataFrame(), pd.DataFrame())
+    assert not any(e.evidence_id.startswith("ev_item_") for e in table)
+
+
 def test_reference_corpus_lets_model_ground_a_methodology_answer():
     # End-to-end: a model citing a real ev_ref_* fact (qualitative) grounds -> ai.
     class _RefProvider:
