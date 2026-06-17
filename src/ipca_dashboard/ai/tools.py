@@ -252,27 +252,24 @@ def _normalize(text: object) -> str:
 _WEIGHT_LEVELS = ("group", "subgroup", "item", "subitem")
 
 
-def get_item_weights(
-    question: str, ipca_items: pd.DataFrame, max_items: int = 6
-) -> list[Evidence]:
+def _match_named_items(question: str, ipca_items: pd.DataFrame, max_items: int) -> list[pd.Series]:
+    """Latest-month IPCA item rows NAMED in the question — the shared matcher.
+
+    Word-bounded (so "Sal" doesn't fire on "salário"), longest-name-first (so
+    "passagem aérea" wins over a bare "passagem"), deduped by name and capped by
+    weight (the most material items). Excludes the headline level. Never raises;
+    returns [] on bad/empty/short-of-columns input. Each returned row carries the
+    coerced reference date in "_date". Shared by the Q&A item tools (weights, changes).
+    """
     try:
-        return _get_item_weights_impl(question, ipca_items, max_items)
-    except Exception:  # noqa: BLE001 - Q&A-only helper must never break the answer path
+        return _match_named_items_impl(question, ipca_items, max_items)
+    except Exception:  # noqa: BLE001 - Q&A-only matcher must never break answers
         return []
 
 
-def _get_item_weights_impl(
-    question: str, ipca_items: pd.DataFrame, max_items: int = 6
-) -> list[Evidence]:
-    """Basket weights of the IPCA items NAMED in the question — Q&A ONLY.
-
-    Question-aware and kept OUT of build_evidence_table (the brief path): a weight is
-    only worth a citation when the user asked about a specific item, so the model can
-    answer "arroz pesa 0,50%, passagem aérea 0,67%" with grounded numbers instead of
-    refusing for lack of data. No items / no match -> [] (the model still answers
-    qualitatively — no regression). Matching is word-bounded so "Sal" doesn't fire on
-    "salário", and longest-name-first so "passagem aérea" wins over a bare "passagem".
-    """
+def _match_named_items_impl(
+    question: str, ipca_items: pd.DataFrame, max_items: int
+) -> list[pd.Series]:
     required = {"date", "level", "item_name", "classification_code", "weight"}
     if not isinstance(ipca_items, pd.DataFrame) or ipca_items.empty:
         return []
@@ -306,20 +303,93 @@ def _get_item_weights_impl(
     matched = list(dict.fromkeys(pattern.findall(q)))
     if not matched:
         return []
-    month = pd.to_datetime(latest_date).strftime("%Y-%m")
     rows = sorted((by_name[n] for n in matched), key=lambda r: r["weight"], reverse=True)
-    return [
-        Evidence(
-            f"ev_weight_{r['classification_code']}",
-            f"Peso na cesta: {r['item_name']}",
-            _num(r["weight"]),
-            "%",
-            month,
-            SOURCE_SIDRA,
-            "peso (fatia do orçamento das famílias) do item na cesta do IPCA, mês de referência",
-        )
-        for r in rows[:max_items]
-    ]
+    return rows[:max_items]
+
+
+def get_item_weights(question: str, ipca_items: pd.DataFrame, max_items: int = 6) -> list[Evidence]:
+    """Basket weights of the IPCA items NAMED in the question — Q&A ONLY.
+
+    Kept OUT of build_evidence_table (the brief path): a weight is only worth a
+    citation when the user asked about a specific item, so the model can answer
+    "arroz pesa 0,50%, passagem aérea 0,67%" with grounded numbers instead of
+    refusing for lack of data. No items / no match -> [] (zero regression). Never raises.
+    """
+    try:
+        rows = _match_named_items(question, ipca_items, max_items)
+        if not rows:
+            return []
+        month = pd.to_datetime(rows[0]["_date"]).strftime("%Y-%m")
+        return [
+            Evidence(
+                f"ev_weight_{r['classification_code']}",
+                f"Peso na cesta: {r['item_name']}",
+                _num(r["weight"]),
+                "%",
+                month,
+                SOURCE_SIDRA,
+                "peso (fatia do orçamento das famílias) do item na cesta do IPCA, "
+                "mês de referência",
+            )
+            for r in rows
+        ]
+    except Exception:  # noqa: BLE001 - Q&A-only helper must never break the answer path
+        return []
+
+
+def get_item_changes(question: str, ipca_items: pd.DataFrame, max_items: int = 4) -> list[Evidence]:
+    """Price changes of the IPCA items NAMED in the question — Q&A ONLY.
+
+    Answers the most common question ("quanto subiu o café?") with grounded numbers:
+    for each named item, the month variation (m/m), the 12-month variation, and the
+    contribution to the headline (p.p.). Q&A-only (never in build_evidence_table). No
+    item / no match -> [] (the model still answers qualitatively). Never raises; a
+    missing metric column degrades that field to None.
+    """
+    try:
+        rows = _match_named_items(question, ipca_items, max_items)
+        if not rows:
+            return []
+        month = pd.to_datetime(rows[0]["_date"]).strftime("%Y-%m")
+        out: list[Evidence] = []
+        for r in rows:
+            code, name = r["classification_code"], r["item_name"]
+            out.append(
+                Evidence(
+                    f"ev_item_mom_{code}",
+                    f"Variação no mês: {name}",
+                    _num(r.get("mom")),
+                    "%",
+                    month,
+                    SOURCE_SIDRA,
+                    "variação de preço do item no mês (m/m)",
+                )
+            )
+            out.append(
+                Evidence(
+                    f"ev_item_12m_{code}",
+                    f"Variação em 12 meses: {name}",
+                    _num(r.get("yoy")),
+                    "%",
+                    month,
+                    SOURCE_SIDRA,
+                    "variação acumulada do item em 12 meses",
+                )
+            )
+            out.append(
+                Evidence(
+                    f"ev_item_contrib_{code}",
+                    f"Contribuição no mês: {name}",
+                    _num(r.get("contribution_mom")),
+                    "p.p.",
+                    month,
+                    SOURCE_SIDRA,
+                    "contribuição do item para o IPCA do mês (peso × variação ÷ 100)",
+                )
+            )
+        return out
+    except Exception:  # noqa: BLE001 - Q&A-only helper must never break the answer path
+        return []
 
 
 def get_alerts(alerts: pd.DataFrame) -> list[Evidence]:
