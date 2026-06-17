@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from ipca_dashboard.ai.tools import get_item_changes
+from ipca_dashboard.ai.tools import _match_named_items, get_item_changes
 
 
 def _items() -> pd.DataFrame:
@@ -32,6 +32,14 @@ def test_named_item_emits_mom_12m_and_contribution():
     assert vals["ev_item_mom_1101001"] == (-2.38, "%")
     assert vals["ev_item_12m_1101001"] == (-12.25, "%")
     assert vals["ev_item_contrib_1101001"] == (-0.01, "p.p.")
+
+
+def test_matches_multiword_item_with_extra_spacing_and_string_dates():
+    items = _items()
+    items["date"] = items["date"].dt.strftime("%Y-%m-%d")
+    ev = get_item_changes("café     moído", items)
+    assert ev[0].evidence_id == "ev_item_mom_1101001"
+    assert ev[0].date == "2026-05"
 
 
 def test_no_item_named_returns_empty():
@@ -64,4 +72,13 @@ def test_never_raises_on_empty_or_missing_data():
     assert get_item_changes("café", pd.DataFrame()) == []
     assert get_item_changes("", _items()) == []
     assert get_item_changes("café", _items().drop(columns=["weight"])) == []
+    assert get_item_changes("café", _items().drop(columns=["date"])) == []
+    assert get_item_changes("café", _items().drop(columns=["item_name"])) == []
     assert get_item_changes("café", _items().drop(columns=["classification_code"])) == []
+
+
+def test_shared_matcher_never_raises_on_malformed_data():
+    malformed = _items().astype({"weight": "object"})
+    malformed.at[0, "weight"] = {"bad": "value"}
+    assert _match_named_items("gasolina", malformed, max_items=4) == []
+    assert _match_named_items("gasolina", _items(), max_items="bad") == []

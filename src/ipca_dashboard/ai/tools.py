@@ -261,6 +261,15 @@ def _match_named_items(question: str, ipca_items: pd.DataFrame, max_items: int) 
     returns [] on bad/empty/short-of-columns input. Each returned row carries the
     coerced reference date in "_date". Shared by the Q&A item tools (weights, changes).
     """
+    try:
+        return _match_named_items_impl(question, ipca_items, max_items)
+    except Exception:  # noqa: BLE001 - Q&A-only matcher must never break answers
+        return []
+
+
+def _match_named_items_impl(
+    question: str, ipca_items: pd.DataFrame, max_items: int
+) -> list[pd.Series]:
     required = {"date", "level", "item_name", "classification_code", "weight"}
     if not isinstance(ipca_items, pd.DataFrame) or ipca_items.empty:
         return []

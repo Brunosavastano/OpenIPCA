@@ -79,7 +79,7 @@ QA_SYSTEM = (
     "(peso na cesta, %) e 'ev_item_*' (variação no mês e em 12 meses, em %, e contribuição "
     "em p.p.) dos itens que aparecem na PERGUNTA. Para perguntas do tipo 'quanto pesa / "
     "quanto subiu / quanto caiu / quanto contribuiu o X', RESPONDA com os NÚMEROS reais "
-    "citando esses ids (ex.: 'o café caiu 2,38% no mês e 12,25% em 12 meses'); valem as "
+    "citando esses ids (ex.: 'o café variou -2,38% no mês e -12,25% em 12 meses'); valem as "
     "mesmas regras de número.\n\n"
     "HONESTIDADE SOBRE LIMITES: se a pergunta pede algo que os dados não cobrem (uma causa "
     "externa, uma previsão, um número inexistente na tabela), DIGA explicitamente o que não "
