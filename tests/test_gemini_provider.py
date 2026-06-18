@@ -15,6 +15,7 @@ import sys
 
 import pandas as pd
 import pytest
+import requests
 
 from ipca_dashboard.ai.brief import generate_brief
 from ipca_dashboard.ai.evidence import evidence_table_to_dicts
@@ -98,6 +99,23 @@ def _capture_post(captured: dict, returned_text: str):
         return _FakeResponse(_gemini_payload(returned_text))
 
     return _post
+
+
+class _StatusResponse:
+    """A response whose raise_for_status raises requests.HTTPError for >= 400."""
+
+    def __init__(self, status_code: int, payload: dict | None = None) -> None:
+        self.status_code = status_code
+        self._payload = payload or {}
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            err = requests.HTTPError(f"{self.status_code} error")
+            err.response = self  # type: ignore[assignment]
+            raise err
+
+    def json(self) -> dict:
+        return self._payload
 
 
 # --- registration / fallback ------------------------------------------------
@@ -304,3 +322,99 @@ def test_gemini_key_is_redacted_from_fallback_error(monkeypatch):
         ensure_ascii=False,
     )
     assert secret not in serialized
+
+
+# --- resilience: transient errors retry + fall back to a stable model --------
+
+
+def test_recovers_via_fallback_on_a_transient_error(monkeypatch):
+    calls = {"n": 0}
+
+    def _post(url, headers=None, json=None, timeout=None):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return _StatusResponse(503)  # primary blips (overload)
+        return _FakeResponse(_gemini_payload('{"answer": "ok", "claims": []}'))
+
+    monkeypatch.setattr("ipca_dashboard.ai.providers.gemini_provider.requests.post", _post)
+    monkeypatch.setattr("time.sleep", lambda *_: None)
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "gemini-3.5-flash")
+
+    from ipca_dashboard.ai.providers.gemini_provider import GeminiProvider
+
+    out = GeminiProvider().generate_structured(
+        [{"role": "evidence", "content": []}], schema={}, temperature=0.0
+    )
+    assert out == {"answer": "ok", "claims": []}
+    assert calls["n"] == 2  # primary failed -> the next model in the chain answered
+
+
+def test_falls_back_to_a_stable_model_when_the_primary_keeps_failing(monkeypatch):
+    seen: list[str] = []
+
+    def _post(url, headers=None, json=None, timeout=None):
+        seen.append(url)
+        if "gemini-3.5-flash" in url:
+            return _StatusResponse(503)  # primary model overloaded
+        return _FakeResponse(_gemini_payload('{"answer": "via fallback", "claims": []}'))
+
+    monkeypatch.setattr("ipca_dashboard.ai.providers.gemini_provider.requests.post", _post)
+    monkeypatch.setattr("time.sleep", lambda *_: None)
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "gemini-3.5-flash")
+
+    from ipca_dashboard.ai.providers.gemini_provider import GeminiProvider
+
+    out = GeminiProvider().generate_structured(
+        [{"role": "evidence", "content": []}], schema={}, temperature=0.0
+    )
+    assert out["answer"] == "via fallback"
+    assert any("gemini-2.5-flash" in u for u in seen)  # it fell back to a stable model
+    assert sum("gemini-3.5-flash" in u for u in seen) == 1  # primary tried once, then moved on
+    # the configured model is still PRIMARY (tried first), not replaced
+    assert "gemini-3.5-flash" in seen[0]
+
+
+def test_a_non_transient_error_is_not_retried_or_fallen_back(monkeypatch):
+    calls = {"n": 0}
+
+    def _post(url, headers=None, json=None, timeout=None):
+        calls["n"] += 1
+        return _StatusResponse(400)  # bad request -> retrying won't help
+
+    monkeypatch.setattr("ipca_dashboard.ai.providers.gemini_provider.requests.post", _post)
+    monkeypatch.setattr("time.sleep", lambda *_: None)
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "gemini-3.5-flash")
+
+    from ipca_dashboard.ai.providers.gemini_provider import GeminiProvider
+
+    with pytest.raises(requests.HTTPError):
+        GeminiProvider().generate_structured(
+            [{"role": "evidence", "content": []}], schema={}, temperature=0.0
+        )
+    assert calls["n"] == 1  # no retry, no fallback
+
+
+def test_all_models_transient_failing_exhausts_then_raises(monkeypatch):
+    # Every model overloaded -> the chain exhausts and the last error propagates,
+    # so CP7 degrades to the deterministic fallback (never a crash).
+    calls = {"n": 0}
+
+    def _post(url, headers=None, json=None, timeout=None):
+        calls["n"] += 1
+        return _StatusResponse(503)
+
+    monkeypatch.setattr("ipca_dashboard.ai.providers.gemini_provider.requests.post", _post)
+    monkeypatch.setattr("time.sleep", lambda *_: None)
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "gemini-3.5-flash")
+
+    from ipca_dashboard.ai.providers.gemini_provider import GeminiProvider
+
+    with pytest.raises(requests.HTTPError):
+        GeminiProvider().generate_structured(
+            [{"role": "evidence", "content": []}], schema={}, temperature=0.0
+        )
+    assert calls["n"] > 1  # primary + fallback shots were all tried
