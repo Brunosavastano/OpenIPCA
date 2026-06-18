@@ -329,9 +329,13 @@ def test_gemini_key_is_redacted_from_fallback_error(monkeypatch):
 
 def test_recovers_via_fallback_on_a_transient_error(monkeypatch):
     calls = {"n": 0}
+    seen_urls: list[str] = []
+    seen_timeouts: list[int] = []
 
     def _post(url, headers=None, json=None, timeout=None):
         calls["n"] += 1
+        seen_urls.append(url)
+        seen_timeouts.append(timeout)
         if calls["n"] == 1:
             return _StatusResponse(503)  # primary blips (overload)
         return _FakeResponse(_gemini_payload('{"answer": "ok", "claims": []}'))
@@ -348,6 +352,8 @@ def test_recovers_via_fallback_on_a_transient_error(monkeypatch):
     )
     assert out == {"answer": "ok", "claims": []}
     assert calls["n"] == 2  # primary failed -> the next model in the chain answered
+    assert all("test-key" not in url for url in seen_urls)  # key stays in the header
+    assert seen_timeouts == [20, 20]  # short per-call timeout, not the old 60s
 
 
 def test_falls_back_to_a_stable_model_when_the_primary_keeps_failing(monkeypatch):
@@ -376,12 +382,13 @@ def test_falls_back_to_a_stable_model_when_the_primary_keeps_failing(monkeypatch
     assert "gemini-3.5-flash" in seen[0]
 
 
-def test_a_non_transient_error_is_not_retried_or_fallen_back(monkeypatch):
+@pytest.mark.parametrize("status_code", [400, 403])
+def test_a_non_transient_error_is_not_retried_or_fallen_back(monkeypatch, status_code):
     calls = {"n": 0}
 
     def _post(url, headers=None, json=None, timeout=None):
         calls["n"] += 1
-        return _StatusResponse(400)  # bad request -> retrying won't help
+        return _StatusResponse(status_code)  # bad request/key -> retrying won't help
 
     monkeypatch.setattr("ipca_dashboard.ai.providers.gemini_provider.requests.post", _post)
     monkeypatch.setattr("time.sleep", lambda *_: None)
@@ -397,14 +404,12 @@ def test_a_non_transient_error_is_not_retried_or_fallen_back(monkeypatch):
     assert calls["n"] == 1  # no retry, no fallback
 
 
-def test_all_models_transient_failing_exhausts_then_raises(monkeypatch):
-    # Every model overloaded -> the chain exhausts and the last error propagates,
-    # so CP7 degrades to the deterministic fallback (never a crash).
+def test_parse_error_is_not_retried_or_fallen_back(monkeypatch):
     calls = {"n": 0}
 
     def _post(url, headers=None, json=None, timeout=None):
         calls["n"] += 1
-        return _StatusResponse(503)
+        return _FakeResponse(_gemini_payload("not json"))
 
     monkeypatch.setattr("ipca_dashboard.ai.providers.gemini_provider.requests.post", _post)
     monkeypatch.setattr("time.sleep", lambda *_: None)
@@ -413,8 +418,33 @@ def test_all_models_transient_failing_exhausts_then_raises(monkeypatch):
 
     from ipca_dashboard.ai.providers.gemini_provider import GeminiProvider
 
-    with pytest.raises(requests.HTTPError):
+    with pytest.raises(json.JSONDecodeError):
         GeminiProvider().generate_structured(
             [{"role": "evidence", "content": []}], schema={}, temperature=0.0
         )
-    assert calls["n"] > 1  # primary + fallback shots were all tried
+    assert calls["n"] == 1  # parser/schema failures are real errors, not transient
+
+
+def test_all_models_transient_failing_exhausts_then_raises(monkeypatch):
+    # Every model overloaded -> the chain exhausts and the last error propagates,
+    # so CP7 degrades to the deterministic fallback (never a crash).
+    calls = {"n": 0}
+    statuses = iter([503, 502, 504, 500, 429])
+
+    def _post(url, headers=None, json=None, timeout=None):
+        calls["n"] += 1
+        return _StatusResponse(next(statuses))
+
+    monkeypatch.setattr("ipca_dashboard.ai.providers.gemini_provider.requests.post", _post)
+    monkeypatch.setattr("time.sleep", lambda *_: None)
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "gemini-3.5-flash")
+
+    from ipca_dashboard.ai.providers.gemini_provider import GeminiProvider
+
+    with pytest.raises(requests.HTTPError) as excinfo:
+        GeminiProvider().generate_structured(
+            [{"role": "evidence", "content": []}], schema={}, temperature=0.0
+        )
+    assert calls["n"] == 5  # configured primary + two fallback models over two passes
+    assert excinfo.value.response.status_code == 429  # last transient error propagates
