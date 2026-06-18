@@ -46,6 +46,8 @@ INPUT_CASES: list[tuple[str, str, str]] = [
     ("A passagem aerea teve reajuste forte?", "allowed", "item_change"),
     ("Quanto subiu a conta de luz?", "allowed", "item_change"),
     ("O transporte ta mais caro?", "allowed", "item_change"),
+    ("Quanto a cebola variou em 12 meses?", "allowed", "item_change"),
+    ("Qual a variacao do tomate no mes?", "allowed", "item_change"),
     # --- allowed: aggregate -------------------------------------------------
     ("Como esta o headline da inflacao no ultimo dado?", "allowed", "aggregate"),
     ("A inflacao desacelerou na media movel de 3 meses (MM3M)?", "allowed", "aggregate"),
@@ -109,6 +111,4 @@ KNOWN_LIMITATIONS: list[tuple[str, str, str]] = [
      "preco-no-IPCA de preco-de-servico"),
     ("por que meu mercado ficou mais salgado?", "refused",
      "falso-negativo: giria de 'caro' sem stem in-scope"),
-    ("Quanto a cebola variou em 12 meses?", "refused",
-     "gap: 'variar/variacao' nao esta no vocabulario de escopo (candidato a fix)"),
 ]

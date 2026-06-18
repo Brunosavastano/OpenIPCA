@@ -91,10 +91,13 @@ _IN_SCOPE_PATTERNS = [
     ),
     re.compile(r"\b(item|itens|grupo\w*)\s+(da|do|de|na|no)\s+(cesta|ipca|inflacao)\b"),
     # Price movement vocabulary, bounded to whole words / real inflections.
+    # "varia\w*|variou" covers variacao/variar/variaram/variavel AND the common
+    # preterite "variou" ("quanto a cebola variou?"), without matching "varios/vario"
+    # (= "several") — those start "vario", and "variou" is an exact-word alternative.
     re.compile(
         r"\b(preco\w*|custa|custam|custou|custaram|custos?|car[ao]s?|barat\w*|"
         r"subiu|subiram|subida\w*|caiu|cairam|queda\w*|aument\w*|encarec\w*|"
-        r"reajust\w*)\b"
+        r"reajust\w*|varia\w*|variou)\b"
     ),
     # Common basket categories/items.
     re.compile(
