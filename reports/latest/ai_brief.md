@@ -1,12 +1,13 @@
-# Brief de IA — IPCA 2026-05
+# Brief de IA — IPCA 2026-06
 
 _AI Replay Mode · provider: openai_
 
-O IPCA de maio trouxe uma leitura ainda pressionada: o índice cheio segue firme, a alta aparece relativamente disseminada entre os subitens e os núcleos continuam desconfortáveis. A composição mostra pressão relevante de alimentação, habitação e saúde, parcialmente compensada por transportes. No conjunto, o quadro pede cautela, embora a classificação geral permaneça como um regime misto.
+O IPCA de junho traz uma mensagem predominantemente benigna: a alta mensal foi contida e aparece baixa na comparação histórica, enquanto a classificação de regime indica desinflação disseminada. A composição, porém, não é totalmente isenta de atenção, porque a média móvel recente do índice cheio supera a leitura pontual e a difusão ainda mostra mais da metade dos subitens em alta. Nos grupos, Habitação liderou as pressões, Transportes e Saúde também contribuíram para cima, e Alimentação e bebidas ajudou a reduzir o índice. Em conjunto, o quadro sugere inflação corrente mais confortável, com alguma persistência residual na tendência curta e na disseminação.
 
-- Em maio, o IPCA avançou 0,58% no mês e acumulou 4,72% em 12 meses, enquanto a MM3M, isto é, a média móvel de 3 meses, ficou em 0,71%, retratando uma inflação corrente ainda firme.
-- Na comparação com o histórico desde 2012, a alta mensal ficou no percentil 67,92, ou seja, acima de boa parte das leituras passadas, o que reforça que a pressão do mês não foi trivial.
-- A difusão, que mede a parcela de subitens com aumento de preço, alcançou 64,99% no mês e 65,87% na MM3M, e essa média está no percentil 72,81 do histórico desde 2012, sinalizando que as altas seguem relativamente espalhadas.
-- Os núcleos, medidas que tentam filtrar choques mais voláteis, avançaram 0,45% no mês e 0,46% na MM3M, enquanto os alertas em ritmo trimestral anualizado apareceram em 5,64 com leitura high e 6,59 com leitura critical, mantendo uma mensagem de persistência.
-- Na composição do índice, Alimentação e bebidas contribuiu com 0,29 p.p., Habitação com 0,19 p.p. e Saúde e cuidados pessoais com 0,12 p.p., ao passo que Transportes contribuiu com -0,09 p.p. e Educação e Artigos de residência ficaram em 0,00 p.p.
-- Com esse conjunto, a classificação de regime inflacionário, isto é, um rótulo resumido do estado dos preços, é de Quadro misto.
+- Em junho de 2026, o IPCA teve alta mensal de 0,16%, enquanto a taxa acumulada em 12 meses ficou em 4,64%, combinando uma leitura corrente contida com um acumulado anual ainda positivo.
+- A leitura mensal também parece baixa em perspectiva histórica recente: o IPCA de 0,16% está no percentil 16,09 da amostra desde 2012, isto é, abaixo da maior parte das observações desse período.
+- Na tendência de curto prazo, a MM3M, ou média móvel de três meses da variação mensal sem ajuste sazonal, ficou em 0,47%, sugerindo que o alívio do mês convive com uma média recente mais elevada do que a variação pontual.
+- A difusão, que mede a parcela de subitens com alta de preços, alcançou 53,58% no mês e 61,27% na MM3M, com a média de três meses no percentil 49,13 da história desde 2012, quadro que aponta pressão espalhada, mas sem sinal extremo na comparação histórica.
+- Os núcleos, medidas que buscam capturar a inflação menos sujeita a choques pontuais, subiram 0,21% no mês e 0,38% na MM3M, reforçando uma leitura subjacente mais moderada do que a média recente do índice cheio.
+- Na abertura por grupos, Habitação foi a principal pressão altista, com contribuição de 0,10 p.p., seguida por Transportes e Saúde e cuidados pessoais, ambos com 0,03 p.p., enquanto Alimentação e bebidas trouxe alívio de -0,05 p.p.
+- A classificação de regime inflacionário é de desinflação disseminada, ou seja, uma combinação em que a leitura do índice cheio e a disseminação das altas aparecem em patamar baixo pelo critério determinístico informado.

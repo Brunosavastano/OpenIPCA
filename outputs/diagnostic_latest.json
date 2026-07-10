@@ -1,7 +1,7 @@
 {
-  "reference_month": "2026-05",
-  "diagnostic": "O IPCA de 2026-05 veio em 0.58%, acumulando 4.72% em 12 meses. A composição foi adversa, com destaque altista para Alimentação e bebidas (0.29 p.p.) e contribuição baixista de Transportes (-0.09 p.p.). A média dos núcleos avançou 0.45% no mês e roda a 0.46% em MM3M (NSA), sinalizando leitura de curto prazo em MM3M (NSA). A difusão ficou em 65.0% (65.9% em MM3M), com 2 alerta(s) ativo(s), incluindo: Média dos núcleos em 3 meses anualizado (NSA, experimental) acima de 5,0%. Pressão subjacente desconfortável.. Regime: Quadro misto.",
-  "regime": "mixed",
-  "regime_label": "Quadro misto",
-  "regime_rule_id": "regime_v1_mixed"
+  "reference_month": "2026-06",
+  "diagnostic": "O IPCA de 2026-06 veio em 0.16%, acumulando 4.64% em 12 meses. A composição foi moderada, com destaque altista para Habitação (0.10 p.p.) e contribuição baixista de Alimentação e bebidas (-0.05 p.p.). A média dos núcleos avançou 0.21% no mês e roda a 0.38% em MM3M (NSA), sinalizando leitura de curto prazo em MM3M (NSA). A difusão ficou em 53.6% (61.3% em MM3M), sem alertas ativos. Regime: Desinflação disseminada.",
+  "regime": "broad_disinflation",
+  "regime_label": "Desinflação disseminada",
+  "regime_rule_id": "regime_v1_headline_low_diffusion_low"
 }
