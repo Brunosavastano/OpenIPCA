@@ -2,21 +2,22 @@
   "schema_version": "brief_v1",
   "prompt_version": "ask_ipca_v2",
   "reference_month": "2026-06",
-  "generated_at": "2026-07-10T13:59:40+00:00",
+  "generated_at": "2026-07-11T20:41:46+00:00",
   "pairs": [
     {
       "question": "O que mais puxou a inflação do IPCA neste mês?",
-      "answer": "Quem mais puxou a inflação para cima neste mês foi Habitação, com contribuição de 0,10 p.p. para o IPCA. Bem atrás vieram Transportes e Saúde e cuidados pessoais, ambos com 0,03 p.p. Do lado contrário, Alimentação e bebidas segurou o índice, com contribuição de -0,05 p.p. Como o IPCA cheio foi 0,16%, a leitura é que a alta do mês ficou bastante dependente de Habitação; isso é uma decomposição contábil do índice, não uma prova da causa dos reajustes.",
+      "answer": "O principal vetor altista do IPCA neste mês foi Habitação, com contribuição de 0,10 p.p. para o índice cheio, que subiu 0,16%. Em segundo plano vieram Transportes e Saúde e cuidados pessoais, ambos com 0,03 p.p. A leitura, porém, não foi de pressão generalizada forte: Alimentação e bebidas ajudou a conter o resultado, com contribuição de -0,05 p.p. Em termos práticos, foi uma inflação puxada sobretudo por Habitação, parcialmente compensada por alimentação.",
       "claims": [
         {
-          "text": "Habitação foi a maior pressão altista, com contribuição de 0,10 p.p. para o IPCA do mês.",
+          "text": "O principal vetor altista do IPCA neste mês foi Habitação, com contribuição de 0,10 p.p. para o índice cheio, que subiu 0,16%.",
           "type": "number",
           "evidence_ids": [
-            "ev_contrib_top_pos_0"
+            "ev_contrib_top_pos_0",
+            "ev_headline_mom"
           ]
         },
         {
-          "text": "Transportes e Saúde e cuidados pessoais vieram depois, ambos com contribuição de 0,03 p.p.",
+          "text": "Transportes e Saúde e cuidados pessoais vieram em seguida, ambos com contribuição de 0,03 p.p.",
           "type": "number",
           "evidence_ids": [
             "ev_contrib_top_pos_1",
@@ -24,26 +25,20 @@
           ]
         },
         {
-          "text": "Alimentação e bebidas atuou no sentido contrário, com contribuição de -0,05 p.p.",
+          "text": "Alimentação e bebidas ajudou a conter o resultado, com contribuição de -0,05 p.p.",
           "type": "number",
           "evidence_ids": [
             "ev_contrib_top_neg_0"
           ]
         },
         {
-          "text": "O IPCA cheio do mês foi 0,16%.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_headline_mom"
-          ]
-        },
-        {
-          "text": "A alta do mês ficou bastante dependente de Habitação, enquanto Alimentação e bebidas aliviou o resultado agregado.",
+          "text": "A composição sugere uma alta concentrada sobretudo em Habitação, e não uma pressão igualmente forte em todos os grandes grupos disponíveis na decomposição.",
           "type": "interpretation",
           "evidence_ids": [
             "ev_contrib_top_pos_0",
-            "ev_contrib_top_neg_0",
-            "ev_headline_mom"
+            "ev_contrib_top_pos_1",
+            "ev_contrib_top_pos_2",
+            "ev_contrib_top_neg_0"
           ]
         }
       ],
@@ -441,50 +436,48 @@
     },
     {
       "question": "A inflação está espalhada ou concentrada? Como está a difusão?",
-      "answer": "Está mais para uma inflação pouco espalhada do que para uma pressão ampla. Difusão é o percentual de subitens do IPCA com alta de preços; em junho de 2026, a difusão mensal foi de 53,58% dos subitens. A leitura suavizada também não sugere alarme: a difusão em MM3M, isto é, média móvel de 3 meses, ficou em 61,27%, no percentil histórico 49,13%, praticamente uma leitura intermediária frente ao histórico desde 2012. O IPCA cheio também veio baixo no mês, 0,16%, o que reforça a leitura de pressão contida. A composição sugere alguma concentração: Habitação puxou 0,10 p.p., enquanto Alimentação e bebidas aliviou -0,05 p.p.; Transportes e Saúde e cuidados pessoais contribuíram 0,03 p.p. cada. Minha leitura: não é uma inflação “zerada” nem totalmente concentrada em um único item, mas tampouco está claramente espalhada; o quadro é de desinflação disseminada pelo critério da tabela, com difusão baixa/moderada e pressões pontuais compensadas por alívios.",
+      "answer": "A leitura é de inflação mais contida e parcialmente concentrada, não de uma alta claramente espalhada. A difusão mensal foi 53,58% dos subitens, ou seja, há alta em uma parcela relevante da cesta, mas não é um sinal de pressão generalizada forte. A difusão em MM3M está em 61,27%, e seu percentil histórico é 49,13, o que sugere um espalhamento perto do meio da distribuição histórica, não extremo. Em termos de composição, a pressão altista veio sobretudo de Habitação, com 0,10 p.p., enquanto Transportes e Saúde e cuidados pessoais adicionaram 0,03 p.p. cada; do outro lado, Alimentação e bebidas retirou -0,05 p.p. do IPCA. Então eu diria: não está totalmente concentrada em um único grupo, mas também não há evidência de uma inflação amplamente disseminada. O regime classificado na tabela é “Desinflação disseminada”, mas eu leria isso com cautela: a difusão ainda mostra mais subitens subindo do que caindo, só que sem intensidade histórica excepcional.",
       "claims": [
         {
-          "text": "Difusão é o percentual não ponderado dos subitens efetivamente pesquisados do IPCA que tiveram variação positiva no período; difusão alta indica inflação espalhada por muitos subitens.",
+          "text": "Difusão é o percentual não ponderado dos subitens pesquisados do IPCA que tiveram variação positiva; difusão alta indica inflação mais espalhada.",
           "type": "interpretation",
           "evidence_ids": [
             "ev_ref_difusao"
           ]
         },
         {
-          "text": "Em junho de 2026, a difusão mensal foi de 53,58% dos subitens.",
+          "text": "A difusão mensal foi 53,58% dos subitens em 2026-06.",
           "type": "number",
           "evidence_ids": [
             "ev_diffusion_mom"
           ]
         },
         {
-          "text": "A difusão em MM3M, média móvel de 3 meses, ficou em 61,27%, no percentil histórico 49,13%.",
+          "text": "A difusão MM3M foi 61,27%, com percentil histórico de 49,13 em 2026-06.",
           "type": "number",
           "evidence_ids": [
             "ev_diffusion_mm3",
-            "ev_diffusion_mm3_percentile",
-            "ev_ref_mm3m"
+            "ev_diffusion_mm3_percentile"
           ]
         },
         {
-          "text": "O IPCA cheio veio baixo no mês, com alta de 0,16%.",
-          "type": "number",
-          "evidence_ids": [
-            "ev_headline_mom"
-          ]
-        },
-        {
-          "text": "Na composição do mês, Habitação contribuiu 0,10 p.p., Alimentação e bebidas contribuiu -0,05 p.p., e Transportes e Saúde e cuidados pessoais contribuíram 0,03 p.p. cada.",
+          "text": "Habitação contribuiu 0,10 p.p., Transportes 0,03 p.p. e Saúde e cuidados pessoais 0,03 p.p. para o IPCA de 2026-06.",
           "type": "number",
           "evidence_ids": [
             "ev_contrib_top_pos_0",
-            "ev_contrib_top_neg_0",
             "ev_contrib_top_pos_1",
             "ev_contrib_top_pos_2"
           ]
         },
         {
-          "text": "O regime inflacionário indicado é Desinflação disseminada.",
+          "text": "Alimentação e bebidas contribuiu -0,05 p.p., funcionando como alívio no IPCA de 2026-06.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_contrib_top_neg_0"
+          ]
+        },
+        {
+          "text": "O regime inflacionário informado é “Desinflação disseminada”.",
           "type": "regime",
           "evidence_ids": [
             "ev_regime"
@@ -886,10 +879,10 @@
     },
     {
       "question": "Como estão os núcleos do IPCA em relação ao headline?",
-      "answer": "Os núcleos estão um pouco mais altos que o headline na leitura mensal, mas melhores que o headline nas medidas de tendência recente. No mês, a média dos núcleos ficou em 0,21%, acima do IPCA cheio de 0,16%. Já na média móvel de três meses, os núcleos ficaram em 0,38%, abaixo do headline em 0,47%. E no momentum dessazonalizado anualizado, os núcleos aparecem em 4,32% a.a., também abaixo do IPCA cheio em 4,92% a.a.\n\nMinha leitura: o dado mensal isolado dos núcleos não é tão benigno quanto o headline, sugerindo que parte do alívio do IPCA cheio pode ter vindo de itens mais voláteis ou específicos. Mas, olhando medidas mais suaves, a tendência de fundo parece menos pressionada que o headline. Isso é compatível com um quadro de desinflação disseminada, embora eu não exageraria a conclusão com base em um único mês. Núcleos servem justamente para filtrar volatilidade e captar a tendência subjacente da inflação.",
+      "answer": "Os núcleos estão um pouco acima do headline no mês, mas abaixo quando olhamos o ritmo recente suavizado. No mês, a média dos núcleos foi 0,21%, contra 0,16% do IPCA cheio. Já na média móvel trimestral, os núcleos rodaram a 0,38%, abaixo do headline em 0,47%. Na medida dessazonalizada e anualizada, a leitura também é mais benigna para os núcleos: 4,32% a.a. contra 4,92% a.a. do headline. \n\nMinha leitura cética: o mês isolado não permite dizer que a tendência de fundo piorou, porque os núcleos ficaram apenas levemente acima do índice cheio no m/m. O sinal mais relevante é o suavizado: os núcleos abaixo do headline sugerem que parte da pressão recente está fora da tendência subjacente. Ainda assim, não dá para relaxar totalmente: o IPCA em doze meses está em 4,64%, e não há na tabela uma comparação equivalente de núcleos em doze meses. Núcleos, vale lembrar, são medidas que excluem ou suavizam itens mais voláteis para tentar enxergar a tendência de fundo da inflação.",
       "claims": [
         {
-          "text": "No mês, a média dos núcleos foi 0,21%, acima do IPCA cheio de 0,16%.",
+          "text": "No mês, a média dos núcleos foi 0,21%, contra 0,16% do IPCA cheio.",
           "type": "number",
           "evidence_ids": [
             "ev_core_mean_mom",
@@ -897,7 +890,7 @@
           ]
         },
         {
-          "text": "Na média móvel de três meses, a média dos núcleos foi 0,38%, abaixo do IPCA cheio de 0,47%.",
+          "text": "Na média móvel trimestral, os núcleos rodaram a 0,38%, abaixo do headline em 0,47%.",
           "type": "number",
           "evidence_ids": [
             "ev_core_mean_mm3",
@@ -905,7 +898,7 @@
           ]
         },
         {
-          "text": "No momentum dessazonalizado anualizado, a média dos núcleos foi 4,32% a.a., abaixo do IPCA cheio de 4,92% a.a.",
+          "text": "Na medida dessazonalizada e anualizada, a leitura também é mais benigna para os núcleos: 4,32% a.a. contra 4,92% a.a. do headline.",
           "type": "number",
           "evidence_ids": [
             "ev_core_mean_saar_sa",
@@ -913,19 +906,18 @@
           ]
         },
         {
-          "text": "Núcleos são medidas que excluem ou suavizam itens mais voláteis para tentar revelar a tendência de fundo da inflação.",
+          "text": "O IPCA em doze meses está em 4,64%, e não há na tabela uma comparação equivalente de núcleos em doze meses.",
+          "type": "number",
+          "evidence_ids": [
+            "ev_headline_12m"
+          ]
+        },
+        {
+          "text": "Núcleos são medidas que excluem ou suavizam itens mais voláteis para revelar a tendência de fundo da inflação.",
           "type": "interpretation",
           "evidence_ids": [
             "ev_ref_nucleos"
           ]
-        },
-        {
-          "text": "O regime inflacionário indicado é Desinflação disseminada.",
-          "type": "regime",
-          "evidence_ids": [
-            "ev_regime"
-          ],
-          "rule_id": "regime_v1_headline_low_diffusion_low"
         }
       ],
       "evidence": [
@@ -1322,19 +1314,25 @@
     },
     {
       "question": "Qual é o regime inflacionário atual e o que ele significa?",
-      "answer": "O regime inflacionário atual é “Desinflação disseminada”. Esse rótulo significa que, pela regra determinística do app, o mês combina inflação corrente baixa com inflação menos espalhada entre os subitens — ou seja, o problema parece mais contido do que em um quadro de pressão ampla.\n\nA evidência principal é que o IPCA do mês foi 0,16% e ficou no percentil 16,09 da sua própria série histórica usada na comparação. A difusão também não parece extrema: 53,58% dos subitens subiram no mês, e a difusão em média móvel ficou no percentil 49,13.\n\nLeitura cética: “desinflação disseminada” não quer dizer inflação resolvida. O IPCA em 12 meses ainda está em 4,64%, a média dos núcleos no mês foi 0,21% e o momentum dessazonalizado dos núcleos está em 4,32% a.a. Então o sinal de curto prazo é benigno, mas ainda exige cautela: núcleos medem a tendência de fundo, e difusão mede o quanto a alta de preços está espalhada.",
+      "answer": "O regime inflacionário atual é “Desinflação disseminada”. Em termos simples, isso quer dizer que a regra do indicador está lendo o mês como uma combinação de inflação corrente baixa com pressão relativamente pouco espalhada, quando comparada ao histórico usado pelo próprio método.\n\nOs dados dão algum suporte a essa leitura: o IPCA do mês foi 0,16%, em percentil histórico de 16,09, ou seja, um resultado baixo frente à própria série; a difusão em média móvel está em 61,27%, com percentil de 49,13, sugerindo que a alta de preços não está excepcionalmente disseminada. Ainda assim, eu leria com cautela: “desinflação disseminada” não significa inflação zerada nem problema resolvido — o IPCA em 12 meses está em 4,64%, e a média dos núcleos em média móvel está em 0,38%, então há tendência de fundo a monitorar.",
       "claims": [
         {
-          "text": "O regime inflacionário atual é “Desinflação disseminada”, um rótulo determinístico que combina o nível da inflação com sua difusão.",
+          "text": "O regime inflacionário atual é “Desinflação disseminada”.",
           "type": "regime",
           "evidence_ids": [
-            "ev_regime",
-            "ev_ref_regime"
+            "ev_regime"
           ],
           "rule_id": "regime_v1_headline_low_diffusion_low"
         },
         {
-          "text": "O IPCA do mês foi 0,16% e ficou no percentil 16,09 da série histórica usada na comparação.",
+          "text": "O regime é um rótulo determinístico que resume o mês combinando o nível da inflação com o quanto ela está espalhada, em comparação com o histórico disponível.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_ref_regime"
+          ]
+        },
+        {
+          "text": "O IPCA do mês foi 0,16%, em percentil histórico de 16,09.",
           "type": "number",
           "evidence_ids": [
             "ev_headline_mom",
@@ -1342,32 +1340,28 @@
           ]
         },
         {
-          "text": "A difusão foi 53,58% dos subitens no mês, e a difusão em média móvel ficou no percentil 49,13.",
+          "text": "A difusão em média móvel está em 61,27%, com percentil de 49,13.",
           "type": "number",
           "evidence_ids": [
-            "ev_diffusion_mom",
-            "ev_diffusion_mm3_percentile",
-            "ev_ref_difusao"
+            "ev_diffusion_mm3",
+            "ev_diffusion_mm3_percentile"
           ]
         },
         {
-          "text": "O IPCA em 12 meses está em 4,64%, a média dos núcleos no mês foi 0,21% e o momentum dessazonalizado dos núcleos está em 4,32% a.a.",
+          "text": "O IPCA em 12 meses está em 4,64%, e a média dos núcleos em média móvel está em 0,38%.",
           "type": "number",
           "evidence_ids": [
             "ev_headline_12m",
-            "ev_core_mean_mom",
-            "ev_core_mean_saar_sa",
-            "ev_ref_nucleos"
+            "ev_core_mean_mm3"
           ]
         },
         {
-          "text": "A leitura é benigna no curto prazo, mas não equivale a dizer que a inflação está resolvida, porque núcleos e acumulado em 12 meses ainda precisam ser monitorados.",
+          "text": "A leitura é benigna na margem, mas ainda pede cautela porque o rótulo não elimina a necessidade de acompanhar a tendência de fundo da inflação.",
           "type": "interpretation",
           "evidence_ids": [
-            "ev_headline_12m",
-            "ev_core_mean_mom",
-            "ev_core_mean_saar_sa",
-            "ev_ref_nucleos"
+            "ev_regime",
+            "ev_core_mean_mm3",
+            "ev_headline_12m"
           ]
         }
       ],
@@ -1765,26 +1759,25 @@
     },
     {
       "question": "Alimentação puxou ou segurou a inflação do mês?",
-      "answer": "Segurou. Alimentação e bebidas teve contribuição de -0,05 p.p. no IPCA do mês, enquanto o IPCA cheio ficou em 0,16%. Em linguagem simples: o grupo retirou pressão do índice, não puxou a inflação para cima. A principal pressão altista veio de Habitação, com 0,10 p.p., então a leitura é de alívio vindo de alimentação, compensando parte das altas de outros grupos.",
+      "answer": "Segurou. Alimentação e bebidas foi vetor de alívio no IPCA do mês: enquanto o índice cheio subiu 0,16%, o grupo contribuiu -0,05 p.p., ou seja, reduziu a inflação agregada em vez de puxá-la para cima. A leitura é clara: a pressão do mês veio mais de outros grupos, especialmente Habitação, não de alimentação.",
       "claims": [
         {
-          "text": "Alimentação e bebidas teve contribuição de -0,05 p.p. no IPCA do mês, enquanto o IPCA cheio ficou em 0,16%.",
+          "text": "O IPCA do mês foi 0,16% e Alimentação e bebidas contribuiu -0,05 p.p.",
           "type": "number",
           "evidence_ids": [
-            "ev_contrib_top_neg_0",
-            "ev_headline_mom"
+            "ev_headline_mom",
+            "ev_contrib_top_neg_0"
           ]
         },
         {
-          "text": "Uma contribuição negativa de Alimentação e bebidas significa que o grupo retirou pressão do IPCA cheio, em vez de puxá-lo para cima.",
+          "text": "Alimentação e bebidas segurou a inflação do mês, pois sua contribuição foi negativa.",
           "type": "interpretation",
           "evidence_ids": [
-            "ev_contrib_top_neg_0",
-            "ev_ref_variacao_contrib"
+            "ev_contrib_top_neg_0"
           ]
         },
         {
-          "text": "Habitação foi a principal pressão altista entre os grupos listados, com contribuição de 0,10 p.p.",
+          "text": "Habitação foi uma pressão altista relevante no mês, com contribuição de 0,10 p.p.",
           "type": "number",
           "evidence_ids": [
             "ev_contrib_top_pos_0"
@@ -2185,30 +2178,38 @@
     },
     {
       "question": "Como está a inflação acumulada em 12 meses?",
-      "answer": "Nessa janela acumulada, o IPCA está em 4,64%. A leitura é de alívio recente, mas eu seria cético em chamar isso de inflação plenamente confortável: o dado mensal foi 0,16% e o ritmo suavizado recente está em 0,47%, o que ajuda, mas a taxa acumulada ainda carrega pressões passadas. O regime identificado na tabela é “Desinflação disseminada”, isto é, uma combinação de inflação mais baixa com menor espalhamento, mas isso deve ser lido como diagnóstico do dado corrente, não como garantia de continuidade.",
+      "answer": "A inflação acumulada em 12 meses está em 4,64% no IPCA. Minha leitura é cautelosa: o dado corrente do mês veio baixo, em 0,16%, mas o acumulado ainda não parece plenamente confortável. O rótulo do mês é “Desinflação disseminada”, o que sugere perda de pressão mais espalhada, mas isso não elimina a necessidade de olhar a tendência dos próximos meses.",
       "claims": [
         {
-          "text": "Nessa janela acumulada, o IPCA está em 4,64%.",
+          "text": "A inflação acumulada em 12 meses está em 4,64% no IPCA.",
           "type": "number",
           "evidence_ids": [
             "ev_headline_12m"
           ]
         },
         {
-          "text": "O dado mensal foi 0,16% e o ritmo suavizado recente está em 0,47%.",
+          "text": "O dado corrente do mês veio em 0,16%.",
           "type": "number",
           "evidence_ids": [
-            "ev_headline_mom",
-            "ev_headline_mm3"
+            "ev_headline_mom"
           ]
         },
         {
-          "text": "O regime identificado na tabela é “Desinflação disseminada”.",
+          "text": "O rótulo do mês é “Desinflação disseminada”.",
           "type": "regime",
           "evidence_ids": [
             "ev_regime"
           ],
           "rule_id": "regime_v1_headline_low_diffusion_low"
+        },
+        {
+          "text": "A leitura é cautelosa: há sinal benigno no mês, mas o acumulado ainda exige monitoramento.",
+          "type": "interpretation",
+          "evidence_ids": [
+            "ev_headline_12m",
+            "ev_headline_mom",
+            "ev_regime"
+          ]
         }
       ],
       "evidence": [

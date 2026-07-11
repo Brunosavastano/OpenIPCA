@@ -40,7 +40,7 @@
   ],
   "claims": [
     {
-      "text": "Em junho de 2026, o IPCA teve alta mensal de 0,16%, enquanto a taxa acumulada em 12 meses ficou em 4,64%, combinando uma leitura corrente contida com um acumulado anual ainda positivo.",
+      "text": "O IPCA de junho mostrou uma leitura mensal contida, com alta de 0,16%, enquanto a variação acumulada em 12 meses ficou em 4,64%.",
       "type": "number",
       "evidence_ids": [
         "ev_headline_mom",
@@ -48,23 +48,15 @@
       ]
     },
     {
-      "text": "A leitura mensal também parece baixa em perspectiva histórica recente: o IPCA de 0,16% está no percentil 16,09 da amostra desde 2012, isto é, abaixo da maior parte das observações desse período.",
+      "text": "A leitura mensal também foi baixa em perspectiva histórica, no percentil 16,09 da série desde 2012, ao mesmo tempo em que a MM3M, isto é, a média móvel de três meses da variação mensal sem ajuste sazonal, ficou em 0,47%.",
       "type": "interpretation",
       "evidence_ids": [
-        "ev_headline_mom",
-        "ev_headline_percentile"
+        "ev_headline_percentile",
+        "ev_headline_mm3"
       ]
     },
     {
-      "text": "Na tendência de curto prazo, a MM3M, ou média móvel de três meses da variação mensal sem ajuste sazonal, ficou em 0,47%, sugerindo que o alívio do mês convive com uma média recente mais elevada do que a variação pontual.",
-      "type": "interpretation",
-      "evidence_ids": [
-        "ev_headline_mm3",
-        "ev_headline_mom"
-      ]
-    },
-    {
-      "text": "A difusão, que mede a parcela de subitens com alta de preços, alcançou 53,58% no mês e 61,27% na MM3M, com a média de três meses no percentil 49,13 da história desde 2012, quadro que aponta pressão espalhada, mas sem sinal extremo na comparação histórica.",
+      "text": "A difusão, que mede a parcela de subitens com alta de preços e ajuda a avaliar quão espalhada está a inflação, ficou em 53,58% no mês e em 61,27% na MM3M, com esta última no percentil 49,13 da história desde 2012.",
       "type": "interpretation",
       "evidence_ids": [
         "ev_diffusion_mom",
@@ -73,16 +65,15 @@
       ]
     },
     {
-      "text": "Os núcleos, medidas que buscam capturar a inflação menos sujeita a choques pontuais, subiram 0,21% no mês e 0,38% na MM3M, reforçando uma leitura subjacente mais moderada do que a média recente do índice cheio.",
+      "text": "Os núcleos, que buscam captar a tendência da inflação ao reduzir o peso de itens mais voláteis, também vieram moderados: a média dos núcleos subiu 0,21% no mês e 0,38% na MM3M.",
       "type": "interpretation",
       "evidence_ids": [
         "ev_core_mean_mom",
-        "ev_core_mean_mm3",
-        "ev_headline_mm3"
+        "ev_core_mean_mm3"
       ]
     },
     {
-      "text": "Na abertura por grupos, Habitação foi a principal pressão altista, com contribuição de 0,10 p.p., seguida por Transportes e Saúde e cuidados pessoais, ambos com 0,03 p.p., enquanto Alimentação e bebidas trouxe alívio de -0,05 p.p.",
+      "text": "Na composição, Habitação foi a principal pressão altista, com contribuição de 0,10 p.p., seguida por Transportes e Saúde e cuidados pessoais, ambos com 0,03 p.p., enquanto Alimentação e bebidas atuou na direção oposta, com -0,05 p.p.",
       "type": "number",
       "evidence_ids": [
         "ev_contrib_top_pos_0",
@@ -92,7 +83,7 @@
       ]
     },
     {
-      "text": "A classificação de regime inflacionário é de desinflação disseminada, ou seja, uma combinação em que a leitura do índice cheio e a disseminação das altas aparecem em patamar baixo pelo critério determinístico informado.",
+      "text": "O enquadramento do mês é de desinflação disseminada, isto é, um regime em que a leitura cheia e a disseminação dos reajustes apontam para menor pressão inflacionária.",
       "type": "regime",
       "evidence_ids": [
         "ev_regime"
