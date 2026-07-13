@@ -45,6 +45,7 @@ def test_resolve_joins_each_claim_with_its_evidence_rows():
     rows = resolve_claim_evidence(claims, EVIDENCE)
     assert len(rows) == 3  # 1 + 2 (one row per claim-evidence pair)
     assert rows[0]["metric"] == "IPCA m/m" and rows[0]["value"] == 0.67
+    assert rows[0]["evidence_id"] == "ev_headline_mom"
     assert rows[0]["source"] == "BCB/SGS"
     assert {r["metric"] for r in rows[1:]} == {"IPCA m/m", "Difusão MM3M"}
     # the claim text rides along on every row

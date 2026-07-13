@@ -209,14 +209,14 @@ def test_unknown_data_month_does_not_crash_or_block_replay(tmp_path):
     assert result.answer == "RESPOSTA PRÉ-GERADA."
 
 
-def test_degraded_live_without_matching_replay_is_honest_fallback(tmp_path):
-    # in-scope question the replay does NOT contain -> honest fallback, no replay
+def test_degraded_live_without_matching_replay_uses_current_data_floor(tmp_path):
+    # in-scope question the replay does NOT contain -> current deterministic answer
     result = answer_with_replay(
         "Como estão os núcleos do IPCA?",
         _bcb(), _items(), pd.DataFrame(), pd.DataFrame(),
         provider=_BoomProvider(), replay_path=_write_replay(tmp_path),
     )
-    assert result.mode == "fallback"
+    assert result.mode == "deterministic"
     assert "PRÉ-GERADA" not in result.answer
 
 
@@ -246,7 +246,7 @@ def test_answer_with_replay_missing_replay_file_never_raises(tmp_path):
         DIFFUSION_Q, _bcb(), _items(), pd.DataFrame(), pd.DataFrame(),
         provider=_BoomProvider(), replay_path=tmp_path / "nope.json",
     )
-    assert result.mode == "fallback"
+    assert result.mode == "deterministic"
 
 
 def test_answer_with_replay_malformed_replay_file_never_raises(tmp_path):
@@ -256,7 +256,7 @@ def test_answer_with_replay_malformed_replay_file_never_raises(tmp_path):
         DIFFUSION_Q, _bcb(), _items(), pd.DataFrame(), pd.DataFrame(),
         provider=_BoomProvider(), replay_path=path,
     )
-    assert result.mode == "fallback"
+    assert result.mode == "deterministic"
 
 
 def test_answer_with_replay_deeply_nested_replay_file_never_raises(tmp_path):
@@ -266,7 +266,7 @@ def test_answer_with_replay_deeply_nested_replay_file_never_raises(tmp_path):
         DIFFUSION_Q, _bcb(), _items(), pd.DataFrame(), pd.DataFrame(),
         provider=_BoomProvider(), replay_path=path,
     )
-    assert result.mode == "fallback"
+    assert result.mode == "deterministic"
 
 
 def test_answer_with_replay_oversized_replay_file_is_ignored(tmp_path):
@@ -276,7 +276,7 @@ def test_answer_with_replay_oversized_replay_file_is_ignored(tmp_path):
         DIFFUSION_Q, _bcb(), _items(), pd.DataFrame(), pd.DataFrame(),
         provider=_BoomProvider(), replay_path=path,
     )
-    assert result.mode == "fallback"
+    assert result.mode == "deterministic"
 
 
 @pytest.mark.parametrize("question", [None, ""])

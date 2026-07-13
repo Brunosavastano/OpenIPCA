@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import date, datetime
 from html import escape
 from pathlib import Path
 
@@ -13,6 +14,20 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from ipca_dashboard.ai.env import bridge_secrets_to_env, load_env_once  # noqa: E402
+from ipca_dashboard.ai.evidence import resolve_claim_evidence  # noqa: E402
+from ipca_dashboard.ai.qa_replay import CURATED_QUESTIONS, answer_with_replay  # noqa: E402
+from ipca_dashboard.ai.staleness import (  # noqa: E402
+    is_stale,
+    normalize_analysis_title,
+    reference_month_from_brief,
+)
+from ipca_dashboard.ai.trace import (  # noqa: E402
+    brief_stamp_line,
+    load_brief_metadata,
+    load_trace_summary,
+)
+from ipca_dashboard.buildinfo import build_stamp  # noqa: E402
 from ipca_dashboard.charts import (  # noqa: E402
     contribution_ranking,
     core_fan,
@@ -25,16 +40,6 @@ from ipca_dashboard.charts import (  # noqa: E402
     subitem_sparkline,
     waterfall_latest,
 )
-from ipca_dashboard.ai.env import bridge_secrets_to_env, load_env_once  # noqa: E402
-from ipca_dashboard.ai.evidence import resolve_claim_evidence  # noqa: E402
-from ipca_dashboard.ai.qa_replay import CURATED_QUESTIONS, answer_with_replay  # noqa: E402
-from ipca_dashboard.ai.staleness import is_stale, reference_month_from_brief  # noqa: E402
-from ipca_dashboard.ai.trace import (  # noqa: E402
-    brief_stamp_line,
-    load_brief_metadata,
-    load_trace_summary,
-)
-from ipca_dashboard.buildinfo import build_stamp  # noqa: E402
 from ipca_dashboard.config import OUTPUTS_DIR, PROCESSED_DIR, load_yaml  # noqa: E402
 from ipca_dashboard.diagnostics import classify_latest_regime  # noqa: E402
 from ipca_dashboard.glossary import (  # noqa: E402
@@ -51,6 +56,15 @@ from ipca_dashboard.hierarchy import (  # noqa: E402
     subitem_options,
     top_level_rows,
 )
+from ipca_dashboard.navigation import (  # noqa: E402
+    PAGE_SLUGS,
+    SLUG_BY_PAGE,
+    NavigationTarget,
+    parse_query_params,
+    target_for_evidence,
+)
+from ipca_dashboard.release import freshness_status as release_freshness_status  # noqa: E402
+from ipca_dashboard.release import load_release_state as read_release_state  # noqa: E402
 from ipca_dashboard.transforms import calculate_diffusion_from_items, top_movers  # noqa: E402
 from ipca_dashboard.validation import summarize_report  # noqa: E402
 
@@ -70,7 +84,7 @@ st.set_page_config(
     page_title="OpenIPCA — IPCA além da headline",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 
 
@@ -82,7 +96,7 @@ CSS = """
 
   html, body, [class*="css"], .stApp { font-family: 'IBM Plex Sans', sans-serif; }
   .main .block-container { padding-top: 1.4rem; max-width: 1400px; }
-  h1 { font-size: 1.55rem; font-weight: 600; letter-spacing: -.005em; color: #E6EAF1; }
+  h1 { font-size: 1.55rem; font-weight: 600; letter-spacing: 0; color: #E6EAF1; }
   h2, h3 { font-weight: 600; color: #E6EAF1; letter-spacing: 0; }
   [data-testid="stCaptionContainer"], .small-note { color: #8A93A3; }
 
@@ -92,11 +106,10 @@ CSS = """
   /* KPI tiles — custom grid (st.markdown HTML). Equal height via the grid; each
      tile = label + (?) tooltip, mono value, plain colored delta, muted note. */
   .kpi-grid {
-    display: grid; grid-template-columns: repeat(7, 1fr);
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-auto-rows: 1fr; gap: 10px; margin: 2px 0 6px;
   }
-  @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 640px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 760px)  { .kpi-grid { grid-template-columns: 1fr; } }
   .kpi {
     display: flex; flex-direction: column;
     background: #11161F; border: 1px solid #222A36; border-radius: 6px;
@@ -127,7 +140,72 @@ CSS = """
   .kpi-delta.flat { color: #8A93A3; }
   .kpi-note { color: #5A6373; font-size: .64rem; margin-top: 3px; }
 
-  /* "Vilões e aliados" — the month's biggest 12m movers, in everyday names */
+  /* Compact secondary metrics: subordinate to the three headline KPIs. */
+  .secondary-strip {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-top: 1px solid #222A36; border-bottom: 1px solid #222A36;
+    margin: 12px 0 18px;
+  }
+  .secondary-metric { padding: 10px 14px; border-right: 1px solid #222A36; min-width: 0; }
+  .secondary-metric:last-child { border-right: 0; }
+  .secondary-label {
+    color: #5A6373; font: 500 .62rem 'IBM Plex Mono', monospace;
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .secondary-value {
+    color: #B7BECB; font: 500 1rem 'IBM Plex Mono', monospace; margin-top: 3px;
+  }
+  @media (max-width: 760px) {
+    .secondary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .secondary-metric:nth-child(2) { border-right: 0; }
+  }
+
+  /* Release status and the signature analytical ruler are full-width bands, not cards. */
+  .release-status {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid #222A36; border-bottom: 1px solid #222A36;
+    margin: 10px 0 18px;
+  }
+  .release-status-cell { padding: 11px 14px; border-right: 1px solid #222A36; min-width: 0; }
+  .release-status-cell:last-child { border-right: 0; }
+  .release-status-key {
+    color: #5A6373; font: 500 .6rem 'IBM Plex Mono', monospace;
+    letter-spacing: .1em; text-transform: uppercase;
+  }
+  .release-status-value { color: #E6EAF1; font-size: .88rem; font-weight: 600; margin-top: 4px; }
+  .release-status-note { color: #8A93A3; font-size: .7rem; margin-top: 2px; }
+  .release-status-value.ok { color: #35B07D; }
+  .release-status-value.warn { color: #E0A046; }
+  .release-status-value.block { color: #E5484D; }
+
+  .release-ruler {
+    display: grid; grid-template-columns: 1fr 1.35fr 1fr 1fr 1fr;
+    border-top: 1px solid #2E3845; border-bottom: 1px solid #2E3845;
+    margin: 16px 0 18px;
+  }
+  .release-stage { padding: 13px 14px; border-right: 1px solid #222A36; min-width: 0; }
+  .release-stage:last-child { border-right: 0; }
+  .release-stage-key {
+    color: #E8943A; font: 600 .6rem 'IBM Plex Mono', monospace;
+    letter-spacing: .11em; text-transform: uppercase;
+  }
+  .release-stage-value { color: #E6EAF1; font-size: .9rem; font-weight: 600; margin-top: 5px; }
+  .release-stage-note { color: #8A93A3; font-size: .72rem; line-height: 1.35; margin-top: 3px; }
+  @media (max-width: 900px) {
+    .release-ruler { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .release-stage:nth-child(2n) { border-right: 0; }
+  }
+  @media (max-width: 640px) {
+    .release-status, .release-ruler, .secondary-strip { grid-template-columns: 1fr; }
+    .release-status-cell, .release-stage, .secondary-metric {
+      border-right: 0; border-bottom: 1px solid #222A36;
+    }
+    .release-status-cell:last-child, .release-stage:last-child, .secondary-metric:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  /* "Vilões e aliados" — monthly ranking with 12m context, in everyday names */
   .movers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 2px 0 6px; }
   @media (max-width: 640px) { .movers-grid { grid-template-columns: 1fr; } }
   .movers-col {
@@ -135,16 +213,42 @@ CSS = """
   }
   .movers-title-up { color: #E5484D; }
   .movers-title-down { color: #35B07D; }
-  .mover-row { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
+  .mover-row {
+    display: grid; grid-template-columns: minmax(0, 1fr) 68px 76px;
+    align-items: baseline; column-gap: 10px; padding: 4px 0;
+  }
+  .mover-head {
+    border-bottom: 1px solid #222A36; margin: 3px 0 4px; padding-bottom: 6px;
+    color: #697386; font: 500 .58rem 'IBM Plex Mono', monospace;
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .mover-sort-label {
+    display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px;
+    color: #697386;
+    border-bottom: 1px solid transparent; padding-bottom: 2px;
+  }
+  .mover-sort-label.active {
+    color: #E8943A; border-color: #E8943A; font-weight: 700;
+  }
+  .mover-sort-mark { font-size: .48rem; line-height: 1; }
   .mover-name {
     color: #E6EAF1; font-size: .86rem;
     min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .mover-val {
-    font-family: 'IBM Plex Mono', monospace; font-size: .86rem; font-weight: 500; flex: none;
+    font-family: 'IBM Plex Mono', monospace; font-size: .82rem;
+    font-variant-numeric: tabular-nums; text-align: right;
   }
   .mover-val.up { color: #E5484D; }
   .mover-val.down { color: #35B07D; }
+  .mover-val.flat, .mover-val.na { color: #697386; }
+  .mover-val-month { font-weight: 700; }
+  .mover-val-yoy { font-weight: 400; opacity: .74; }
+  .mover-empty { color: #697386; font-size: .78rem; padding: 8px 0 3px; }
+  @media (max-width: 420px) {
+    .mover-row { grid-template-columns: minmax(0, 1fr) 62px 70px; column-gap: 7px; }
+    .mover-name, .mover-val { font-size: .76rem; }
+  }
 
   /* buttons & input */
   .stButton > button[kind="primary"] {
@@ -230,7 +334,7 @@ CSS = """
     width: 26px; height: 26px; border-radius: 6px; background: #E8943A; color: #0A0E14;
     font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: .95rem;
   }
-  [data-testid="stSidebar"] .brand-name { font-weight: 600; font-size: 1.05rem; color: #E6EAF1; letter-spacing: -.01em; }
+  [data-testid="stSidebar"] .brand-name { font-weight: 600; font-size: 1.05rem; color: #E6EAF1; letter-spacing: 0; }
   [data-testid="stSidebar"] .brand-accent { color: #E8943A; }  /* "IPCA" in the logo amber */
   [data-testid="stSidebar"] .nav-label {
     font-family: 'IBM Plex Mono', monospace; font-size: .6rem; letter-spacing: .18em;
@@ -272,6 +376,10 @@ CSS = """
   .status-strip .seal-ok { color: #35B07D; }
   .status-strip .seal-warn { color: #E0A046; }
   .status-strip .seal-block { color: #E5484D; }
+  @media (max-width: 640px) {
+    .status-strip { align-items: flex-start; flex-direction: column; gap: 5px; }
+    .status-strip .strip-right { line-height: 1.5; }
+  }
 
   /* regime pill */
   .regime-row { display: flex; align-items: center; gap: 10px; margin: 4px 0 2px; flex-wrap: wrap; }
@@ -294,7 +402,7 @@ CSS = """
      already transparent via chart_theme.yaml.) */
   [data-testid="stPlotlyChart"] .main-svg { background: transparent !important; }
 
-  /* expanders ("Briefing IPCA", "Glossário", "Evidências"…) framed like the cards */
+  /* expanders ("Análise OpenIPCA", "Glossário", "Evidências"…) framed like the cards */
   [data-testid="stExpander"] details {
     background: #11161F; border: 1px solid #222A36 !important; border-radius: 8px;
   }
@@ -317,6 +425,7 @@ PROCESSED_PATHS = {
     "cores": PROCESSED_DIR / "core_metrics_monthly.parquet",
     "alerts": PROCESSED_DIR / "alerts.parquet",
 }
+RELEASE_STATE_PATH = OUTPUTS_DIR / "release_state.json"
 
 
 def processed_signature() -> tuple:
@@ -345,40 +454,219 @@ def load_diagnostic() -> str:
     )
 
 
+def _set_query_params(**updates: str) -> None:
+    """Update only validated public parameters without disturbing unrelated state."""
+    try:
+        current = {key: str(value) for key, value in st.query_params.items()}
+        for key, value in updates.items():
+            if value:
+                current[key] = value
+            else:
+                current.pop(key, None)
+        if current != {key: str(value) for key, value in st.query_params.items()}:
+            st.query_params.from_dict(current)
+    except Exception:  # noqa: BLE001 - old/mocked Streamlit must still render
+        return
+
+
+def _apply_query_params_once() -> None:
+    if st.session_state.get("query_params_applied"):
+        return
+    try:
+        target = parse_query_params(st.query_params)
+    except Exception:  # noqa: BLE001 - malformed public URL must never break the app
+        target = NavigationTarget("")
+    if target.view:
+        st.session_state["nav_page"] = PAGE_SLUGS[target.view]
+    if target.month:
+        st.session_state["nav_month"] = target.month
+    if target.item:
+        st.session_state["nav_item"] = target.item
+    st.session_state["query_params_applied"] = True
+
+
+def _navigate_to_target(target: NavigationTarget) -> None:
+    st.session_state["pending_navigation"] = {
+        "view": target.view,
+        "month": target.month,
+        "item": target.item,
+    }
+    _set_query_params(
+        view=target.view,
+        month=target.month,
+        evidence=target.evidence,
+        item=target.item,
+    )
+    st.rerun()
+
+
+def _format_release_date(value: object) -> str:
+    try:
+        return date.fromisoformat(str(value)).strftime("%d/%m/%Y")
+    except ValueError:
+        return "não informado"
+
+
+def _format_build_time(value: object) -> str:
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        return parsed.strftime("%d/%m/%Y %H:%M UTC")
+    except ValueError:
+        return "horário não informado"
+
+
+def render_release_status(data: dict[str, pd.DataFrame]) -> None:
+    """Separate data recency, strict integrity and the next official calendar date."""
+    state = read_release_state(RELEASE_STATE_PATH)
+    try:
+        data_month = pd.to_datetime(data["bcb"]["date"]).max().strftime("%Y-%m")
+    except (AttributeError, KeyError, TypeError, ValueError):
+        data_month = ""
+    month = data_month or str(state.get("reference_month", ""))
+    summary = summarize_report(OUTPUTS_DIR / "validation_report.csv")
+    if summary:
+        quality = f"{summary['passed']}/{summary['total']} verificações"
+        quality_class = {"pass": "ok", "warn": "warn", "block": "block"}[
+            str(summary["worst"])
+        ]
+        quality_note = "strict aprovado" if summary["worst"] == "pass" else "ver detalhes"
+    else:
+        quality, quality_class, quality_note = "não informado", "warn", "sem relatório"
+    freshness = release_freshness_status(state)
+    next_note = {
+        "current": "calendário oficial",
+        "due_today": "divulgação prevista hoje",
+        "overdue": "nova divulgação já era esperada",
+        "unknown": "calendário indisponível",
+    }[freshness]
+    next_class = "warn" if freshness in {"due_today", "overdue", "unknown"} else ""
+    try:
+        year, month_number = (int(part) for part in month.split("-"))
+        month_label = f"{_PT_MONTHS[month_number]}/{year}"
+    except (KeyError, ValueError):
+        month_label = "não informado"
+    st.markdown(
+        "<div class='release-status'>"
+        "<div class='release-status-cell'>"
+        "<div class='release-status-key'>Dados atualizados</div>"
+        f"<div class='release-status-value'>{escape(month_label)}</div>"
+        f"<div class='release-status-note'>build {_format_build_time(state.get('built_at'))}</div>"
+        "</div>"
+        "<div class='release-status-cell'>"
+        "<div class='release-status-key'>Integridade</div>"
+        f"<div class='release-status-value {quality_class}'>{escape(quality)}</div>"
+        f"<div class='release-status-note'>{escape(quality_note)}</div>"
+        "</div>"
+        "<div class='release-status-cell'>"
+        "<div class='release-status-key'>Próxima divulgação</div>"
+        f"<div class='release-status-value {next_class}'>"
+        f"{escape(_format_release_date(state.get('next_release_date')))}</div>"
+        f"<div class='release-status-note'>{escape(next_note)}</div>"
+        "</div></div>",
+        unsafe_allow_html=True,
+    )
+    if state and state.get("reference_month") != data_month:
+        st.warning("Metadados de divulgação não coincidem com a competência dos Parquets.")
+    elif freshness == "overdue":
+        st.warning(
+            "A divulgação seguinte já estava prevista no calendário oficial. "
+            "O painel mantém o último conjunto validado enquanto o refresh é reprocessado."
+        )
+    elif freshness == "due_today":
+        st.info(
+            "Há divulgação prevista para hoje. O detector publica quando SIDRA e séries "
+            "críticas do BCB estiverem completos."
+        )
+
+
+@st.fragment
 def render_top_movers(items: pd.DataFrame, date: pd.Timestamp) -> None:
-    """The month's "vilões e aliados": top subitems by official 12m variation.
+    """"Vilões e aliados" ranked by the official variation selected in the header.
 
     The first thing a lay visitor understands in 5 seconds — names people buy
-    (arroz, energia, transporte por aplicativo), not p.p. jargon. Selection is
-    a pure, declared rule (transforms.top_movers); the card is silently omitted
-    when the data has no usable yoy.
+    (arroz, energia, transporte por aplicativo), not p.p. jargon. The visitor can
+    switch between monthly and 12-month ranking without losing either value.
     """
-    up, down = top_movers(items, date)
+    rank_by = st.segmented_control(
+        "Ordenar ranking por",
+        options=["mom", "yoy"],
+        default="mom",
+        format_func=lambda value: "Mês" if value == "mom" else "12 meses",
+        key="top_movers_rank",
+        help="O período selecionado define a ordem e a separação entre altas e quedas.",
+    )
+    rank_by = str(rank_by) if rank_by in {"mom", "yoy"} else "mom"
+
+    all_up, all_down = top_movers(items, date, n=None, rank_by=rank_by)
+    if all_up.empty and all_down.empty:
+        return
+
+    show_all = st.toggle(
+        "Mostrar todos os subitens elegíveis",
+        value=False,
+        key="show_all_top_movers",
+        help="Expande o ranking além dos cinco primeiros de cada lado.",
+    )
+    up = all_up if show_all else all_up.head(5)
+    down = all_down if show_all else all_down.head(5)
     if up.empty and down.empty:
         return
 
+    def _value_class(value: object) -> str:
+        if pd.isna(value):
+            return "na"
+        numeric = float(value)
+        return "up" if numeric > 0 else "down" if numeric < 0 else "flat"
+
+    def _format_change(value: object) -> str:
+        return "n.d." if pd.isna(value) else f"{float(value):+.1f}%"
+
     def _rows(frame: pd.DataFrame) -> str:
+        if frame.empty:
+            return "<div class='mover-empty'>Nenhum subitem elegível neste mês.</div>"
         return "".join(
             "<div class='mover-row'>"
             f"<span class='mover-name'>{escape(str(row.item_name))}</span>"
-            f"<span class='mover-val {'up' if row.yoy >= 0 else 'down'}'>{row.yoy:+.1f}%</span>"
+            f"<span class='mover-val mover-val-month {_value_class(row.mom)}'>"
+            f"{_format_change(row.mom)}</span>"
+            f"<span class='mover-val mover-val-yoy {_value_class(row.yoy)}'>"
+            f"{_format_change(row.yoy)}</span>"
             "</div>"
             for row in frame.itertuples()
         )
 
+    def _sort_label(label: str, value: str) -> str:
+        active = rank_by == value
+        active_class = " active" if active else ""
+        marker = "<span class='mover-sort-mark' aria-hidden='true'>●</span>" if active else ""
+        return (
+            f"<span class='mover-sort-label{active_class}'>{label}{marker}</span>"
+        )
+
+    header = (
+        "<div class='mover-row mover-head'>"
+        "<span>Subitem</span>"
+        f"{_sort_label('Mês', 'mom')}"
+        f"{_sort_label('12 meses', 'yoy')}"
+        "</div>"
+    )
+    period_title = "no mês" if rank_by == "mom" else "em 12 meses"
+    ranking_description = (
+        "variação mensal" if rank_by == "mom" else "variação acumulada em 12 meses"
+    )
     st.markdown(
-        "<div class='movers-grid'>"
+        "<div id='ranking-movers' class='movers-grid'>"
         "<div class='movers-col'>"
-        "<div class='callout-title movers-title-up'>Vilões do bolso · 12 meses</div>"
-        f"{_rows(up)}</div>"
+        f"<div class='callout-title movers-title-up'>Vilões do bolso · altas {period_title}</div>"
+        f"{header}{_rows(up)}</div>"
         "<div class='movers-col'>"
-        "<div class='callout-title movers-title-down'>Aliados do bolso · 12 meses</div>"
-        f"{_rows(down)}</div></div>",
+        f"<div class='callout-title movers-title-down'>Aliados do bolso · quedas {period_title}</div>"
+        f"{header}{_rows(down)}</div></div>",
         unsafe_allow_html=True,
     )
     st.caption(
-        "Subitens com peso ≥ 0,1% da cesta, ordenados pela variação oficial acumulada "
-        "em 12 meses (IBGE/SIDRA). Regra fixa, sem curadoria manual."
+        f"Ranking pela {ranking_description}; use o seletor acima para reordenar. "
+        "Subitens com peso ≥ 0,1% da cesta (IBGE/SIDRA), sem curadoria manual."
     )
 
 
@@ -386,7 +674,7 @@ REPORTS_LATEST = ROOT / "reports" / "latest"
 
 
 def render_ai_replay(data_month: str = "") -> None:
-    """Show the pre-generated, auditable AI brief (the "Briefing IPCA").
+    """Show the pre-generated, auditable monthly analysis.
 
     The brief is regenerated by the monthly refresh alongside the data. Safety net:
     if its reference month lags the data's (a rare partial-refresh failure), it is
@@ -398,10 +686,11 @@ def render_ai_replay(data_month: str = "") -> None:
         return
     if is_stale(reference_month_from_brief(REPORTS_LATEST), data_month):
         return  # stale -> hide; the deterministic reading above carries the page
-    # Open by default: the audited AI brief is the product's differentiator —
+    # Open by default: the audited analysis is the product's differentiator —
     # it must not be born hidden behind a click (spec §3.8: visible by default).
-    with st.expander("Briefing IPCA", expanded=True):
-        st.markdown(brief_path.read_text(encoding="utf-8"))
+    with st.expander("Análise OpenIPCA", expanded=True):
+        st.caption("Gerada sobre dados oficiais · rastreável a evidências")
+        st.markdown(normalize_analysis_title(brief_path.read_text(encoding="utf-8")))
         meta = load_brief_metadata(REPORTS_LATEST / "metadata.json")
         if meta:
             stamp = brief_stamp_line(meta)
@@ -424,7 +713,7 @@ def _render_brief_trace() -> None:
     summary = load_trace_summary(REPORTS_LATEST / "ai_trace.json")
     if summary is None:
         return
-    with st.expander("Como a IA montou este brief", expanded=False):
+    with st.expander("Como esta análise foi construída", expanded=False):
         st.markdown(
             "A IA não escreve números por conta própria: ela consulta ferramentas "
             "determinísticas sobre os dados oficiais e cada frase é validada contra as "
@@ -585,6 +874,62 @@ def _kpi_tile(label_full: str, label_show: str, value: str, delta_text: str | No
     )
 
 
+def _secondary_metric(label: str, value: str) -> str:
+    return (
+        "<div class='secondary-metric'>"
+        f"<div class='secondary-label'>{escape(label)}</div>"
+        f"<div class='secondary-value'>{escape(value)}</div>"
+        "</div>"
+    )
+
+
+def _release_stage(key: str, value: str, note: str) -> str:
+    return (
+        "<div class='release-stage'>"
+        f"<div class='release-stage-key'>{escape(key)}</div>"
+        f"<div class='release-stage-value'>{escape(value)}</div>"
+        f"<div class='release-stage-note'>{escape(note)}</div>"
+        "</div>"
+    )
+
+
+def render_release_ruler(
+    items: pd.DataFrame,
+    latest_date: pd.Timestamp,
+    *,
+    headline: object,
+    headline_delta: str | None,
+    core_mm3m: object,
+    diffusion_mm3m: object,
+    regime_label: str,
+) -> None:
+    """The release in one scan: headline -> composition -> underlying -> breadth -> regime."""
+    groups = items[(items["date"] == latest_date) & (items["level"] == "group")].dropna(
+        subset=["contribution_mom"]
+    )
+    if groups.empty:
+        composition_value, composition_note = "n.d.", "composição indisponível"
+    else:
+        positive = groups.nlargest(1, "contribution_mom").iloc[0]
+        negative = groups.nsmallest(1, "contribution_mom").iloc[0]
+        composition_value = f"{positive['item_name']} {positive['contribution_mom']:+.2f} p.p."
+        composition_note = (
+            f"menor: {negative['item_name']} {negative['contribution_mom']:+.2f} p.p."
+        )
+    _, delta_label = _delta_arrow(headline_delta)
+    stages = [
+        _release_stage("Headline", fmt(headline), delta_label or "estável vs. mês anterior"),
+        _release_stage("Composição", composition_value, composition_note),
+        _release_stage("Subjacente", fmt(core_mm3m), "média dos núcleos · MM3M NSA"),
+        _release_stage("Difusão", fmt(diffusion_mm3m), "parcela de altas · MM3M"),
+        _release_stage("Regime", regime_label, "classificação determinística"),
+    ]
+    st.markdown(
+        f"<div class='release-ruler'>{''.join(stages)}</div>",
+        unsafe_allow_html=True,
+    )
+
+
 def page_executive(data: dict[str, pd.DataFrame]) -> None:
     bcb, items, cores, alerts = data["bcb"], data["items"], data["cores"], data["alerts"]
     latest_date = pd.to_datetime(bcb["date"]).max()
@@ -597,16 +942,10 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     ]
     core_row = core_mean.iloc[0] if not core_mean.empty else None
     ipca_prev = prev_series_row(bcb, "IPCA")
-    diffusion_prev = prev_series_row(bcb, "Difusao")
-    core_prev_df = cores[
-        (cores["core_set_name"] == "bcb_compact")
-        & (cores["core_name"].isin(["Media", "Média"]))
-        & (cores["date"] < latest_date)
-    ].sort_values("date")
-    core_prev = core_prev_df.iloc[-1] if not core_prev_df.empty else None
 
     st.title("OpenIPCA — Painel executivo")
     st.caption(f"Último dado processado: {latest_date:%Y-%m} | Fontes: BCB/SGS e IBGE/SIDRA")
+    render_release_status(data)
 
     notice = freshness_notice()
     if notice is not None:
@@ -642,35 +981,30 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
             fmt(ipca_mm3m),
             delta_pp(ipca_mm3m, ipca_prev["moving_average_3m"] if ipca_prev is not None else None),
         ),
-        _kpi_tile(
-            "IPCA 3m anual. SA",
-            "IPCA 3m SA",
-            fmt(ipca_saar_sa),
-            delta_pp(
-                ipca_saar_sa,
-                ipca_prev.get("annualized_3m_sa") if ipca_prev is not None else None,
-            ),
-        ),
-        _kpi_tile(
-            "Média núcleos MM3M",
-            "Núcleos MM3M",
-            fmt(core_mm3m),
-            delta_pp(core_mm3m, core_prev["moving_average_3m"] if core_prev is not None else None),
-        ),
-        _kpi_tile(
-            "Difusão MM3M",
-            "Difusão MM3M",
-            fmt(diff_mm3m),
-            delta_pp(
-                diff_mm3m,
-                diffusion_prev["moving_average_3m"] if diffusion_prev is not None else None,
-            ),
-        ),
-        _kpi_tile("Alertas ativos", "Alertas ativos", str(len(alerts)), None),
     ]
     st.markdown(f"<div class='kpi-grid'>{''.join(tiles)}</div>", unsafe_allow_html=True)
 
+    secondary = [
+        _secondary_metric("IPCA 3m anual. SA", fmt(ipca_saar_sa)),
+        _secondary_metric("Núcleos MM3M", fmt(core_mm3m)),
+        _secondary_metric("Difusão MM3M", fmt(diff_mm3m)),
+        _secondary_metric("Alertas ativos", str(len(alerts))),
+    ]
+    st.markdown(
+        f"<div class='secondary-strip'>{''.join(secondary)}</div>",
+        unsafe_allow_html=True,
+    )
+
     regime = classify_latest_regime(bcb)
+    render_release_ruler(
+        items,
+        latest_date,
+        headline=ipca_mom,
+        headline_delta=delta_pp(ipca_mom, ipca_prev["mom"] if ipca_prev is not None else None),
+        core_mm3m=core_mm3m,
+        diffusion_mm3m=diff_mm3m,
+        regime_label=regime.label_pt,
+    )
     st.markdown(
         "<div class='regime-row'><span class='regime-key'>Regime inflacionário:</span>"
         f"<span class='regime-pill'>{escape(regime.label_pt.upper())}</span></div>",
@@ -742,9 +1076,15 @@ def render_item_search(items: pd.DataFrame, date: pd.Timestamp) -> None:
         "ex.: gasolina, arroz, aluguel."
     )
     labels = dict(zip(options["classification_code"], options["item_name"], strict=False))
+    codes = list(options["classification_code"].astype(str))
+    requested_item = str(st.session_state.pop("nav_item", ""))
+    if requested_item in codes:
+        st.session_state["item_search"] = requested_item
+    elif st.session_state.get("item_search") not in {None, *codes}:
+        st.session_state.pop("item_search", None)
     chosen = st.selectbox(
         "Subitem",
-        list(options["classification_code"]),
+        codes,
         index=None,
         format_func=lambda code: labels.get(code, code),
         placeholder="Ex.: gasolina, café, aluguel…",
@@ -753,6 +1093,11 @@ def render_item_search(items: pd.DataFrame, date: pd.Timestamp) -> None:
     )
     if not chosen:
         return
+    _set_query_params(
+        view="decomposicao",
+        month=date.strftime("%Y-%m"),
+        item=str(chosen),
+    )
     row = items[(items["classification_code"] == chosen) & (items["date"] == date)].iloc[0]
     name = str(row.get("item_name", chosen))
     col_mom, col_yoy, col_weight = st.columns(3)
@@ -840,14 +1185,29 @@ def page_decomposition(data: dict[str, pd.DataFrame]) -> None:
         "= variação × peso ÷ 100. Um item pode variar muito e contribuir pouco se "
         "seu peso na cesta for pequeno."
     )
-    dates = sorted(pd.to_datetime(items["date"]).dropna().unique())
+    dates = [
+        pd.Timestamp(value)
+        for value in sorted(pd.to_datetime(items["date"]).dropna().unique())
+    ]
+    requested_month = str(st.session_state.pop("nav_month", ""))
+    requested_date = (
+        pd.Period(requested_month, freq="M").to_timestamp() if requested_month else None
+    )
+    selected_index = len(dates) - 1
+    if requested_date in dates:
+        selected_index = dates.index(requested_date)
+        st.session_state.pop("decomp_month", None)
+    elif st.session_state.get("decomp_month") not in dates:
+        st.session_state.pop("decomp_month", None)
     selected_date = st.selectbox(
         "Mês de referência",
         dates,
-        index=len(dates) - 1,
+        index=selected_index,
         format_func=lambda x: pd.Timestamp(x).strftime("%Y-%m"),
+        key="decomp_month",
     )
     selected_date = pd.Timestamp(selected_date)
+    _set_query_params(view="decomposicao", month=selected_date.strftime("%Y-%m"))
     level = st.selectbox(
         "Nível de detalhe (ranking e download)",
         ["group", "subgroup", "item", "subitem"],
@@ -1049,11 +1409,11 @@ def page_methodology(data: dict[str, pd.DataFrame]) -> None:
 _ASK_SEAL = {
     "ai": ("live", "AO VIVO", "Resposta gerada ao vivo, aterrada nos dados oficiais."),
     "replay": ("", "PRÉ-GERADA", "Resposta pré-gerada e auditada (IA ao vivo indisponível agora)."),
-    "fallback": ("", "INDISPONÍVEL", "A IA está indisponível no momento — use o painel e o brief."),
+    "fallback": ("", "SEM EVIDÊNCIA", "Não houve evidência suficiente para uma resposta segura."),
     "deterministic": (
-        "",
-        "INDISPONÍVEL",
-        "A IA está indisponível no momento — use o painel e o brief.",
+        "live",
+        "DADOS",
+        "Resposta direta calculada sobre os dados atuais, sem depender de IA externa.",
     ),
     "refused": (
         "refused",
@@ -1063,14 +1423,41 @@ _ASK_SEAL = {
 }
 
 
+def render_evidence_navigation(rows: list[dict[str, object]]) -> None:
+    """Render safe actions from resolved Q&A evidence into the relevant chart view."""
+    targets: list[tuple[str, str, NavigationTarget]] = []
+    seen: set[str] = set()
+    for row in rows:
+        evidence_id = str(row.get("evidence_id", ""))
+        if not evidence_id or evidence_id in seen:
+            continue
+        target = target_for_evidence(evidence_id, row.get("date", ""))
+        if target is None:
+            continue
+        seen.add(evidence_id)
+        targets.append((evidence_id, str(row.get("metric", evidence_id)), target))
+    if not targets:
+        return
+    st.markdown("**Abrir a evidência no painel:**")
+    columns = st.columns(min(3, len(targets)))
+    for index, (evidence_id, metric, target) in enumerate(targets):
+        if columns[index % len(columns)].button(
+            f"Ver: {metric}",
+            key=f"open_evidence_{index}_{evidence_id}",
+            use_container_width=True,
+        ):
+            _navigate_to_target(target)
+
+
 def page_ask(data: dict[str, pd.DataFrame]) -> None:
     bcb, items, cores, alerts = data["bcb"], data["items"], data["cores"], data["alerts"]
     st.title("Pergunte ao IPCA")
     st.caption(
         "Pergunte em português sobre a inflação brasileira. A resposta é aterrada nos "
         "dados oficiais já calculados — cada número é rastreável a uma evidência. Com uma "
-        "chave de IA configurada, a resposta é gerada ao vivo; caso contrário, mostramos "
-        "uma resposta pré-gerada e auditada. A IA nunca dá recomendação de investimento "
+        "chave de IA configurada, a resposta pode ser gerada ao vivo; sem ela, o app "
+        "responde diretamente com as evidências atuais ou usa um replay auditado. A IA "
+        "nunca dá recomendação de investimento "
         "nem previsão de Copom/Selic."
     )
 
@@ -1093,14 +1480,18 @@ def page_ask(data: dict[str, pd.DataFrame]) -> None:
         st.info("Escolha uma pergunta acima ou escreva a sua para começar.")
         return
 
-    # Cache the answer for the current question: Streamlit reruns on every widget
+    # Cache the answer for the current question and data month: Streamlit reruns on every widget
     # interaction, and without this each rerun would re-hit the live model — wasted
     # quota on a public box with no rate-limit. Only call when the question changes.
+    try:
+        data_month = pd.to_datetime(bcb["date"], errors="coerce").max().strftime("%Y-%m")
+    except (KeyError, TypeError, ValueError):
+        data_month = ""
     cache = st.session_state.get("qa_cache")
-    if cache is None or cache.get("q") != question:
+    if cache is None or cache.get("q") != question or cache.get("month") != data_month:
         with st.spinner("Consultando os dados do IPCA..."):
             result = answer_with_replay(question, bcb, items, cores, alerts)
-        st.session_state["qa_cache"] = {"q": question, "result": result}
+        st.session_state["qa_cache"] = {"q": question, "month": data_month, "result": result}
     result = st.session_state["qa_cache"]["result"]
 
     st.markdown(f"**Você perguntou:** {question}")
@@ -1128,6 +1519,7 @@ def page_ask(data: dict[str, pd.DataFrame]) -> None:
                     pd.DataFrame(rows).rename(
                         columns={
                             "claim": "Afirmação",
+                            "evidence_id": "Evidência",
                             "metric": "Métrica",
                             "value": "Valor",
                             "unit": "Unidade",
@@ -1138,6 +1530,7 @@ def page_ask(data: dict[str, pd.DataFrame]) -> None:
                     use_container_width=True,
                     hide_index=True,
                 )
+                render_evidence_navigation(rows)
 
 
 _PT_MONTHS = {
@@ -1169,6 +1562,12 @@ def _status_strip_right(data: dict[str, pd.DataFrame]) -> str:
         if summary["worst"] == "pass":
             label += " OK"
         parts.append(f"<span class='{seal_cls}'>{label}</span>")
+    state = read_release_state(RELEASE_STATE_PATH)
+    runtime_status = release_freshness_status(state)
+    if runtime_status == "due_today":
+        parts.append("<span class='seal-warn'>DIVULGAÇÃO PREVISTA HOJE</span>")
+    elif runtime_status == "overdue":
+        parts.append("<span class='seal-warn'>DADO POSSIVELMENTE DEFASADO</span>")
     return " · ".join(parts) or "openipca.streamlit.app"
 
 
@@ -1189,10 +1588,21 @@ def main() -> None:
         st.caption(str(exc))
         return
 
+    _apply_query_params_once()
+
+    pending = st.session_state.pop("pending_navigation", None)
+    if isinstance(pending, dict) and pending.get("view") in PAGE_SLUGS:
+        st.session_state["nav_page"] = PAGE_SLUGS[str(pending["view"])]
+        if pending.get("month"):
+            st.session_state["nav_month"] = str(pending["month"])
+        if pending.get("item"):
+            st.session_state["nav_item"] = str(pending["item"])
+
     # "Abrir Pergunte ao IPCA" (a button on the panel) routes here: promote its flag to
     # the nav radio's value BEFORE the radio is instantiated, so it renders pre-selected.
     if st.session_state.pop("goto_ask", False):
         st.session_state["nav_page"] = "Pergunte ao IPCA"
+        _set_query_params(view="pergunte", month="", evidence="", item="")
 
     st.sidebar.markdown(
         "<div class='brand'><span class='brand-mark'>I</span>"
@@ -1202,17 +1612,15 @@ def main() -> None:
     )
     page = st.sidebar.radio(
         "Navegação",
-        [
-            "Painel executivo",
-            "Pergunte ao IPCA",
-            "Decomposição",
-            "Núcleos",
-            "Difusão",
-            "Alertas",
-            "Metodologia",
-        ],
+        list(PAGE_SLUGS.values()),
         key="nav_page",
         label_visibility="collapsed",
+    )
+    _set_query_params(view=SLUG_BY_PAGE[page])
+    st.sidebar.link_button(
+        "Relatórios mensais",
+        "https://github.com/Brunosavastano/OpenIPCA/releases",
+        use_container_width=True,
     )
     # Glanceable "what's deployed" marker (short commit + date) — also the quickest
     # way to confirm an auto-deploy landed: it changes the moment a new commit is live.

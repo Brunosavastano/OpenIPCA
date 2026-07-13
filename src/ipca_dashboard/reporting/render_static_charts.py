@@ -1,4 +1,4 @@
-"""Best-effort static PNG charts via Plotly + kaleido (optional, local only).
+"""Best-effort static PNG charts via Plotly + kaleido.
 
 kaleido is an optional [report] dependency and is intentionally NOT in CI. If it
 is unavailable, render_hero() returns None and the caller falls back to a manual
@@ -76,9 +76,9 @@ def render_hero(bcb: pd.DataFrame, ipca_items: pd.DataFrame, out_dir: Path) -> l
     embedded: list[str] = []
 
     if not ipca_items.empty:
-        name = _write_png(stacked_contribution(ipca_items), charts_dir / "01_decomposition.png")
+        name = _write_png(stacked_contribution(ipca_items), out_dir / "report.png")
         if name:
-            embedded.append(f"charts/{name}")
+            embedded.append(name)
     if not bcb.empty:
         name = _write_png(diffusion_line(bcb), charts_dir / "02_diffusion.png")
         if name:

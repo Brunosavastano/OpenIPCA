@@ -12,6 +12,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from ipca_dashboard.ai.staleness import reference_month_from_brief
+
 DISCLAIMER = (
     "OpenIPCA é uma ferramenta de pesquisa e educação. Usa dados públicos e cálculos "
     "determinísticos. Não é recomendação de investimento, não prevê política monetária e "
@@ -97,12 +99,17 @@ def render_report_markdown(
     return "\n".join(lines).strip() + "\n"
 
 
-def load_ai_brief(reports_dir: Path) -> str | None:
-    """Return the pre-generated AI brief markdown if it exists."""
+def load_ai_brief(reports_dir: Path, *, expected_month: str = "") -> str | None:
+    """Return the AI brief only when it belongs to the report's data month."""
     path = reports_dir / "ai_brief.md"
-    if path.exists():
+    if not path.exists():
+        return None
+    if expected_month and reference_month_from_brief(reports_dir) != expected_month:
+        return None
+    try:
         return path.read_text(encoding="utf-8")
-    return None
+    except OSError:
+        return None
 
 
 def load_reference_month(processed_dir: Path) -> str:

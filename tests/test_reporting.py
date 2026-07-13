@@ -9,6 +9,7 @@ import pandas as pd
 import ipca_dashboard.reporting.build_report as build_report_module
 from ipca_dashboard.reporting.render_markdown import (
     DISCLAIMER,
+    load_ai_brief,
     render_report_markdown,
 )
 
@@ -63,6 +64,15 @@ def test_report_omits_ai_section_when_absent():
     assert "AI Replay Mode" not in md
 
 
+def test_report_omits_stale_ai_brief(tmp_path):
+    (tmp_path / "ai_brief.md").write_text("# Brief de IA — IPCA 2024-02", encoding="utf-8")
+    (tmp_path / "metadata.json").write_text(
+        '{"reference_month":"2024-02"}', encoding="utf-8"
+    )
+    assert load_ai_brief(tmp_path, expected_month="2024-03") is None
+    assert load_ai_brief(tmp_path, expected_month="2024-02") is not None
+
+
 def test_report_embeds_charts_when_provided():
     md = render_report_markdown(_bcb(), _diagnostic(), charts=["charts/01_decomposition.png"])
     assert "![chart](charts/01_decomposition.png)" in md
@@ -86,7 +96,11 @@ def test_build_report_default_does_not_import_static_chart_renderer(tmp_path, mo
 
     monkeypatch.setattr(build_report_module, "_load", fake_load)
     monkeypatch.setattr(build_report_module, "build_diagnostic_text", lambda *_args: _diagnostic())
-    monkeypatch.setattr(build_report_module, "load_ai_brief", lambda _out_dir: None)
+    monkeypatch.setattr(
+        build_report_module,
+        "load_ai_brief",
+        lambda _out_dir, expected_month="": None,
+    )
 
     result = build_report_module.build_report(tmp_path, with_charts=False)
 

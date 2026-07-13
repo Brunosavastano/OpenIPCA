@@ -376,7 +376,7 @@ def test_falls_back_to_a_stable_model_when_the_primary_keeps_failing(monkeypatch
         [{"role": "evidence", "content": []}], schema={}, temperature=0.0
     )
     assert out["answer"] == "via fallback"
-    assert any("gemini-2.5-flash" in u for u in seen)  # it fell back to a stable model
+    assert any("gemini-3.1-flash-lite" in u for u in seen)  # maintained stable fallback
     assert sum("gemini-3.5-flash" in u for u in seen) == 1  # primary tried once, then moved on
     # the configured model is still PRIMARY (tried first), not replaced
     assert "gemini-3.5-flash" in seen[0]
@@ -402,6 +402,30 @@ def test_a_non_transient_error_is_not_retried_or_fallen_back(monkeypatch, status
             [{"role": "evidence", "content": []}], schema={}, temperature=0.0
         )
     assert calls["n"] == 1  # no retry, no fallback
+
+
+@pytest.mark.parametrize("status_code", [404, 410])
+def test_retired_configured_model_falls_back_to_maintained_model(monkeypatch, status_code):
+    seen: list[str] = []
+
+    def _post(url, headers=None, json=None, timeout=None):
+        seen.append(url)
+        if "gemini-2.0-flash" in url:
+            return _StatusResponse(status_code)
+        return _FakeResponse(_gemini_payload('{"answer": "ok", "claims": []}'))
+
+    monkeypatch.setattr("ipca_dashboard.ai.providers.gemini_provider.requests.post", _post)
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "gemini-2.0-flash")
+
+    from ipca_dashboard.ai.providers.gemini_provider import GeminiProvider
+
+    out = GeminiProvider().generate_structured(
+        [{"role": "evidence", "content": []}], schema={}, temperature=0.0
+    )
+    assert out["answer"] == "ok"
+    assert "gemini-2.0-flash" in seen[0]
+    assert "gemini-3.5-flash" in seen[1]
 
 
 def test_parse_error_is_not_retried_or_fallen_back(monkeypatch):
@@ -448,3 +472,34 @@ def test_all_models_transient_failing_exhausts_then_raises(monkeypatch):
         )
     assert calls["n"] == 5  # configured primary + two fallback models over two passes
     assert excinfo.value.response.status_code == 429  # last transient error propagates
+
+
+def test_transient_chain_has_a_total_latency_budget(monkeypatch):
+    clock = {"now": 0.0}
+    timeouts: list[float] = []
+
+    def _monotonic():
+        return clock["now"]
+
+    def _sleep(seconds):
+        clock["now"] += seconds
+
+    def _post(url, headers=None, json=None, timeout=None):
+        timeouts.append(float(timeout))
+        clock["now"] += float(timeout)
+        raise requests.Timeout("simulated timeout")
+
+    monkeypatch.setattr("ipca_dashboard.ai.providers.gemini_provider.time.monotonic", _monotonic)
+    monkeypatch.setattr("ipca_dashboard.ai.providers.gemini_provider.time.sleep", _sleep)
+    monkeypatch.setattr("ipca_dashboard.ai.providers.gemini_provider.requests.post", _post)
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
+    monkeypatch.setenv("OPENIPCA_AI_MODEL", "gemini-3.5-flash")
+
+    from ipca_dashboard.ai.providers.gemini_provider import GeminiProvider
+
+    with pytest.raises(requests.Timeout):
+        GeminiProvider().generate_structured(
+            [{"role": "evidence", "content": []}], schema={}, temperature=0.0
+        )
+    assert len(timeouts) == 2
+    assert sum(timeouts) <= 25

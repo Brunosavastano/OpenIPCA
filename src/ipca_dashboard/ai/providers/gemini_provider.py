@@ -29,17 +29,22 @@ _ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:gen
 # Transient HTTP statuses (overload / rate / gateway) worth a retry or a model
 # fallback — vs a real error (400/403 bad request/key) that won't fix itself.
 _TRANSIENT_STATUS = {429, 500, 502, 503, 504}
+# A configured model can be retired while the app is deployed. A model-specific
+# 404/410 is recoverable by trying the maintained fallback list; request/auth
+# errors (400/403), parse failures and safety blocks still fail immediately.
+_MODEL_UNAVAILABLE_STATUS = {404, 410}
 # The configured model stays the PRIMARY; these stable models are tried next when it
 # fails transiently (e.g. gemini-3.5-flash overloaded -> 503), WITHOUT replacing it.
 # Order matters: the most reliable model goes first. Because Google's flash models can
 # all blip at once, the fallbacks get _FALLBACK_PASSES shots each (the reliable one
 # gets a couple) — so a single bad round doesn't drop the user to "INDISPONÍVEL".
-_FALLBACK_MODELS = ("gemini-2.5-flash", "gemini-flash-latest")
+_FALLBACK_MODELS = ("gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest")
 _FALLBACK_PASSES = 2
 _BACKOFF_SECONDS = 0.3
 # Short per-call timeout so a hung/overloaded model fails fast and the chain moves on,
 # instead of the user waiting ~a minute. A healthy grounded answer comes well under this.
 _REQUEST_TIMEOUT = 20
+_TOTAL_TIMEOUT = 25
 
 
 def _is_transient(exc: Exception) -> bool:
@@ -47,6 +52,15 @@ def _is_transient(exc: Exception) -> bool:
     if isinstance(exc, requests.HTTPError) and exc.response is not None:
         return exc.response.status_code in _TRANSIENT_STATUS
     return isinstance(exc, (requests.Timeout, requests.ConnectionError))
+
+
+def _is_model_unavailable(exc: Exception) -> bool:
+    return (
+        isinstance(exc, requests.HTTPError)
+        and exc.response is not None
+        and exc.response.status_code in _MODEL_UNAVAILABLE_STATUS
+    )
+
 
 _SYSTEM = (
     "Você é um analista macro de inflação brasileira (IPCA). "
@@ -145,23 +159,29 @@ class GeminiProvider:
         fallbacks = [m for m in _FALLBACK_MODELS if m != self._model]
         attempt_models = [self._model, *(fallbacks * _FALLBACK_PASSES)]
         last_exc: Exception | None = None
+        deadline = time.monotonic() + _TOTAL_TIMEOUT
         for index, model in enumerate(attempt_models):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0 and last_exc is not None:
+                raise last_exc
             try:
-                return self._call_model(model, body)
+                return self._call_model(
+                    model, body, timeout=min(_REQUEST_TIMEOUT, max(1, remaining))
+                )
             except Exception as exc:  # noqa: BLE001 - decide fallback vs propagate
-                if not _is_transient(exc):
+                if not (_is_transient(exc) or _is_model_unavailable(exc)):
                     raise
                 last_exc = exc
-                if index + 1 < len(attempt_models):
-                    time.sleep(_BACKOFF_SECONDS)
+                if index + 1 < len(attempt_models) and _is_transient(exc):
+                    time.sleep(min(_BACKOFF_SECONDS, max(0, deadline - time.monotonic())))
         raise last_exc  # type: ignore[misc]  # only reached if a transient error occurred
 
-    def _call_model(self, model: str, body: dict) -> dict:
+    def _call_model(self, model: str, body: dict, *, timeout: float = _REQUEST_TIMEOUT) -> dict:
         response = requests.post(
             _ENDPOINT.format(model=model),
             headers={"x-goog-api-key": self._api_key, "Content-Type": "application/json"},
             json=body,
-            timeout=_REQUEST_TIMEOUT,
+            timeout=timeout,
         )
         response.raise_for_status()
         data = response.json()

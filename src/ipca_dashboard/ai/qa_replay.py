@@ -1,11 +1,9 @@
 """Degrade-to-replay for the public "Ask the IPCA" box (spec_V3 §3.8).
 
 The live Q&A (``answer_question``) needs a provider key. On the published app the
-key may be absent or the free-tier quota may run out — in which case the live
-call degrades to ``mode="fallback"`` (a generic "AI unavailable" message). This
-layer makes that degradation graceful: for a curated question we serve a
-**pre-generated, audited** answer (``mode="replay"``) instead of the generic
-message, so the app always shows a grounded answer.
+key may be absent or the free-tier quota may run out; the current-data
+deterministic floor still answers common intents. For a curated question this
+layer can serve a richer **pre-generated, audited** answer (``mode="replay"``).
 
 Design (kept lightweight, no new backend):
 - ``answer_with_replay`` calls ``answer_question`` first. If the live answer is
@@ -14,7 +12,7 @@ Design (kept lightweight, no new backend):
   answer. Only when the live path degraded do we look for a replay.
 - Matching is **exact on the normalized question text** (curated questions are
   offered as buttons in the UI). No fuzzy/embedding match — a stranger's free
-  text that we cannot ground simply gets the honest "unavailable" fallback.
+  text that the deterministic floor cannot ground gets an explicit no-evidence response.
 - The replay file ``reports/qa/replay.json`` is generated once, BYOK, by the
   owner running ``python -m ipca_dashboard.ai.qa_replay`` with a key configured.
   It is committed; no key is ever written (answers only).
@@ -58,7 +56,7 @@ def load_replay(path: Path | None = None) -> dict[str, dict]:
     """Load the replay pairs as a {normalized_question: pair} map.
 
     Robust by design: a missing or malformed file yields an empty map so the
-    Q&A box degrades to the honest fallback rather than crashing.
+    Q&A box keeps its deterministic floor rather than crashing.
     """
     path = path or REPLAY_PATH
     try:
@@ -149,8 +147,9 @@ def answer_with_replay(
     # A grounded live answer wins; a refusal must NOT be masked by a replay.
     if result.mode in ("ai", "refused"):
         return result
-    # Live path degraded (fallback/deterministic): use a replay if the question
-    # is one we pre-generated; otherwise keep the honest "unavailable" fallback.
+    # Live path degraded (fallback/deterministic): a fresh audited replay remains
+    # the richer answer for curated prompts; otherwise keep the current-data
+    # deterministic result (or the explicit no-evidence response).
     # Safety net: never serve a replay whose reference month lags the data (a rare
     # partial-refresh state) — fall back to the honest "unavailable" result.
     if is_stale(_replay_reference_month(replay_path), _data_reference_month(bcb)):
@@ -270,10 +269,10 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - BYOK entr
     logger.info("Wrote %d/%d grounded replay pair(s) -> %s", grounded, total, out_path)
     if grounded == 0:
         logger.error(
-            "NO replay pairs were grounded. The published app will have NO safety net: "
-            "without a live key (or when the free quota runs out) visitors see only the "
-            "'AI unavailable' fallback. Configure a provider key (a STRONGER model like "
-            "openai/anthropic is recommended for the one-off replay) and re-run."
+            "NO replay pairs were grounded. The deterministic Q&A remains available, but "
+            "curated prompts will not have the richer audited replay. Configure a provider "
+            "key (a stronger model such as openai/anthropic is recommended for the one-off "
+            "replay) and re-run."
         )
     elif skipped:
         logger.warning(

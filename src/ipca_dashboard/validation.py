@@ -99,6 +99,37 @@ def validate_critical_series_freshness(bcb: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame([validation_row("critical_series_freshness", status, value, details)])
 
 
+def validate_source_reference_month_alignment(
+    bcb: pd.DataFrame, items: pd.DataFrame
+) -> pd.DataFrame:
+    """Block a full rebuild that would publish different BCB and SIDRA months."""
+    def latest_month(frame: pd.DataFrame) -> str:
+        if frame.empty or "date" not in frame.columns:
+            return ""
+        latest = pd.to_datetime(frame["date"], errors="coerce").max()
+        return latest.strftime("%Y-%m") if pd.notna(latest) else ""
+
+    bcb_month = latest_month(bcb)
+    sidra_month = latest_month(items)
+    aligned = bool(bcb_month and sidra_month and bcb_month == sidra_month)
+    value = bcb_month if aligned else f"BCB={bcb_month or 'missing'},SIDRA={sidra_month or 'missing'}"
+    details = (
+        f"BCB e SIDRA fecham na mesma competência ({bcb_month})."
+        if aligned
+        else "BCB e SIDRA terminam em competências diferentes; promoção bloqueada."
+    )
+    return pd.DataFrame(
+        [
+            validation_row(
+                "source_reference_month_alignment",
+                "pass" if aligned else "block",
+                value,
+                details,
+            )
+        ]
+    )
+
+
 def validate_bcb_series(bcb: pd.DataFrame, core_sets_config: dict) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
     if bcb.empty:
@@ -282,17 +313,77 @@ def validate_stl_coverage(bcb: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def validate_all(bcb: pd.DataFrame, items: pd.DataFrame, core_sets_config: dict) -> pd.DataFrame:
-    return pd.concat(
-        [
-            validate_bcb_series(bcb, core_sets_config),
-            validate_critical_series_freshness(bcb),
-            validate_sgs_history_depth(bcb),
-            validate_stl_coverage(bcb),
-            validate_ipca_items(items),
-        ],
-        ignore_index=True,
+def validate_expected_reference_month(
+    bcb: pd.DataFrame, items: pd.DataFrame, expected_month: str
+) -> pd.DataFrame:
+    """Fail closed unless the newly detected month is complete in both sources."""
+    try:
+        target = pd.Period(expected_month, freq="M").to_timestamp()
+    except (TypeError, ValueError):
+        return pd.DataFrame(
+            [
+                validation_row(
+                    "expected_reference_month",
+                    "block",
+                    str(expected_month),
+                    "Competência esperada inválida; use YYYY-MM.",
+                )
+            ]
+        )
+
+    missing: list[str] = []
+    if bcb.empty or not {"date", "series_short_name", "mom"}.issubset(bcb.columns):
+        missing.append("BCB dataset")
+    else:
+        dates = pd.to_datetime(bcb["date"], errors="coerce").dt.to_period("M").dt.to_timestamp()
+        target_bcb = bcb[dates == target]
+        for series in CRITICAL_SERIES:
+            row = target_bcb[target_bcb["series_short_name"] == series]
+            if row.empty or row["mom"].isna().all():
+                missing.append(f"BCB:{series}")
+
+    required_item_columns = {"date", "level", "mom", "weight", "ytd", "yoy"}
+    if items.empty or not required_item_columns.issubset(items.columns):
+        missing.append("SIDRA dataset/variables")
+    else:
+        dates = pd.to_datetime(items["date"], errors="coerce").dt.to_period("M").dt.to_timestamp()
+        target_items = items[dates == target]
+        headline = target_items[target_items["level"] == "headline"]
+        required_levels = {"headline", "group", "subgroup", "item", "subitem"}
+        levels = set(target_items["level"].dropna().astype(str))
+        if len(headline) != 1 or headline[["mom", "weight", "ytd", "yoy"]].isna().any(axis=None):
+            missing.append("SIDRA:headline/variables")
+        if not required_levels.issubset(levels):
+            missing.append("SIDRA:hierarchy")
+
+    status = "pass" if not missing else "block"
+    details = (
+        f"BCB crítico e SIDRA completos para {expected_month}."
+        if not missing
+        else f"Competência {expected_month} incompleta: {', '.join(missing)}."
     )
+    return pd.DataFrame(
+        [validation_row("expected_reference_month", status, len(missing), details)]
+    )
+
+
+def validate_all(
+    bcb: pd.DataFrame,
+    items: pd.DataFrame,
+    core_sets_config: dict,
+    expected_month: str | None = None,
+) -> pd.DataFrame:
+    checks = [
+        validate_bcb_series(bcb, core_sets_config),
+        validate_critical_series_freshness(bcb),
+        validate_source_reference_month_alignment(bcb, items),
+        validate_sgs_history_depth(bcb),
+        validate_stl_coverage(bcb),
+        validate_ipca_items(items),
+    ]
+    if expected_month:
+        checks.append(validate_expected_reference_month(bcb, items, expected_month))
+    return pd.concat(checks, ignore_index=True)
 
 
 def has_blocking_errors(report: pd.DataFrame) -> bool:

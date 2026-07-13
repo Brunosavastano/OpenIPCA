@@ -11,13 +11,13 @@ versão pública.
 |---|---|
 | 🟢 **ao vivo** | há chave de IA no deploy e a cota está disponível → o modelo responde na hora |
 | 🗂️ **pré-gerada** | a IA ao vivo está indisponível (sem chave / cota estourada / erro) **e** a pergunta tem um par no replay |
-| ⚪ **indisponível** | sem chave **e** sem replay para aquela pergunta → fallback honesto (aponta para o painel/brief) |
+| 🟢 **dados** | sem resposta ao vivo/replay, mas a pergunta é coberta pelas tools → resposta direta com os dados atuais |
+| ⚪ **sem evidência** | a pergunta está no escopo, mas as evidências disponíveis não sustentam uma resposta segura |
 | 🚫 **recusada** | injeção ou pergunta fora do escopo (apenas inflação/IPCA) |
 
-**Conclusão prática:** para o visitante do LinkedIn ver IA de verdade, você precisa
-de **pelo menos um** entre (1) chave no deploy e (2) replay gerado. O ideal é **os
-dois**: chave para o "ao vivo" + replay como rede de segurança quando a cota grátis
-estourar.
+**Conclusão prática:** a feature responde sobre os dados correntes mesmo sem chave ou
+replay. Para o visitante ver interpretação de IA, use os dois: chave para o "ao vivo"
++ replay como rede auditada quando a cota grátis estourar.
 
 ---
 
@@ -29,10 +29,11 @@ provider mais forte que você tiver (gpt-5.x / Claude) para respostas de máxima
 qualidade. O modo *ao vivo* continua no Gemini grátis (para estranhos); o *replay*
 pode ser premium. O app é model-agnostic — isto já é suportado.
 
-> **Atualização mensal (automática):** o robô `refresh-data.yml` regenera o brief **e** o
-> replay junto com o dado a cada novo IPCA, usando a chave `OPENAI_API_KEY` nos *secrets* do
-> GitHub Actions — assim os artefatos públicos nunca ficam num mês diferente do painel. O passo
-> manual abaixo só é necessário na primeira geração ou para regenerar fora do ciclo mensal.
+> **Atualização mensal:** `refresh-data.yml` publica primeiro os dados determinísticos completos,
+> sem depender de chave ou modelo. Depois, `refresh-ai-artifacts.yml` gera brief e replay com o
+> `OPENAI_API_KEY` dos *secrets* e abre um PR para revisão humana. Enquanto o PR não é aprovado,
+> brief e replay antigos ficam ocultos por competência; o painel e o Q&A determinístico continuam
+> atuais. O passo manual abaixo serve para a primeira geração ou regeneração fora do ciclo.
 
 1. No seu `.env` local (nunca commitado), aponte para o provider forte, por ex.:
    ```
@@ -70,9 +71,13 @@ No **Streamlit Community Cloud**: app → **Settings → Secrets** → cole (for
 ```toml
 OPENIPCA_AI_ENABLED = "true"
 OPENIPCA_AI_PROVIDER = "gemini"
-OPENIPCA_AI_MODEL = "gemini-2.0-flash"
+OPENIPCA_AI_MODEL = "gemini-3.5-flash"
 GOOGLE_API_KEY = "sua-chave-google"
 ```
+
+`gemini-2.0-flash` foi desligado pelo Google em junho de 2026. Deploys antigos que
+ainda usam esse nome devem atualizar o secret para `gemini-3.5-flash`; o provider
+também tenta modelos mantidos quando recebe um erro específico de modelo aposentado.
 
 - A chave fica **no servidor**, nunca no navegador nem no repositório.
 - O app espelha esses secrets para variáveis de ambiente no boot
@@ -80,7 +85,7 @@ GOOGLE_API_KEY = "sua-chave-google"
   app não enxergaria a chave (ele lê `os.environ`, e o Streamlit não exporta secrets
   como env vars automaticamente).
 - **Sem rate-limit, de propósito:** se a cota grátis do Gemini estourar, o app cai
-  no replay (ou no fallback honesto) — não quebra. Trivial de adicionar depois.
+  no replay ou na resposta determinística atual — não quebra. Trivial de adicionar depois.
 
 ---
 
@@ -96,9 +101,9 @@ Streamlit Community Cloud → **New app** → repositório → branch `main` →
 | Chave no deploy | Replay commitado | Resultado |
 |:---:|:---:|---|
 | ✅ | ✅ | **Ideal.** Ao vivo; cai no replay se a cota estourar. |
-| ❌ | ✅ | Sempre pré-gerada (auditada). IA visível, sem custo de chave. |
-| ✅ | ❌ | Ao vivo; **⚪ indisponível** quando a cota estourar. |
-| ❌ | ❌ | **⚪ indisponível** — IA invisível no app. **Evite.** |
+| ❌ | ✅ | Replay auditado nas perguntas curadas; resposta direta nas demais cobertas. |
+| ✅ | ❌ | Ao vivo; cai na resposta direta se a cota estourar. |
+| ❌ | ❌ | Resposta direta sobre headline, composição, difusão, núcleos, regime e itens. |
 
 ---
 

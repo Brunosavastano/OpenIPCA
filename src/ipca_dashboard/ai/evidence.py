@@ -69,6 +69,7 @@ def resolve_claim_evidence(
             rows.append(
                 {
                     "claim": text,
+                    "evidence_id": "",
                     "metric": "(sem evidence_id)",
                     "value": "",
                     "unit": "",
@@ -83,6 +84,7 @@ def resolve_claim_evidence(
                 rows.append(
                     {
                         "claim": text,
+                        "evidence_id": evidence_id,
                         "metric": f"({evidence_id} não encontrada)",
                         "value": "",
                         "unit": "",
@@ -94,6 +96,7 @@ def resolve_claim_evidence(
             rows.append(
                 {
                     "claim": text,
+                    "evidence_id": evidence_id,
                     "metric": str(item.get("metric", "")),
                     "value": item.get("value", ""),
                     "unit": str(item.get("unit", "")),

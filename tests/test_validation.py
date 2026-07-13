@@ -3,7 +3,9 @@ import pandas as pd
 from ipca_dashboard.validation import (
     CRITICAL_SERIES,
     validate_critical_series_freshness,
+    validate_expected_reference_month,
     validate_ipca_items,
+    validate_source_reference_month_alignment,
 )
 
 
@@ -63,4 +65,38 @@ def test_validate_group_contribution_matches_headline():
     report = validate_ipca_items(df)
     row = report[report["check"] == "group_contribution_matches_headline"].iloc[0]
     assert row["status"] == "pass"
+
+
+def test_expected_month_blocks_when_bcb_lags_and_passes_when_complete():
+    month = "2024-06"
+    bcb = _bcb_with_latest({s: "2024-06-01" for s in CRITICAL_SERIES})
+    item_rows = [
+        {
+            "date": pd.Timestamp("2024-06-01"),
+            "level": level,
+            "mom": 0.3,
+            "weight": 1.0,
+            "ytd": 2.0,
+            "yoy": 4.0,
+        }
+        for level in ("headline", "group", "subgroup", "item", "subitem")
+    ]
+    items = pd.DataFrame(item_rows)
+    assert validate_expected_reference_month(bcb, items, month).iloc[0]["status"] == "pass"
+
+    lagged = bcb[bcb["series_short_name"] != "EX3"]
+    row = validate_expected_reference_month(lagged, items, month).iloc[0]
+    assert row["status"] == "block"
+    assert "BCB:EX3" in row["details"]
+
+
+def test_source_month_alignment_blocks_cross_source_partial_release():
+    bcb = pd.DataFrame([{"date": pd.Timestamp("2024-06-01")}])
+    items = pd.DataFrame([{"date": pd.Timestamp("2024-05-01")}])
+    row = validate_source_reference_month_alignment(bcb, items).iloc[0]
+    assert row["status"] == "block"
+    assert row["value"] == "BCB=2024-06,SIDRA=2024-05"
+
+    items["date"] = pd.Timestamp("2024-06-01")
+    assert validate_source_reference_month_alignment(bcb, items).iloc[0]["status"] == "pass"
 

@@ -6,7 +6,7 @@
 
 **[➡️ Abra o app — openipca.streamlit.app](https://openipca.streamlit.app)**
 
-[![Painel executivo do OpenIPCA: KPIs, badge de regime inflacionário, leitura do mês e briefing de IA aterrado](docs/hero.png)](https://openipca.streamlit.app)
+[![Painel executivo do OpenIPCA: KPIs, regime inflacionário, leitura do mês e Análise OpenIPCA auditável](docs/hero.png)](https://openipca.streamlit.app)
 
 OpenIPCA é um dashboard open-source de pesquisa macro para a inflação brasileira. Ele
 transforma dados oficiais do **IBGE/SIDRA** e do **BCB/SGS** em decomposição do IPCA,
@@ -29,6 +29,12 @@ e se o *momentum* está acelerando. O OpenIPCA reconstrói a divulgação como u
 research leria — decomposição, núcleos, difusão e momentum — a partir de dados oficiais,
 com a metodologia toda aberta.
 
+O detector consulta a competência oficial a cada cinco minutos na janela de divulgação. Quando
+SIDRA e as séries críticas do BCB estão completos, o mês novo é validado e publicado sem esperar
+pela IA. Brief e replay são propostos em PR separado e ficam ocultos enquanto estiverem defasados.
+O Pergunte ao IPCA continua respondendo sem chave: para perguntas cobertas pelas tools,
+monta uma resposta direta e rastreável com as evidências da competência atual.
+
 ## Início rápido
 
 ```bash
@@ -42,6 +48,10 @@ python -m pip install -e ".[dev]"
 # (defaults: BCB/SGS desde 2012-01 — os percentis precisam da história longa —
 #  e IBGE/SIDRA desde 2020-01, primeiro mês da tabela):
 python -m ipca_dashboard.pipeline run
+
+# Detectar uma competência oficial nova e fazer o refresh incremental estrito:
+python scripts/probe_ipca_release.py --json
+python -m ipca_dashboard.pipeline refresh-latest --expected-month YYYY-MM --strict
 
 # Abrir o dashboard:
 streamlit run dashboard/app.py

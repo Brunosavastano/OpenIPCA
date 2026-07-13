@@ -116,7 +116,7 @@ def _ensure_processed_fixtures() -> list[Path]:
                     "contribution_mom": 0.04,
                     "weight": 1.0,
                     "mom": 0.6,
-                    "yoy": -21.6,  # feeds the "vilões e aliados" card
+                    "yoy": -21.6,  # 12m context in the "vilões e aliados" card
                     "group_classification_code": "1",
                 },
             ]
@@ -202,8 +202,9 @@ def test_ask_page_renders_an_answer_without_network(monkeypatch):
         app.session_state["qa_last_q"] = "Como está a difusão do IPCA?"
         app.run(timeout=60)
         assert not app.exception
-        # the answer prose is rendered (fallback message is non-empty markdown)
-        assert any("IA" in md.value or "brief" in md.value for md in app.markdown)
+        # the key-free path is a real current-data answer, not an unavailable notice
+        assert any("difusão" in md.value.lower() and "%" in md.value for md in app.markdown)
+        assert any("DADOS" in md.value for md in app.markdown)
     finally:
         for path in created:
             path.unlink(missing_ok=True)
@@ -236,6 +237,7 @@ def test_ask_page_cache_is_keyed_by_question(monkeypatch):
         assert not app.exception
         assert calls == ["Como está a difusão do IPCA?"]
         assert any("ANSWER::Como está a difusão do IPCA?" in md.value for md in app.markdown)
+        assert app.session_state["qa_cache"]["month"]
 
         app.session_state["qa_last_q"] = "Como está o IPCA acumulado em 12 meses?"
         app.run(timeout=60)
@@ -281,18 +283,27 @@ def test_decomposition_item_search_renders_mini_card():
 
 
 def test_executive_panel_shows_top_movers_card():
-    """The 'vilões e aliados' card renders subitem names with their 12m change."""
+    """The card ranks by month, shows 12m context and exposes the expanded view."""
     created = _ensure_processed_fixtures()
     try:
         app = AppTest.from_file("dashboard/app.py")
         app.run(timeout=60)
         assert not app.exception
         movers = [
-            md.value for md in app.markdown if "<div class='movers-grid'>" in md.value
+            md.value for md in app.markdown if "<div id='ranking-movers'" in md.value
         ]
         assert movers, "top movers card should render on the executive panel"
         assert "bolso" in movers[0]  # the two column titles
-        assert "%" in movers[0]  # a formatted yoy value made it in
+        assert "Mês" in movers[0] and "12 meses" in movers[0]
+        assert "mover-sort-label active" in movers[0]
+        assert "mover-val-month" in movers[0] and "mover-val-yoy" in movers[0]
+        assert "%" in movers[0]
+        assert app.session_state["top_movers_rank"] == "mom"
+        toggles = [toggle for toggle in app.toggle if toggle.key == "show_all_top_movers"]
+        assert toggles, "the expanded movers view should be user-controlled"
+        toggles[0].set_value(True)
+        app.run(timeout=60)
+        assert not app.exception
     finally:
         for path in created:
             path.unlink(missing_ok=True)
@@ -311,6 +322,66 @@ def test_status_strip_shows_data_month_and_validation_seal():
         assert strips, "status strip should render"
         assert "DADOS " in strips[0]  # data reference month (e.g. DADOS ABR/2026)
         assert "VERIFICAÇÕES" in strips[0]  # validation seal from the committed report
+    finally:
+        for path in created:
+            path.unlink(missing_ok=True)
+
+
+def test_executive_panel_has_three_primary_kpis_release_status_and_ruler():
+    created = _ensure_processed_fixtures()
+    try:
+        app = AppTest.from_file("dashboard/app.py")
+        app.run(timeout=60)
+        assert not app.exception
+        markup = "\n".join(md.value for md in app.markdown)
+        assert "<div class='release-status'>" in markup
+        assert "Dados atualizados" in markup and "Próxima divulgação" in markup
+        assert "<div class='release-ruler'>" in markup
+        kpi_grid = next(md.value for md in app.markdown if "<div class='kpi-grid'>" in md.value)
+        assert kpi_grid.count("<div class='kpi'>") == 3
+    finally:
+        for path in created:
+            path.unlink(missing_ok=True)
+
+
+def test_top_movers_can_be_ranked_by_12_month_change():
+    created = _ensure_processed_fixtures()
+    try:
+        app = AppTest.from_file("dashboard/app.py")
+        app.run(timeout=60)
+        assert not app.exception
+        app.session_state["top_movers_rank"] = "yoy"
+        app.run(timeout=60)
+        assert not app.exception
+        movers = next(
+            md.value for md in app.markdown if "<div id='ranking-movers'" in md.value
+        )
+        assert "mover-sort-label active'>12 meses" in movers
+        assert "altas em 12 meses" in movers and "quedas em 12 meses" in movers
+        assert any(
+            "Ranking pela variação acumulada em 12 meses" in caption.value
+            for caption in app.caption
+        )
+    finally:
+        for path in created:
+            path.unlink(missing_ok=True)
+
+
+def test_valid_query_param_opens_requested_view_and_invalid_is_ignored():
+    created = _ensure_processed_fixtures()
+    try:
+        app = AppTest.from_file("dashboard/app.py")
+        app.query_params["view"] = "difusao"
+        app.run(timeout=60)
+        assert not app.exception
+        assert app.sidebar.radio[0].value == "Difusão"
+
+        invalid = AppTest.from_file("dashboard/app.py")
+        invalid.query_params["view"] = "admin"
+        invalid.query_params["month"] = "2026-99"
+        invalid.run(timeout=60)
+        assert not invalid.exception
+        assert invalid.sidebar.radio[0].value == "Painel executivo"
     finally:
         for path in created:
             path.unlink(missing_ok=True)
@@ -350,6 +421,12 @@ def test_ask_page_evidence_expander_shows_resolved_table(monkeypatch):
         assert tables, "evidence expander should render a dataframe"
         joined = "\n".join(t.to_string() for t in tables)
         assert "IPCA m/m" in joined and "BCB/SGS" in joined  # resolved, not bare ids
+        evidence_button = next(button for button in app.button if button.label == "Ver: IPCA m/m")
+        evidence_button.click()
+        app.run(timeout=60)
+        assert not app.exception
+        assert app.sidebar.radio[0].value == "Painel executivo"
+        assert app.query_params["evidence"] == ["ev_headline_mom"]
     finally:
         for path in created:
             path.unlink(missing_ok=True)

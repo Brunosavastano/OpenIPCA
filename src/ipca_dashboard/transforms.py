@@ -350,30 +350,46 @@ def _chain_contribution(df: pd.DataFrame) -> pd.DataFrame:
 def top_movers(
     items: pd.DataFrame,
     date: pd.Timestamp,
-    n: int = 5,
+    n: int | None = 5,
     min_weight: float = 0.1,
+    rank_by: str = "mom",
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Top-N subitems by 12m variation (yoy), up and down, for the month.
+    """Top-N subitems by the selected official variation, up and down.
 
     The selection rule is PURE and declared (weight >= min_weight, ranked by the
-    official yoy) — no hand-curated "everyday items" list, which would be an
-    editorial choice disguised as a ranking. The weight floor keeps sub-0.1%
-    curiosities (e.g. tiny produce) from crowding out items people actually buy.
+    official mom or yoy) — no hand-curated "everyday items" list, which would be
+    an editorial choice disguised as a ranking. The non-selected variation is
+    retained as context. The weight floor keeps sub-0.1% curiosities (e.g. tiny
+    produce) from crowding out items people actually buy.
 
     Returns (up, down) with item_name/yoy/mom/weight, both possibly empty —
-    callers must omit the card rather than crash (e.g. yoy column absent).
+    callers must omit the card rather than crash. ``n=None`` returns every eligible
+    row, which supports an explicit expanded view in the dashboard.
     """
-    required = {"date", "level", "item_name", "yoy", "mom", "weight"}
+    rank_by = rank_by if rank_by in {"mom", "yoy"} else "mom"
+    required = {"date", "level", "item_name", "mom", "weight"}
     if items.empty or not required.issubset(items.columns):
         empty = pd.DataFrame(columns=["item_name", "yoy", "mom", "weight"])
         return empty, empty
-    rows = items[
-        (items["date"] == date)
-        & (items["level"] == "subitem")
-        & (items["weight"].notna())
-        & (items["weight"] >= min_weight)
-        & (items["yoy"].notna())
+    source = items.copy()
+    if "yoy" not in source.columns:
+        source["yoy"] = pd.NA
+    rows = source[
+        (source["date"] == date)
+        & (source["level"] == "subitem")
+        & (source["weight"].notna())
+        & (source["weight"] >= min_weight)
+        & (source[rank_by].notna())
     ][["item_name", "yoy", "mom", "weight"]]
-    up = rows.nlargest(n, "yoy").reset_index(drop=True)
-    down = rows.nsmallest(n, "yoy").sort_values("yoy").reset_index(drop=True)
+    up = rows[rows[rank_by] > 0].sort_values(
+        [rank_by, "item_name"], ascending=[False, True]
+    )
+    down = rows[rows[rank_by] < 0].sort_values(
+        [rank_by, "item_name"], ascending=[True, True]
+    )
+    if n is not None:
+        up = up.head(n)
+        down = down.head(n)
+    up = up.reset_index(drop=True)
+    down = down.reset_index(drop=True)
     return up, down
