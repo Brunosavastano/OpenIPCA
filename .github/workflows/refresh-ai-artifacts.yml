@@ -1,0 +1,95 @@
+name: refresh-ai-artifacts
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: openipca-ai-artifacts
+  cancel-in-progress: false
+
+jobs:
+  propose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Skip when AI artifacts already match the data month
+        id: stale
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          data_month = json.loads(Path("outputs/release_state.json").read_text())["reference_month"]
+          try:
+              ai_month = json.loads(Path("reports/latest/metadata.json").read_text())["reference_month"]
+          except (OSError, KeyError, ValueError):
+              ai_month = ""
+          stale = data_month != ai_month
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"stale={str(stale).lower()}\n")
+              handle.write(f"month={data_month}\n")
+          print(f"data={data_month} ai={ai_month or 'missing'} stale={stale}")
+          PY
+
+      - name: Install optional AI provider
+        if: steps.stale.outputs.stale == 'true'
+        run: python -m pip install -e ".[ai]"
+
+      - name: Generate grounded brief and replay
+        if: steps.stale.outputs.stale == 'true'
+        env:
+          OPENIPCA_AI_ENABLED: "true"
+          OPENIPCA_AI_PROVIDER: "openai"
+          OPENIPCA_AI_MODEL: "gpt-5.5"
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python -m ipca_dashboard.ai.cli
+          python -m ipca_dashboard.ai.qa_replay
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data_month = json.loads(Path("outputs/release_state.json").read_text())["reference_month"]
+          metadata = json.loads(Path("reports/latest/metadata.json").read_text())
+          replay = json.loads(Path("reports/qa/replay.json").read_text())
+          if metadata.get("mode") != "ai" or metadata.get("reference_month") != data_month:
+              raise SystemExit("AI brief is not grounded for the current data month.")
+          if replay.get("reference_month") != data_month or not replay.get("pairs"):
+              raise SystemExit("AI replay is empty or stale; refusing publication proposal.")
+          PY
+
+      - name: Open human-review PR
+        if: steps.stale.outputs.stale == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MONTH: ${{ steps.stale.outputs.month }}
+        run: |
+          branch="automation/ai-brief-${MONTH}"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            echo "A review branch already exists for ${MONTH}; leaving it untouched."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add reports/latest/ai_brief.md reports/latest/ai_trace.json \
+            reports/latest/metadata.json reports/qa/replay.json
+          git commit -m "chore(ai): propose grounded artifacts for ${MONTH}"
+          git push --set-upstream origin "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "chore(ai): grounded brief and replay for ${MONTH}" \
+            --body "Generated from the published deterministic data. Review the brief, trace, evidence hashes and replay before merging."

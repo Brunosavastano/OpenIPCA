@@ -31,6 +31,7 @@ from ipca_dashboard.ai.guardrails import (
 )
 from ipca_dashboard.ai.providers.base import LLMProvider
 from ipca_dashboard.ai.providers.registry import resolve_provider
+from ipca_dashboard.ai.qa_deterministic import deterministic_answer
 from ipca_dashboard.ai.reference import load_reference_evidence
 from ipca_dashboard.ai.schemas import ANSWER_SCHEMA
 from ipca_dashboard.ai.tools import (
@@ -137,8 +138,9 @@ def _refused_result(question: str, reason: str) -> QAResult:
 def _fallback_answer() -> dict:
     return {
         "answer": (
-            "Não consegui consultar a IA agora. Use o painel e o brief para ver os "
-            "números oficiais do mês — eles continuam disponíveis e auditáveis."
+            "Não encontrei evidência suficiente para responder com segurança. Tente "
+            "perguntar sobre o resultado do mês, o acumulado em 12 meses, difusão, "
+            "núcleos, regime, maiores contribuições ou nomear um item da cesta."
         ),
         "claims": [],
         "monetary_policy_tone": "cautious",
@@ -180,9 +182,7 @@ def answer_question(
     try:
         check_question(question_text)
     except GuardrailError as exc:
-        return _refused_result(
-            question_text, _redact_secrets(f"{type(exc).__name__}: {exc}")
-        )
+        return _refused_result(question_text, _redact_secrets(f"{type(exc).__name__}: {exc}"))
 
     # 2) Resolve provider (config) + build evidence (reused from the brief path).
     used_fallback = False
@@ -212,26 +212,51 @@ def answer_question(
 
     messages = _messages(question_text, evidence)
 
-    # 3) Generate + validate (grounding + monetary policy). Any failure -> fallback.
-    try:
-        out = provider.generate_structured(messages, ANSWER_SCHEMA, temperature=0.0)
-        out = _require_answer_payload(out)
-        check_grounding(out, evidence)
-        check_monetary_policy(out)
-    except (GuardrailError, Exception) as exc:  # noqa: BLE001 - AI must never block
-        used_fallback = True
-        error = error or _redact_secrets(f"{type(exc).__name__}: {exc}")
-        out = _fallback_answer()
-
     final_provider = _provider_name(provider)
-    mode = "fallback" if used_fallback else ("deterministic" if final_provider == "no_ai" else "ai")
+    # 3) Generate + validate. NoAI and any live failure fall through to a useful,
+    # current deterministic answer assembled from the exact same evidence rows.
+    # The floor is guarded too; if no known intent is safely answerable, keep the
+    # explicit no-evidence response rather than guessing.
+    mode = "ai"
+    out: dict | None = None
+    if final_provider != "no_ai":
+        try:
+            out = provider.generate_structured(messages, ANSWER_SCHEMA, temperature=0.0)
+            out = _require_answer_payload(out)
+            check_grounding(out, evidence)
+            check_monetary_policy(out)
+        except Exception as exc:  # noqa: BLE001 - AI must never block
+            used_fallback = True
+            error = error or _redact_secrets(f"{type(exc).__name__}: {exc}")
+            out = None
+
+    if out is None:
+        try:
+            out = deterministic_answer(question_text, evidence)
+            if out is not None:
+                out = _require_answer_payload(out)
+                check_grounding(out, evidence)
+                check_monetary_policy(out)
+                mode = "deterministic"
+        except Exception as exc:  # noqa: BLE001 - deterministic floor must never block
+            used_fallback = True
+            error = error or _redact_secrets(f"{type(exc).__name__}: {exc}")
+            out = None
+
+    if out is None:
+        mode = "fallback"
+        out = _fallback_answer()
     claims = out.get("claims", []) or []
     trace = {
         "prompt_version": QA_PROMPT_VERSION,
         "question": question_text,
         "evidence_ids": [e["evidence_id"] for e in evidence],
         "claims": [
-            {"text": c.get("text"), "type": c.get("type"), "evidence_ids": c.get("evidence_ids", [])}
+            {
+                "text": c.get("text"),
+                "type": c.get("type"),
+                "evidence_ids": c.get("evidence_ids", []),
+            }
             for c in claims
         ],
         "used_fallback": used_fallback,

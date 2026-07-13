@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import json
 
-from ipca_dashboard.ai.staleness import is_stale, reference_month_from_brief
+from ipca_dashboard.ai.staleness import (
+    is_stale,
+    normalize_analysis_title,
+    reference_month_from_brief,
+)
 
 
 def test_reference_month_prefers_metadata(tmp_path):
@@ -25,6 +29,25 @@ def test_reference_month_falls_back_to_h1_em_dash(tmp_path):
 def test_reference_month_h1_hyphen_variant(tmp_path):
     (tmp_path / "ai_brief.md").write_text("# Brief de IA - IPCA 2026-05\n", encoding="utf-8")
     assert reference_month_from_brief(tmp_path) == "2026-05"
+
+
+def test_reference_month_accepts_analysis_product_title(tmp_path):
+    (tmp_path / "ai_brief.md").write_text(
+        "# Análise OpenIPCA — IPCA 2026-06\n", encoding="utf-8"
+    )
+    assert reference_month_from_brief(tmp_path) == "2026-06"
+
+
+def test_legacy_title_is_normalized_for_display():
+    markdown = "# Brief de IA — IPCA 2026-06\n\nConteúdo auditável.\n"
+    normalized = normalize_analysis_title(markdown)
+    assert normalized.startswith("# Análise OpenIPCA — IPCA 2026-06")
+    assert "Conteúdo auditável." in normalized
+
+
+def test_current_analysis_title_is_left_untouched():
+    markdown = "# Análise OpenIPCA — IPCA 2026-06\n"
+    assert normalize_analysis_title(markdown) == markdown
 
 
 def test_reference_month_none_when_absent(tmp_path):

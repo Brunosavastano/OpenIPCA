@@ -25,6 +25,7 @@ outputs/*
 !data/processed/*.parquet
 !outputs/validation_report.csv
 !outputs/diagnostic_latest.json
+!outputs/release_state.json
 
 # editor / OS noise
 .DS_Store

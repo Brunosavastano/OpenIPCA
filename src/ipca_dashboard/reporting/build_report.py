@@ -58,7 +58,9 @@ def build_report(
         from ipca_dashboard.reporting.render_static_charts import render_hero
 
         charts = render_hero(bcb, items, out_dir)
-    ai_brief_md = load_ai_brief(out_dir)
+    ai_brief_md = load_ai_brief(
+        out_dir, expected_month=str(diagnostic.get("reference_month", ""))
+    )
     markdown = render_report_markdown(bcb, diagnostic, ai_brief_md=ai_brief_md, charts=charts)
 
     paths = {"report": out_dir / "report.md"}

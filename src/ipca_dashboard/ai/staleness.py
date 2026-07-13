@@ -14,8 +14,23 @@ import json
 import re
 from pathlib import Path
 
-# Matches the brief's H1, e.g. "# Brief de IA — IPCA 2026-04" (em dash or hyphen).
-_BRIEF_MONTH_RE = re.compile(r"#\s*Brief de IA\s*[—-]\s*IPCA\s*(\d{4}-\d{2})")
+# Accept the product title and the legacy artifact title during the migration.
+_BRIEF_MONTH_RE = re.compile(
+    r"#\s*(?:Análise OpenIPCA|Brief de IA)\s*[—-]\s*IPCA\s*(\d{4}-\d{2})"
+)
+_LEGACY_TITLE_RE = re.compile(
+    r"^#\s*Brief de IA\s*[—-]\s*IPCA\s*(\d{4}-\d{2})\s*$",
+    flags=re.MULTILINE,
+)
+
+
+def normalize_analysis_title(markdown: str) -> str:
+    """Present legacy monthly artifacts under the current product title."""
+    return _LEGACY_TITLE_RE.sub(
+        lambda match: f"# Análise OpenIPCA — IPCA {match.group(1)}",
+        markdown,
+        count=1,
+    )
 
 
 def reference_month_from_brief(reports_dir: Path) -> str | None:

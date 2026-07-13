@@ -1,0 +1,52 @@
+name: publish-release-report
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - "reports/latest/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: openipca-release-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install report dependencies
+        run: python -m pip install -e ".[report]"
+
+      - name: Build Markdown and best-effort PNG
+        run: python -m ipca_dashboard.reporting.build_report --latest --with-charts
+
+      - name: Publish monthly GitHub Release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          month="$(python -c 'import json; print(json.load(open("outputs/release_state.json"))["reference_month"])')"
+          tag="ipca-${month}"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --target main --title "OpenIPCA · IPCA ${month}" \
+              --notes "Relatório determinístico do OpenIPCA para a competência ${month}."
+          fi
+          assets=(reports/latest/report.md reports/latest/report_metadata.json)
+          [[ -f reports/latest/report.png ]] && assets+=(reports/latest/report.png)
+          for chart in reports/latest/charts/*.png; do
+            [[ -f "$chart" ]] && assets+=("$chart")
+          done
+          gh release upload "$tag" "${assets[@]}" --clobber

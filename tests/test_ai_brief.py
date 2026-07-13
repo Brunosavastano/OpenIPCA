@@ -200,6 +200,7 @@ def test_artifacts_are_written(tmp_path):
     assert meta["prompt_hash"].startswith("sha256:")
     assert meta["evidence_hash"].startswith("sha256:")
     brief_md = paths["brief"].read_text(encoding="utf-8")
+    assert brief_md.startswith("# Análise OpenIPCA — IPCA 2024-03")
     assert "AI Replay Mode" in brief_md
     # Reading copy is clean: no per-claim evidence_ids leak into the prose...
     assert "evidência:" not in brief_md

@@ -2,9 +2,9 @@
 
 The brief is generated once with real tool-use; the trace (tool calls →
 evidence_ids → claims) and the audit metadata (model/prompt/evidence hashes)
-are committed under ``reports/latest/``. The app renders them as "como a IA
-montou este brief" and as the audit stamp under the brief — the proof that the
-AI orchestrates deterministic tools instead of narrating free text.
+are committed under ``reports/latest/``. The app renders them as "como esta
+análise foi construída" and as the audit stamp under the analysis — the proof
+that the AI orchestrates deterministic tools instead of narrating free text.
 
 Extracted from the Streamlit app (same pattern as ``staleness.py``) so the
 robustness rules are unit-testable: a missing or malformed artifact yields

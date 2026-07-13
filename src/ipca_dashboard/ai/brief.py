@@ -205,7 +205,7 @@ def brief_to_markdown(result: BriefResult, reference_month: str = "") -> str:
     # traceability (claim -> evidence_ids) lives in ai_trace.json, which the app
     # shows under "ver os bastidores". The short_brief is the lead paragraph;
     # claims follow as readable bullets.
-    lines = [f"# Brief de IA — IPCA {reference_month}".rstrip(), ""]
+    lines = [f"# Análise OpenIPCA — IPCA {reference_month}".rstrip(), ""]
     mode = "AI Replay Mode (fallback determinístico)" if result.used_fallback else "AI Replay Mode"
     lines.append(f"_{mode} · provider: {result.provider_name}_")
     lines.append("")

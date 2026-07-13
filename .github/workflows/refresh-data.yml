@@ -1,85 +1,124 @@
 name: refresh-data
 
-# Monthly auto-refresh of the IPCA data the app serves. The IBGE releases the
-# IPCA once a month (~the 10th), so this runs across that window and commits the
-# rebuilt data ONLY when it actually changed. Also exposes a manual "Run workflow"
-# button (workflow_dispatch) so it can be triggered and verified on demand.
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      force_full:
+        description: "Force a full long-history rebuild"
+        required: false
+        default: false
+        type: boolean
   schedule:
-    # Twice a day (12:00 and 20:00 UTC = 09:00 and 17:00 BRT) across days 9-16.
-    # The IBGE/SIDRA API is flaky from GitHub runners, so the commit-only-when-changed
-    # guard makes the extra runs cheap: spreading ~16 attempts over the release window
-    # makes it very likely at least one lands the new IPCA. Public repo => Actions are free.
-    - cron: "0 12,20 9-16 * *"
+    # Best-effort 5-minute detection around the usual release window. Offset from
+    # the top of the hour because scheduled Actions are busiest there.
+    - cron: "2-57/5 11-22 7-17 * *"
+    # Daily backstop for calendar changes outside the usual window.
+    - cron: "17 10 * * *"
 
-# Allow the job to push the refreshed data back to the repository.
 permissions:
-  contents: write
+  contents: read
 
-# Never let two refreshes race on a push to main.
 concurrency:
-  group: refresh-data
+  group: openipca-release-refresh
   cancel-in-progress: false
 
 jobs:
-  refresh:
+  probe:
     runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.probe.outputs.status }}
+      official_month: ${{ steps.probe.outputs.official_month }}
+      requires_full_rebuild: ${{ steps.probe.outputs.requires_full_rebuild }}
+      source_modified_at: ${{ steps.probe.outputs.source_modified_at }}
+      detected_at: ${{ steps.probe.outputs.detected_at }}
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install the package (AI extras for brief/replay regen + pipeline extra for STL)
-        run: python -m pip install -e ".[ai,pipeline]"
+      - name: Probe official IBGE period without installing dependencies
+        id: probe
+        run: python scripts/probe_ipca_release.py --json
 
-      # No --start flags on purpose: pipeline defaults fetch SGS from 2012-01
-      # (percentile_since_2012 needs the long history; the sgs_history_depth
-      # strict check fails closed if it ever shortens) and SIDRA from 2020-01.
-      - name: Run the pipeline (fetch + build from BCB/SGS and IBGE/SIDRA)
-        run: python -m ipca_dashboard.pipeline run --strict
+  refresh:
+    needs: probe
+    if: needs.probe.outputs.status == 'new' || inputs.force_full == true
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
 
-      - name: Refresh AI artifacts and commit, only if the data changed
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build-time dependencies
+        run: python -m pip install -e ".[pipeline]"
+
+      - name: Refresh the detected reference month
         env:
-          OPENIPCA_AI_ENABLED: "true"
-          OPENIPCA_AI_PROVIDER: "openai"
-          # Strong model = same quality as the committed artifacts. Change here if needed.
-          OPENIPCA_AI_MODEL: "gpt-5.5"
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          EXPECTED_MONTH: ${{ needs.probe.outputs.official_month }}
+          DETECTED_AT: ${{ needs.probe.outputs.detected_at }}
+          SOURCE_MODIFIED_AT: ${{ needs.probe.outputs.source_modified_at }}
+          FORCE_FULL_INPUT: ${{ inputs.force_full }}
+          PROBE_REQUIRES_FULL: ${{ needs.probe.outputs.requires_full_rebuild }}
+        run: |
+          extra=()
+          if [[ "$FORCE_FULL_INPUT" == "true" || "$PROBE_REQUIRES_FULL" == "true" ]]; then
+            extra+=(--force-full)
+          fi
+          python -m ipca_dashboard.pipeline refresh-latest \
+            --expected-month "$EXPECTED_MONTH" \
+            --strict \
+            --detected-at "$DETECTED_AT" \
+            --source-modified-at "$SOURCE_MODIFIED_AT" \
+            "${extra[@]}"
+
+      - name: Commit deterministic data only
+        id: publish
+        env:
+          EXPECTED_MONTH: ${{ needs.probe.outputs.official_month }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/processed/*.parquet outputs/validation_report.csv outputs/diagnostic_latest.json
+          git add data/processed/*.parquet outputs/validation_report.csv \
+            outputs/diagnostic_latest.json outputs/release_state.json
           if git diff --staged --quiet; then
-            echo "No data changes — nothing to commit."
+            echo "No deterministic data changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          # Data changed: regenerate the AI brief + replay from the SAME data so the
-          # public artifacts never lag the panel. Fail-closed (bash -eo pipefail): if
-          # regen errors, the commit below never runs, the data is NOT committed, and
-          # the next scheduled run retries — data and AI commit together or not at all.
-          python -m ipca_dashboard.ai.cli
-          python -m ipca_dashboard.ai.qa_replay
-          python - <<'PY'
-          import json
-          from pathlib import Path
+          git fetch origin main
+          if [[ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]]; then
+            echo "main moved during the build; refusing to overwrite it. The next probe will retry."
+            exit 1
+          fi
+          git commit -m "chore(data): publish IPCA ${EXPECTED_MONTH} [skip ci]"
+          git push origin HEAD:main
+          echo "changed=true" >> "$GITHUB_OUTPUT"
 
-          metadata = json.loads(Path("reports/latest/metadata.json").read_text(encoding="utf-8"))
-          if metadata.get("mode") != "ai":
-              raise SystemExit(
-                  f"AI brief did not regenerate in ai mode (mode={metadata.get('mode')!r}); refusing commit."
-              )
+      - name: Dispatch non-blocking report follow-up
+        if: steps.publish.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish-release-report.yml --ref main
 
-          replay = json.loads(Path("reports/qa/replay.json").read_text(encoding="utf-8"))
-          pairs = replay.get("pairs") if isinstance(replay, dict) else None
-          if not isinstance(pairs, list) or not pairs:
-              raise SystemExit("AI replay generated zero grounded pairs; refusing commit.")
-          PY
-          git add reports/latest/ai_brief.md reports/latest/ai_trace.json reports/latest/metadata.json reports/qa/replay.json
-          git commit -m "chore(data): monthly IPCA refresh + AI brief/replay [skip ci]"
-          git push
-          echo "Pushed refreshed IPCA data + AI artifacts."
+      - name: Dispatch non-blocking AI review follow-up
+        if: steps.publish.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run refresh-ai-artifacts.yml --ref main
