@@ -39,9 +39,13 @@ def test_reference_month_accepts_analysis_product_title(tmp_path):
 
 
 def test_legacy_title_is_normalized_for_display():
-    markdown = "# Brief de IA — IPCA 2026-06\n\nConteúdo auditável.\n"
+    markdown = (
+        "# Brief de IA — IPCA 2026-06\n\n"
+        "_AI Replay Mode · provider: openai_\n\nConteúdo auditável.\n"
+    )
     normalized = normalize_analysis_title(markdown)
     assert normalized.startswith("# Análise OpenIPCA — IPCA 2026-06")
+    assert "AI Replay Mode" not in normalized
     assert "Conteúdo auditável." in normalized
 
 

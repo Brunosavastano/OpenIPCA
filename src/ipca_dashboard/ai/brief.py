@@ -206,9 +206,6 @@ def brief_to_markdown(result: BriefResult, reference_month: str = "") -> str:
     # shows under "ver os bastidores". The short_brief is the lead paragraph;
     # claims follow as readable bullets.
     lines = [f"# Análise OpenIPCA — IPCA {reference_month}".rstrip(), ""]
-    mode = "AI Replay Mode (fallback determinístico)" if result.used_fallback else "AI Replay Mode"
-    lines.append(f"_{mode} · provider: {result.provider_name}_")
-    lines.append("")
     short = result.brief.get("short_brief", "")
     if short:
         lines.append(short)

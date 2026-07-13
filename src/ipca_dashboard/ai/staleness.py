@@ -22,15 +22,17 @@ _LEGACY_TITLE_RE = re.compile(
     r"^#\s*Brief de IA\s*[—-]\s*IPCA\s*(\d{4}-\d{2})\s*$",
     flags=re.MULTILINE,
 )
+_LEGACY_MODE_RE = re.compile(r"^_AI Replay Mode[^\n]*_\s*\n?", flags=re.MULTILINE)
 
 
 def normalize_analysis_title(markdown: str) -> str:
-    """Present legacy monthly artifacts under the current product title."""
-    return _LEGACY_TITLE_RE.sub(
+    """Present legacy artifacts with product-first, reader-facing copy."""
+    normalized = _LEGACY_TITLE_RE.sub(
         lambda match: f"# Análise OpenIPCA — IPCA {match.group(1)}",
         markdown,
         count=1,
     )
+    return _LEGACY_MODE_RE.sub("", normalized, count=1)
 
 
 def reference_month_from_brief(reports_dir: Path) -> str | None:
