@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "reference_month": "2026-07",
-  "official_period_id": "202607",
-  "source_modified_at": "2026-08-11",
-  "detected_at": "2026-08-11T14:53:27+00:00",
-  "built_at": "2026-08-11T14:54:29+00:00",
-  "next_release_date": "2026-09-11",
+  "reference_month": "2026-08",
+  "official_period_id": "202608",
+  "source_modified_at": "2026-09-11",
+  "detected_at": "2026-09-11T14:25:25+00:00",
+  "built_at": "2026-09-11T14:26:30+00:00",
+  "next_release_date": "2026-10-09",
   "source_urls": {
     "periods": "https://servicodados.ibge.gov.br/api/v3/agregados/7060/periodos",
     "calendar": "https://servicodados.ibge.gov.br/api/v3/calendario/indice-nacional-de-precos-ao-consumidor-amplo",
