@@ -10,4 +10,3 @@ stl_coverage,pass,22,Ajuste sazonal (STL) no IPCA headline: True; 22 séries mon
 sidra_no_duplicate_item_month,pass,0.0,Uma observação por classificação SIDRA por mês.
 sidra_non_negative_weights,pass,0.0,Pesos devem ser não negativos.
 group_contribution_matches_headline,pass,0.0066,"Diferença absoluta máxima, em p.p., entre soma das contribuições por grupo e headline."
-expected_reference_month,pass,0,BCB crítico e SIDRA completos para 2026-08.
