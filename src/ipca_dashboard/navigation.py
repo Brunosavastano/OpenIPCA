@@ -7,13 +7,13 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 PAGE_SLUGS = {
-    "executivo": "Painel executivo",
-    "pergunte": "Pergunte ao IPCA",
-    "decomposicao": "Decomposição",
-    "nucleos": "Núcleos",
-    "difusao": "Difusão",
-    "alertas": "Alertas",
-    "metodologia": "Metodologia",
+    "executivo": "Executive dashboard",
+    "pergunte": "Ask the IPCA",
+    "decomposicao": "Decomposition",
+    "nucleos": "Core inflation",
+    "difusao": "Diffusion",
+    "alertas": "Alerts",
+    "metodologia": "Methodology",
 }
 SLUG_BY_PAGE = {label: slug for slug, label in PAGE_SLUGS.items()}
 _MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")

@@ -14,9 +14,10 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from ipca_dashboard.ai.english import CURATED_QUESTIONS  # noqa: E402
 from ipca_dashboard.ai.env import bridge_secrets_to_env, load_env_once  # noqa: E402
 from ipca_dashboard.ai.evidence import resolve_claim_evidence  # noqa: E402
-from ipca_dashboard.ai.qa_replay import CURATED_QUESTIONS, answer_with_replay  # noqa: E402
+from ipca_dashboard.ai.qa import answer_question  # noqa: E402
 from ipca_dashboard.ai.staleness import (  # noqa: E402
     is_stale,
     normalize_analysis_title,
@@ -42,15 +43,22 @@ from ipca_dashboard.charts import (  # noqa: E402
 )
 from ipca_dashboard.config import OUTPUTS_DIR, PROCESSED_DIR, load_yaml  # noqa: E402
 from ipca_dashboard.diagnostics import classify_latest_regime  # noqa: E402
-from ipca_dashboard.glossary import (  # noqa: E402
+from ipca_dashboard.english import (  # noqa: E402
+    LEVEL_LABEL_PT,
+    METHODOLOGY_EN,
+    display_data,
+    english_diagnostic,
+    translate_text,
+)
+from ipca_dashboard.glossary_en import (  # noqa: E402
     CONCEPTS,
     CORE_TERMS,
     METRIC_LABELS,
+    REGIME_LABELS,  # noqa: E402
     SEVERITY_PT,
     describe,
 )
 from ipca_dashboard.hierarchy import (  # noqa: E402
-    LEVEL_LABEL_PT,
     children,
     node_label,
     subitem_options,
@@ -81,7 +89,7 @@ load_env_once()
 
 
 st.set_page_config(
-    page_title="OpenIPCA — IPCA além da headline",
+    page_title="OpenIPCA — Brazilian inflation beyond the headline",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="auto",
@@ -267,7 +275,7 @@ CSS = """
   [data-testid="stTextInput"] input {
     background: #161D28; border: 1px solid #2E3845; color: #E6EAF1; border-radius: 5px;
   }
-  /* selectboxes ("Conjunto de núcleos", "Métrica"…) framed like the cards */
+  /* selectboxes ("Core set", "Metric"…) framed like the cards */
   [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
     background: #11161F; border-color: #222A36 !important; border-radius: 8px;
   }
@@ -281,7 +289,7 @@ CSS = """
   }
   .diagnostic strong { color: #FFFFFF; }
   .ask-cta { display: none; }
-  /* "Pergunte ao IPCA" CTA: a bordered container (so the button sits inside the box),
+  /* "Ask the IPCA" CTA: a bordered container (so the button sits inside the box),
      scoped by its .ask-cta marker to the innermost wrapper (not the page/sidebar). */
   [data-testid="stVerticalBlockBorderWrapper"]:has(.ask-cta):not(:has([data-testid="stVerticalBlockBorderWrapper"] .ask-cta)) {
     background: linear-gradient(90deg, rgba(53,176,125,.10), rgba(0,0,0,0) 70%), #11161F;
@@ -402,11 +410,11 @@ CSS = """
      already transparent via chart_theme.yaml.) */
   [data-testid="stPlotlyChart"] .main-svg { background: transparent !important; }
 
-  /* expanders ("Análise OpenIPCA", "Glossário", "Evidências"…) framed like the cards */
+  /* expanders ("OpenIPCA analysis", "Glossary", "Evidences"…) framed like the cards */
   [data-testid="stExpander"] details {
     background: #11161F; border: 1px solid #222A36 !important; border-radius: 8px;
   }
-  /* popovers ("O que é cada núcleo"…) framed like the cards, with an amber info icon
+  /* popovers ("What each core measure means"…) framed like the cards, with an amber info icon
      (the blue ℹ️ emoji can't be recolored via CSS, so it's drawn here instead). */
   [data-testid="stPopover"] button {
     background: #11161F !important; border: 1px solid #222A36 !important;
@@ -448,9 +456,9 @@ def load_data(signature: tuple) -> dict[str, pd.DataFrame]:
 def load_diagnostic() -> str:
     path = OUTPUTS_DIR / "diagnostic_latest.json"
     if not path.exists():
-        return "Diagnóstico ainda não gerado."
+        return "Analysis not yet generated."
     return json.loads(path.read_text(encoding="utf-8")).get(
-        "diagnostic", "Diagnóstico indisponível."
+        "diagnostic", "Analysis unavailable."
     )
 
 
@@ -502,17 +510,17 @@ def _navigate_to_target(target: NavigationTarget) -> None:
 
 def _format_release_date(value: object) -> str:
     try:
-        return date.fromisoformat(str(value)).strftime("%d/%m/%Y")
+        return date.fromisoformat(str(value)).strftime("%d %b %Y")
     except ValueError:
-        return "não informado"
+        return "not reported"
 
 
 def _format_build_time(value: object) -> str:
     try:
         parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-        return parsed.strftime("%d/%m/%Y %H:%M UTC")
+        return parsed.strftime("%d %b %Y %H:%M UTC")
     except ValueError:
-        return "horário não informado"
+        return "time not reported"
 
 
 def render_release_status(data: dict[str, pd.DataFrame]) -> None:
@@ -525,40 +533,40 @@ def render_release_status(data: dict[str, pd.DataFrame]) -> None:
     month = data_month or str(state.get("reference_month", ""))
     summary = summarize_report(OUTPUTS_DIR / "validation_report.csv")
     if summary:
-        quality = f"{summary['passed']}/{summary['total']} verificações"
+        quality = f"{summary['passed']}/{summary['total']} checks"
         quality_class = {"pass": "ok", "warn": "warn", "block": "block"}[
             str(summary["worst"])
         ]
-        quality_note = "strict aprovado" if summary["worst"] == "pass" else "ver detalhes"
+        quality_note = "strict checks passed" if summary["worst"] == "pass" else "view details"
     else:
-        quality, quality_class, quality_note = "não informado", "warn", "sem relatório"
+        quality, quality_class, quality_note = "not reported", "warn", "no report"
     freshness = release_freshness_status(state)
     next_note = {
-        "current": "calendário oficial",
-        "due_today": "divulgação prevista hoje",
-        "overdue": "nova divulgação já era esperada",
-        "unknown": "calendário indisponível",
+        "current": "official calendar",
+        "due_today": "release expected today",
+        "overdue": "a new release was expected",
+        "unknown": "calendar unavailable",
     }[freshness]
     next_class = "warn" if freshness in {"due_today", "overdue", "unknown"} else ""
     try:
         year, month_number = (int(part) for part in month.split("-"))
         month_label = f"{_PT_MONTHS[month_number]}/{year}"
     except (KeyError, ValueError):
-        month_label = "não informado"
+        month_label = "not reported"
     st.markdown(
         "<div class='release-status'>"
         "<div class='release-status-cell'>"
-        "<div class='release-status-key'>Dados atualizados</div>"
+        "<div class='release-status-key'>Latest data</div>"
         f"<div class='release-status-value'>{escape(month_label)}</div>"
         f"<div class='release-status-note'>build {_format_build_time(state.get('built_at'))}</div>"
         "</div>"
         "<div class='release-status-cell'>"
-        "<div class='release-status-key'>Integridade</div>"
+        "<div class='release-status-key'>Data integrity</div>"
         f"<div class='release-status-value {quality_class}'>{escape(quality)}</div>"
         f"<div class='release-status-note'>{escape(quality_note)}</div>"
         "</div>"
         "<div class='release-status-cell'>"
-        "<div class='release-status-key'>Próxima divulgação</div>"
+        "<div class='release-status-key'>Next release</div>"
         f"<div class='release-status-value {next_class}'>"
         f"{escape(_format_release_date(state.get('next_release_date')))}</div>"
         f"<div class='release-status-note'>{escape(next_note)}</div>"
@@ -566,16 +574,16 @@ def render_release_status(data: dict[str, pd.DataFrame]) -> None:
         unsafe_allow_html=True,
     )
     if state and state.get("reference_month") != data_month:
-        st.warning("Metadados de divulgação não coincidem com a competência dos Parquets.")
+        st.warning("Release metadata do not match the reference month of the data files.")
     elif freshness == "overdue":
         st.warning(
-            "A divulgação seguinte já estava prevista no calendário oficial. "
-            "O painel mantém o último conjunto validado enquanto o refresh é reprocessado."
+            "The next release was already expected according to the official calendar. "
+            "The dashboard retains the latest validated dataset while the refresh is reprocessed."
         )
     elif freshness == "due_today":
         st.info(
-            "Há divulgação prevista para hoje. O detector publica quando SIDRA e séries "
-            "críticas do BCB estiverem completos."
+            "A release is expected today. The detector publishes once SIDRA and the critical "
+            "BCB series are complete."
         )
 
 
@@ -588,12 +596,12 @@ def render_top_movers(items: pd.DataFrame, date: pd.Timestamp) -> None:
     switch between monthly and 12-month ranking without losing either value.
     """
     rank_by = st.segmented_control(
-        "Ordenar ranking por",
+        "Rank by",
         options=["mom", "yoy"],
         default="mom",
-        format_func=lambda value: "Mês" if value == "mom" else "12 meses",
+        format_func=lambda value: "Month" if value == "mom" else "12 months",
         key="top_movers_rank",
-        help="O período selecionado define a ordem e a separação entre altas e quedas.",
+        help="The selected period determines the ranking and the split between increases and decreases.",
     )
     rank_by = str(rank_by) if rank_by in {"mom", "yoy"} else "mom"
 
@@ -602,10 +610,10 @@ def render_top_movers(items: pd.DataFrame, date: pd.Timestamp) -> None:
         return
 
     show_all = st.toggle(
-        "Mostrar todos os subitens elegíveis",
+        "Show all eligible subitems",
         value=False,
         key="show_all_top_movers",
-        help="Expande o ranking além dos cinco primeiros de cada lado.",
+        help="Expands the ranking beyond the top five on each side.",
     )
     up = all_up if show_all else all_up.head(5)
     down = all_down if show_all else all_down.head(5)
@@ -619,11 +627,11 @@ def render_top_movers(items: pd.DataFrame, date: pd.Timestamp) -> None:
         return "up" if numeric > 0 else "down" if numeric < 0 else "flat"
 
     def _format_change(value: object) -> str:
-        return "n.d." if pd.isna(value) else f"{float(value):+.1f}%"
+        return "n/a" if pd.isna(value) else f"{float(value):+.1f}%"
 
     def _rows(frame: pd.DataFrame) -> str:
         if frame.empty:
-            return "<div class='mover-empty'>Nenhum subitem elegível neste mês.</div>"
+            return "<div class='mover-empty'>No eligible subitems this month.</div>"
         return "".join(
             "<div class='mover-row'>"
             f"<span class='mover-name'>{escape(str(row.item_name))}</span>"
@@ -646,27 +654,27 @@ def render_top_movers(items: pd.DataFrame, date: pd.Timestamp) -> None:
     header = (
         "<div class='mover-row mover-head'>"
         "<span>Subitem</span>"
-        f"{_sort_label('Mês', 'mom')}"
-        f"{_sort_label('12 meses', 'yoy')}"
+        f"{_sort_label('Month', 'mom')}"
+        f"{_sort_label('12 months', 'yoy')}"
         "</div>"
     )
-    period_title = "no mês" if rank_by == "mom" else "em 12 meses"
+    period_title = "this month" if rank_by == "mom" else "over 12 months"
     ranking_description = (
-        "variação mensal" if rank_by == "mom" else "variação acumulada em 12 meses"
+        "monthly change" if rank_by == "mom" else "12-month cumulative change"
     )
     st.markdown(
         "<div id='ranking-movers' class='movers-grid'>"
         "<div class='movers-col'>"
-        f"<div class='callout-title movers-title-up'>Vilões do bolso · altas {period_title}</div>"
+        f"<div class='callout-title movers-title-up'>Largest price increases · {period_title}</div>"
         f"{header}{_rows(up)}</div>"
         "<div class='movers-col'>"
-        f"<div class='callout-title movers-title-down'>Aliados do bolso · quedas {period_title}</div>"
+        f"<div class='callout-title movers-title-down'>Largest price decreases · {period_title}</div>"
         f"{header}{_rows(down)}</div></div>",
         unsafe_allow_html=True,
     )
     st.caption(
-        f"Ranking pela {ranking_description}; use o seletor acima para reordenar. "
-        "Subitens com peso ≥ 0,1% da cesta (IBGE/SIDRA), sem curadoria manual."
+        f"Ranked by {ranking_description}; use the selector above to reorder. "
+        "Subitems with a basket weight of at least 0.1% (IBGE/SIDRA), with no manual selection."
     )
 
 
@@ -678,7 +686,7 @@ def render_ai_replay(data_month: str = "") -> None:
 
     The brief is regenerated by the monthly refresh alongside the data. Safety net:
     if its reference month lags the data's (a rare partial-refresh failure), it is
-    HIDDEN — never shown stale — and the deterministic "Leitura do mês" above
+    HIDDEN — never shown stale — and the deterministic "Monthly analysis" above
     remains current.
     """
     brief_path = REPORTS_LATEST / "ai_brief.md"
@@ -688,8 +696,8 @@ def render_ai_replay(data_month: str = "") -> None:
         return  # stale -> hide; the deterministic reading above carries the page
     # Open by default: the audited analysis is the product's differentiator —
     # it must not be born hidden behind a click (spec §3.8: visible by default).
-    with st.expander("Análise OpenIPCA", expanded=True):
-        st.caption("Gerada sobre dados oficiais · rastreável a evidências")
+    with st.expander("OpenIPCA analysis", expanded=True):
+        st.caption("Based on official data · traceable to evidence")
         st.markdown(normalize_analysis_title(brief_path.read_text(encoding="utf-8")))
         meta = load_brief_metadata(REPORTS_LATEST / "metadata.json")
         if meta:
@@ -697,7 +705,7 @@ def render_ai_replay(data_month: str = "") -> None:
             if stamp:
                 st.caption(
                     f"{stamp} · "
-                    "[artefatos auditáveis no GitHub]"
+                    "[auditable artifacts on GitHub]"
                     "(https://github.com/Brunosavastano/OpenIPCA/tree/main/reports/latest)"
                 )
     _render_brief_trace()
@@ -713,19 +721,19 @@ def _render_brief_trace() -> None:
     summary = load_trace_summary(REPORTS_LATEST / "ai_trace.json")
     if summary is None:
         return
-    with st.expander("Como esta análise foi construída", expanded=False):
+    with st.expander("How this analysis was built", expanded=False):
         st.markdown(
-            "A IA não escreve números por conta própria: ela consulta ferramentas "
-            "determinísticas sobre os dados oficiais e cada frase é validada contra as "
-            "evidências citadas — sem evidência, a frase é rejeitada (fail-closed)."
+            "AI does not invent numbers: it queries deterministic tools "
+            "over official data. Every claim is checked against its cited "
+            "evidence; claims without evidence are rejected."
         )
         tools = ", ".join(f"`{tool}`" for tool in summary["tools"])
-        st.markdown(f"**1 · Ferramentas consultadas:** {tools}")
+        st.markdown(f"**1 · Tools consulted:** {tools}")
         st.markdown(
-            f"**2 · Evidências coletadas:** {summary['n_evidence']} itens, cada um com "
-            "valor, unidade, data e fonte oficial."
+            f"**2 · Evidence collected:** {summary['n_evidence']} items, each with "
+            "a value, unit, date and official source."
         )
-        st.markdown("**3 · Afirmações validadas pelos guardrails:**")
+        st.markdown("**3 · Claims validated against evidence:**")
         for claim in summary["claims"]:
             ids = ", ".join(claim["evidence_ids"])
             st.markdown(f"- {claim['text']}" + (f"  \n  `{ids}`" if ids else ""))
@@ -742,10 +750,10 @@ def _alert_messages() -> dict[str, str]:
 
 def render_active_alerts(alerts: pd.DataFrame) -> None:
     """Active alerts in plain language: the config message + translated severity."""
-    st.subheader("Alertas ativos")
+    st.subheader("Active alerts")
     st.caption(describe("alertas"))
     if alerts.empty:
-        st.info("Nenhum alerta ativo neste mês.")
+        st.info("No active alerts this month.")
         return
     messages = _alert_messages()
     badge_class = {
@@ -758,7 +766,7 @@ def render_active_alerts(alerts: pd.DataFrame) -> None:
     for _, row in alerts.iterrows():
         alert_id = str(row.get("alert_id", ""))
         sev = str(row.get("severity", "info"))
-        text = messages.get(alert_id, "Alerta ativo sem descrição configurada.")
+        text = translate_text(messages.get(alert_id, "Active alert with no configured description."))
         sev_pt = SEVERITY_PT.get(sev, sev)
         cls = badge_class.get(sev, "info")
         # Alert text comes from our config (alert_rules.yaml), not user input.
@@ -774,10 +782,10 @@ def render_active_alerts(alerts: pd.DataFrame) -> None:
 
 def render_glossary() -> None:
     """A persistent, plain-language glossary for readers without macro context."""
-    with st.expander("Glossário", expanded=False):
+    with st.expander("Glossary", expanded=False):
         for text in CONCEPTS.values():
             st.markdown(f"- {text}")
-        st.markdown("**Núcleos do IPCA:**")
+        st.markdown("**IPCA core measures:**")
         for text in CORE_TERMS.values():
             st.markdown(f"- {text}")
 
@@ -799,7 +807,7 @@ def freshness_notice() -> tuple[str, str] | None:
 
 def fmt(value: float | int | None, suffix: str = "%") -> str:
     if value is None or pd.isna(value):
-        return "n.d."
+        return "n/a"
     return f"{value:.2f}{suffix}"
 
 
@@ -826,13 +834,13 @@ def delta_pp(curr: float | int | None, prev: float | int | None) -> str | None:
 
 
 _KPI_NOTES = {
-    "IPCA m/m": "vs. mês anterior",
-    "IPCA 12m": "vs. mês anterior",
-    "IPCA MM3M": "vs. mês anterior",
-    "IPCA 3m anual. SA": "vs. mês anterior",
-    "Média núcleos MM3M": "vs. mês anterior",
-    "Difusão MM3M": "vs. mês anterior",
-    "Alertas ativos": "",
+    "IPCA m/m": "vs. previous month",
+    "IPCA 12m": "vs. previous month",
+    "IPCA 3M average": "vs. previous month",
+    "IPCA 3M annualized SA": "vs. previous month",
+    "Core mean, 3M average": "vs. previous month",
+    "Diffusion 3M average": "vs. previous month",
+    "Active alerts": "",
 }
 
 
@@ -908,21 +916,21 @@ def render_release_ruler(
         subset=["contribution_mom"]
     )
     if groups.empty:
-        composition_value, composition_note = "n.d.", "composição indisponível"
+        composition_value, composition_note = "n/a", "composition unavailable"
     else:
         positive = groups.nlargest(1, "contribution_mom").iloc[0]
         negative = groups.nsmallest(1, "contribution_mom").iloc[0]
         composition_value = f"{positive['item_name']} {positive['contribution_mom']:+.2f} p.p."
         composition_note = (
-            f"menor: {negative['item_name']} {negative['contribution_mom']:+.2f} p.p."
+            f"lowest: {negative['item_name']} {negative['contribution_mom']:+.2f} p.p."
         )
     _, delta_label = _delta_arrow(headline_delta)
     stages = [
-        _release_stage("Headline", fmt(headline), delta_label or "estável vs. mês anterior"),
-        _release_stage("Composição", composition_value, composition_note),
-        _release_stage("Subjacente", fmt(core_mm3m), "média dos núcleos · MM3M NSA"),
-        _release_stage("Difusão", fmt(diffusion_mm3m), "parcela de altas · MM3M"),
-        _release_stage("Regime", regime_label, "classificação determinística"),
+        _release_stage("Headline", fmt(headline), delta_label or "unchanged vs. previous month"),
+        _release_stage("Composition", composition_value, composition_note),
+        _release_stage("Underlying", fmt(core_mm3m), "core mean · 3M average, NSA"),
+        _release_stage("Diffusion", fmt(diffusion_mm3m), "share of price increases · 3M average"),
+        _release_stage("Regime", regime_label, "deterministic classification"),
     ]
     st.markdown(
         f"<div class='release-ruler'>{''.join(stages)}</div>",
@@ -943,8 +951,8 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     core_row = core_mean.iloc[0] if not core_mean.empty else None
     ipca_prev = prev_series_row(bcb, "IPCA")
 
-    st.title("OpenIPCA — Painel executivo")
-    st.caption(f"Último dado processado: {latest_date:%Y-%m} | Fontes: BCB/SGS e IBGE/SIDRA")
+    st.title("OpenIPCA — Executive dashboard")
+    st.caption(f"Latest processed data: {latest_date:%Y-%m} | Sources: BCB/SGS and IBGE/SIDRA")
     render_release_status(data)
 
     notice = freshness_notice()
@@ -976,8 +984,8 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
             delta_pp(ipca_12m, ipca_prev["rolling_12m"] if ipca_prev is not None else None),
         ),
         _kpi_tile(
-            "IPCA MM3M",
-            "IPCA MM3M",
+            "IPCA 3M average",
+            "IPCA 3M average",
             fmt(ipca_mm3m),
             delta_pp(ipca_mm3m, ipca_prev["moving_average_3m"] if ipca_prev is not None else None),
         ),
@@ -985,10 +993,10 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     st.markdown(f"<div class='kpi-grid'>{''.join(tiles)}</div>", unsafe_allow_html=True)
 
     secondary = [
-        _secondary_metric("IPCA 3m anual. SA", fmt(ipca_saar_sa)),
-        _secondary_metric("Núcleos MM3M", fmt(core_mm3m)),
-        _secondary_metric("Difusão MM3M", fmt(diff_mm3m)),
-        _secondary_metric("Alertas ativos", str(len(alerts))),
+        _secondary_metric("IPCA 3M annualized SA", fmt(ipca_saar_sa)),
+        _secondary_metric("Core inflation, 3M average", fmt(core_mm3m)),
+        _secondary_metric("Diffusion 3M average", fmt(diff_mm3m)),
+        _secondary_metric("Active alerts", str(len(alerts))),
     ]
     st.markdown(
         f"<div class='secondary-strip'>{''.join(secondary)}</div>",
@@ -1003,11 +1011,11 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
         headline_delta=delta_pp(ipca_mom, ipca_prev["mom"] if ipca_prev is not None else None),
         core_mm3m=core_mm3m,
         diffusion_mm3m=diff_mm3m,
-        regime_label=regime.label_pt,
+        regime_label=REGIME_LABELS.get(regime.label_pt, regime.label_pt),
     )
     st.markdown(
-        "<div class='regime-row'><span class='regime-key'>Regime inflacionário:</span>"
-        f"<span class='regime-pill'>{escape(regime.label_pt.upper())}</span></div>",
+        "<div class='regime-row'><span class='regime-key'>Inflation regime:</span>"
+        f"<span class='regime-pill'>{escape(REGIME_LABELS.get(regime.label_pt, regime.label_pt).upper())}</span></div>",
         unsafe_allow_html=True,
     )
     regime_explanation = describe(regime.label_pt)
@@ -1015,8 +1023,8 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
         st.caption(regime_explanation)
 
     st.markdown(
-        "<div class='diagnostic'><div class='callout-title info'>Leitura do mês</div>"
-        f"{escape(load_diagnostic())}</div>",
+        "<div class='diagnostic'><div class='callout-title info'>Monthly analysis</div>"
+        f"{escape(english_diagnostic(data))}</div>",
         unsafe_allow_html=True,
     )
 
@@ -1025,12 +1033,12 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     with st.container(border=True):
         st.markdown(
             "<span class='ask-cta'></span>"
-            "<div class='callout-title cta'>Pergunte ao IPCA</div>"
-            "Faça uma pergunta em português sobre a inflação e receba uma resposta "
-            "aterrada nos dados oficiais — cada número rastreável a uma evidência.",
+            "<div class='callout-title cta'>Ask the IPCA</div>"
+            "Ask a question in English about inflation and get an answer "
+            "grounded in official data, with every number traceable to evidence.",
             unsafe_allow_html=True,
         )
-        if st.button("Abrir Pergunte ao IPCA", key="open_ask"):
+        if st.button("Open Ask the IPCA", key="open_ask"):
             st.session_state["goto_ask"] = True
             st.rerun()
 
@@ -1052,15 +1060,15 @@ def page_executive(data: dict[str, pd.DataFrame]) -> None:
     )
     if ipca_sa is not None and ipca_sa.notna().any():
         st.caption(
-            "Ajuste sazonal via STL: o fator sazonal do mês mais recente é estimativa e "
-            "revisa quando entram novos dados. Não é número oficial do IBGE/BCB."
+            "STL seasonal adjustment: the latest month's seasonal factor is an estimate and "
+            "is revised as new data arrive. It is not an official IBGE/BCB figure."
         )
 
     render_active_alerts(alerts)
 
 
 def render_item_search(items: pd.DataFrame, date: pd.Timestamp) -> None:
-    """"Quanto subiu o meu item?" — one-gesture answer for the question every
+    """"How much did my item's price change?" — one-gesture answer for the question every
     visitor brings ("e o café? e a gasolina?").
 
     A searchable selectbox over the month's subitems -> mini-card with the
@@ -1070,10 +1078,10 @@ def render_item_search(items: pd.DataFrame, date: pd.Timestamp) -> None:
     options = subitem_options(items, date)
     if options.empty:
         return
-    st.subheader("Quanto subiu o meu item?")
+    st.subheader("How much did my item's price change?")
     st.caption(
-        f"Digite para buscar um dos {len(options)} subitens da cesta — "
-        "ex.: gasolina, arroz, aluguel."
+        f"Search among {len(options)} basket subitems, "
+        "e.g. gasoline, rice or rent."
     )
     labels = dict(zip(options["classification_code"], options["item_name"], strict=False))
     codes = list(options["classification_code"].astype(str))
@@ -1087,7 +1095,7 @@ def render_item_search(items: pd.DataFrame, date: pd.Timestamp) -> None:
         codes,
         index=None,
         format_func=lambda code: labels.get(code, code),
-        placeholder="Ex.: gasolina, café, aluguel…",
+        placeholder="E.g. gasoline, coffee, rent…",
         key="item_search",
         label_visibility="collapsed",
     )
@@ -1101,9 +1109,9 @@ def render_item_search(items: pd.DataFrame, date: pd.Timestamp) -> None:
     row = items[(items["classification_code"] == chosen) & (items["date"] == date)].iloc[0]
     name = str(row.get("item_name", chosen))
     col_mom, col_yoy, col_weight = st.columns(3)
-    col_mom.metric(f"{name} — no mês", fmt(row.get("mom")))
-    col_yoy.metric("Em 12 meses", fmt(row.get("yoy")))
-    col_weight.metric("Peso na cesta", fmt(row.get("weight")))
+    col_mom.metric(f"{name} — this month", fmt(row.get("mom")))
+    col_yoy.metric("Over 12 months", fmt(row.get("yoy")))
+    col_weight.metric("Basket weight", fmt(row.get("weight")))
     st.plotly_chart(subitem_sparkline(items, chosen), use_container_width=True)
 
 
@@ -1113,15 +1121,15 @@ def render_drilldown(items: pd.DataFrame, date: pd.Timestamp) -> None:
     Answers 'which subitems make up an item?' using the parent/child links
     already in the data. Each step shows the children ordered by contribution.
     """
-    st.subheader("Composição: do grupo ao subitem")
+    st.subheader("Composition: from group to subitem")
     st.caption(
-        "Escolha um grupo e desça nos níveis para ver de que ele é feito. "
-        "O IPCA se organiza em grupo → subgrupo → item → subitem."
+        "Choose a group and drill down to see its components. "
+        "IPCA is organized as group → subgroup → item → subitem."
     )
 
     groups = top_level_rows(items, date)
     if groups.empty:
-        st.info("Sem dados de composição para o mês selecionado.")
+        st.info("No composition data for the selected month.")
         return
 
     # Selected path of classification codes, one per level (built via selectboxes).
@@ -1158,19 +1166,19 @@ def render_drilldown(items: pd.DataFrame, date: pd.Timestamp) -> None:
         st.markdown("**" + " › ".join(crumbs) + "**")
         kids = children(items, current["classification_code"], date)
         if kids.empty:
-            st.caption(f"{current['item_name']} não tem subdivisão neste nível.")
+            st.caption(f"{current['item_name']} has no subdivisions at this level.")
         else:
             label = node_label(items, current["classification_code"], date)
             st.markdown(
-                f"{label} (variou {current['mom']:.2f}%, "
-                f"contribuiu {current['contribution_mom']:.2f} p.p.) é composto por:"
+                f"{label} (price change {current['mom']:.2f}%, "
+                f"contribution {current['contribution_mom']:.2f} p.p.) comprises:"
             )
             show = kids[["item_name", "mom", "contribution_mom", "weight"]].rename(
                 columns={
-                    "item_name": "Componente",
-                    "mom": "Variação (%)",
-                    "contribution_mom": "Contribuição (p.p.)",
-                    "weight": "Peso (%)",
+                    "item_name": "Component",
+                    "mom": "Price change (%)",
+                    "contribution_mom": "Contribution (p.p.)",
+                    "weight": "Weight (%)",
                 }
             )
             st.dataframe(show, use_container_width=True, hide_index=True)
@@ -1178,12 +1186,12 @@ def render_drilldown(items: pd.DataFrame, date: pd.Timestamp) -> None:
 
 def page_decomposition(data: dict[str, pd.DataFrame]) -> None:
     items = data["items"]
-    st.header("Decomposição do IPCA")
+    st.header("IPCA decomposition")
     st.caption(
-        "**Variação (%)** = quanto o preço do grupo mudou no mês (é o número do "
-        "IBGE/SIDRA). **Contribuição (p.p.)** = quanto ele puxou do IPCA do mês "
-        "= variação × peso ÷ 100. Um item pode variar muito e contribuir pouco se "
-        "seu peso na cesta for pequeno."
+        "**Price change (%)** is the monthly change in a group's prices, as reported by "
+        "IBGE/SIDRA. **Contribution (p.p.)** is its impact on monthly IPCA "
+        "= price change × weight ÷ 100. An item can have a large price change but a small contribution if "
+        "its basket weight is small."
     )
     dates = [
         pd.Timestamp(value)
@@ -1200,7 +1208,7 @@ def page_decomposition(data: dict[str, pd.DataFrame]) -> None:
     elif st.session_state.get("decomp_month") not in dates:
         st.session_state.pop("decomp_month", None)
     selected_date = st.selectbox(
-        "Mês de referência",
+        "Reference month",
         dates,
         index=selected_index,
         format_func=lambda x: pd.Timestamp(x).strftime("%Y-%m"),
@@ -1209,7 +1217,7 @@ def page_decomposition(data: dict[str, pd.DataFrame]) -> None:
     selected_date = pd.Timestamp(selected_date)
     _set_query_params(view="decomposicao", month=selected_date.strftime("%Y-%m"))
     level = st.selectbox(
-        "Nível de detalhe (ranking e download)",
+        "Detail level (ranking and download)",
         ["group", "subgroup", "item", "subitem"],
         index=3,
         format_func=lambda lv: LEVEL_LABEL_PT.get(lv, lv),
@@ -1219,10 +1227,10 @@ def page_decomposition(data: dict[str, pd.DataFrame]) -> None:
     st.plotly_chart(stacked_contribution(items), use_container_width=True)
     left, right = st.columns(2)
     with left:
-        st.caption(f"Waterfall e ranking referem-se a {selected_date:%Y-%m}.")
+        st.caption(f"Waterfall and ranking refer to {selected_date:%Y-%m}.")
         st.plotly_chart(waterfall_latest(items, selected_date), use_container_width=True)
     with right:
-        st.caption("Maiores altas e baixas no nível de detalhe selecionado.")
+        st.caption("Largest increases and decreases at the selected detail level.")
         st.plotly_chart(contribution_ranking(items, selected_date, level), use_container_width=True)
     st.plotly_chart(heatmap_groups(items), use_container_width=True)
 
@@ -1231,7 +1239,7 @@ def page_decomposition(data: dict[str, pd.DataFrame]) -> None:
 
     latest = items[(items["date"] == selected_date) & (items["level"] == level)].copy()
     st.download_button(
-        f"Baixar dados ({LEVEL_LABEL_PT.get(level, level)}) — CSV",
+        f"Download data ({LEVEL_LABEL_PT.get(level, level)}) — CSV",
         latest.sort_values("contribution_mom", ascending=False).to_csv(index=False).encode("utf-8"),
         file_name=f"ranking_{level}_{selected_date:%Y_%m}.csv",
         mime="text/csv",
@@ -1243,7 +1251,7 @@ def page_cores(data: dict[str, pd.DataFrame]) -> None:
     core_sets = load_yaml("core_sets.yaml").get("core_sets", {})
     labels = {key: value.get("label", key) for key, value in core_sets.items()}
     selected = st.selectbox(
-        "Conjunto de núcleos", list(labels), format_func=lambda key: labels[key]
+        "Core set", list(labels), format_func=lambda key: translate_text(labels[key])
     )
 
     # Completeness warning (only if the column exists in the processed data).
@@ -1259,18 +1267,18 @@ def page_cores(data: dict[str, pd.DataFrame]) -> None:
                 exp = int(latest_mean.get("n_members_expected", 0))
                 missing = latest_mean.get("missing_members", "")
                 st.warning(
-                    f"Conjunto incompleto no mês mais recente: {avail}/{exp} séries disponíveis. "
-                    f"Faltando: {missing}. A média é omitida quando o conjunto está incompleto."
+                    f"Incomplete set in the latest month: {avail}/{exp} series available. "
+                    f"Missing: {missing}. The mean is omitted when the set is incomplete."
                 )
 
-    st.header("Monitor de núcleos")
+    st.header("Core inflation monitor")
     # What "núcleos" are, then a legend for the cores in the selected conjunto.
     st.caption(describe("nucleos"))
     members = core_sets.get(selected, {}).get("members", [])
     if members:
         legend = "  \n".join(f"- {describe(m)}" for m in members if describe(m))
         if legend:
-            with st.popover("O que é cada núcleo"):
+            with st.popover("What each core measure means"):
                 st.markdown(legend)
 
     # Metric selector reuses the single-source METRIC_LABELS (same labels the
@@ -1290,22 +1298,22 @@ def page_cores(data: dict[str, pd.DataFrame]) -> None:
         if m in cores.columns
     ]
     metric = st.selectbox(
-        "Métrica",
+        "Metric",
         metric_options,
         index=0,
         format_func=lambda key: METRIC_LABELS.get(key, key),
     )
     st.caption(
-        "Ajuste sazonal (SA) via STL: o fator sazonal do mês mais recente é estimativa e "
-        "revisa quando entram novos dados. NSA = sem ajuste sazonal; nenhum é número "
-        "oficial do IBGE/BCB."
+        "Seasonal adjustment (SA) uses STL: the latest seasonal factor is an estimate and "
+        "is revised as data arrive. NSA means not seasonally adjusted. Neither is an "
+        "official IBGE/BCB figure."
     )
     st.plotly_chart(core_lines(cores, selected, metric), use_container_width=True)
     st.plotly_chart(core_fan(cores, selected, metric), use_container_width=True)
 
     # Numeric detail behind a toggle: clean headers, useful columns only.
-    with st.expander("Ver tabela de núcleos (detalhe)", expanded=False):
-        st.caption("Valores mais recentes de cada núcleo do conjunto.")
+    with st.expander("View core measures in detail", expanded=False):
+        st.caption("Latest values for each core measure in the selected set.")
         latest = (
             cores[cores["core_set_name"] == selected]
             .sort_values("date")
@@ -1314,14 +1322,14 @@ def page_cores(data: dict[str, pd.DataFrame]) -> None:
             .sort_values("moving_average_3m", ascending=False)
         )
         rename = {
-            "core_name": "Núcleo",
-            "mom": "No mês (%)",
-            "moving_average_3m": "MM3M (%)",
+            "core_name": "Core",
+            "mom": "Monthly (%)",
+            "moving_average_3m": "3M average (%)",
             "rolling_12m": "12m (%)",
         }
         cols = [c for c in rename if c in latest.columns]
         st.dataframe(
-            latest[cols].rename(columns=rename),
+            latest[cols].replace({"core_name": {"Media": "Average", "Média": "Average"}}).rename(columns=rename),
             use_container_width=True,
             hide_index=True,
         )
@@ -1329,7 +1337,7 @@ def page_cores(data: dict[str, pd.DataFrame]) -> None:
 
 def page_diffusion(data: dict[str, pd.DataFrame]) -> None:
     bcb, items = data["bcb"], data["items"]
-    st.header("Monitor de difusão")
+    st.header("Diffusion monitor")
     st.plotly_chart(diffusion_line(bcb), use_container_width=True)
     st.plotly_chart(ipca_diffusion_scatter(bcb), use_container_width=True)
 
@@ -1337,19 +1345,19 @@ def page_diffusion(data: dict[str, pd.DataFrame]) -> None:
         items, level="subitem", group_col="group_classification_code"
     )
     latest = diffusion_by_group[diffusion_by_group["date"] == diffusion_by_group["date"].max()]
-    st.subheader("Difusão calculada por grupo - último mês")
-    st.dataframe(latest.rename(columns={"diffusion": "diffusion_pct"}), use_container_width=True)
+    st.subheader("Calculated diffusion by group — latest month")
+    st.dataframe(latest.rename(columns={"date": "Date", "group_classification_code": "Group code", "diffusion": "Diffusion (%)"}), use_container_width=True)
 
 
 def page_alerts(data: dict[str, pd.DataFrame]) -> None:
     alerts = data["alerts"]
-    st.header("Alertas")
+    st.header("Alerts")
     if alerts.empty:
-        st.info("Nenhum alerta ativo no último processamento.")
+        st.info("No active alerts in the latest run.")
     else:
         st.dataframe(alerts, use_container_width=True)
         st.download_button(
-            "Baixar alertas CSV",
+            "Download alerts CSV",
             alerts.to_csv(index=False).encode("utf-8"),
             file_name="alerts.csv",
             mime="text/csv",
@@ -1357,47 +1365,17 @@ def page_alerts(data: dict[str, pd.DataFrame]) -> None:
 
 
 def page_methodology(data: dict[str, pd.DataFrame]) -> None:
-    st.header("Metodologia")
-    st.markdown(
-        """
-        **Fontes.** BCB/SGS para IPCA headline, agregados macro, núcleos e difusão; IBGE/SIDRA
-        tabela 7060 para pesos, variações e hierarquia de grupos, subgrupos, itens e subitens.
-
-        **Contribuição mensal.** `peso_mensal * variacao_mensal / 100`, em pontos percentuais.
-
-        **Momentum de curto prazo.** A interface usa MM3M (média móvel de 3 meses da
-        variação m/m), que é bruta, sem ajuste sazonal (NSA). A coluna `three_month_saar`
-        segue disponível para auditoria, mas deve ser lida como 3m anualizado NSA
-        experimental, não como SAAR.
-
-        **Ajuste sazonal (SA).** Para headline e núcleos, calculamos uma série
-        dessazonalizada via **STL** (`statsmodels.tsa.seasonal.STL`, decomposição aditiva,
-        `robust=True`): `SA = observado − componente_sazonal`. A partir dela vem o
-        `mom_sa` (m/m SA) e o `annualized_3m_sa` (3m anualizado SA — o "SAAR" legítimo,
-        porque agora há ajuste sazonal). **Caveat:** o fator sazonal do mês mais recente é
-        uma estimativa que **revisa** quando entram novos dados, e este é um ajuste próprio
-        via STL — **não** o X-13ARIMA-SEATS oficial nem um número do IBGE/BCB. O STL roda
-        só no build-time (pipeline) e é persistido; se a dependência faltar, a série SA
-        fica vazia e o painel NSA continua correto.
-
-        **Núcleos.** A média dos núcleos é calculada a partir do conjunto selecionado em `config/core_sets.yaml`.
-
-        **Alertas.** Regras declarativas em `config/alert_rules.yaml`; o dashboard exibe apenas os
-        alertas disparados no último processamento.
-
-        **Validação.** O pipeline checa duplicidades, faixas plausíveis, disponibilidade do conjunto
-        default e diferença entre soma das contribuições por grupo e headline.
-        """
-    )
+    st.header("Methodology")
+    st.markdown(METHODOLOGY_EN)
     validation_path = OUTPUTS_DIR / "validation_report.csv"
     if validation_path.exists():
-        st.subheader("Relatório de validação")
+        st.subheader("Validation report")
         validation = pd.read_csv(validation_path)
         st.dataframe(validation, use_container_width=True)
     st.subheader("Downloads")
     for name, frame in data.items():
         st.download_button(
-            f"Baixar {name}.csv",
+            f"Download {name}.csv",
             frame.to_csv(index=False).encode("utf-8"),
             file_name=f"{name}.csv",
             mime="text/csv",
@@ -1407,18 +1385,18 @@ def page_methodology(data: dict[str, pd.DataFrame]) -> None:
 # (css class, short uppercase label, explanation) for the answer's mode seal —
 # a sober mono pill with a colored dot instead of an emoji.
 _ASK_SEAL = {
-    "ai": ("live", "AO VIVO", "Resposta gerada ao vivo, aterrada nos dados oficiais."),
-    "replay": ("", "PRÉ-GERADA", "Resposta pré-gerada e auditada (IA ao vivo indisponível agora)."),
-    "fallback": ("", "SEM EVIDÊNCIA", "Não houve evidência suficiente para uma resposta segura."),
+    "ai": ("live", "LIVE", "Live answer grounded in official data."),
+    "replay": ("", "PRE-GENERATED", "Pre-generated, audited answer (live AI is currently unavailable)."),
+    "fallback": ("", "NO EVIDENCE", "There was insufficient evidence for a reliable answer."),
     "deterministic": (
         "live",
-        "DADOS",
-        "Resposta direta calculada sobre os dados atuais, sem depender de IA externa.",
+        "DATA",
+        "Direct answer calculated from current data, without an external AI service.",
     ),
     "refused": (
         "refused",
-        "RECUSADA",
-        "Fora do escopo (apenas inflação/IPCA) ou recusada por segurança.",
+        "OUT OF SCOPE",
+        "Outside the inflation/IPCA scope or rejected by input checks.",
     ),
 }
 
@@ -1438,11 +1416,11 @@ def render_evidence_navigation(rows: list[dict[str, object]]) -> None:
         targets.append((evidence_id, str(row.get("metric", evidence_id)), target))
     if not targets:
         return
-    st.markdown("**Abrir a evidência no painel:**")
+    st.markdown("**Open evidence in the dashboard:**")
     columns = st.columns(min(3, len(targets)))
     for index, (evidence_id, metric, target) in enumerate(targets):
         if columns[index % len(columns)].button(
-            f"Ver: {metric}",
+            f"View: {metric}",
             key=f"open_evidence_{index}_{evidence_id}",
             use_container_width=True,
         ):
@@ -1451,33 +1429,33 @@ def render_evidence_navigation(rows: list[dict[str, object]]) -> None:
 
 def page_ask(data: dict[str, pd.DataFrame]) -> None:
     bcb, items, cores, alerts = data["bcb"], data["items"], data["cores"], data["alerts"]
-    st.title("Pergunte ao IPCA")
+    st.title("Ask the IPCA")
     st.caption(
-        "Pergunte em português sobre a inflação brasileira. A resposta é aterrada nos "
-        "dados oficiais já calculados — cada número é rastreável a uma evidência. Com uma "
-        "chave de IA configurada, a resposta pode ser gerada ao vivo; sem ela, o app "
-        "responde diretamente com as evidências atuais ou usa um replay auditado. A IA "
-        "nunca dá recomendação de investimento "
-        "nem previsão de Copom/Selic."
+        "Ask in English about Brazilian inflation. The answer is grounded in "
+        "processed official data, with each number linked to evidence. With an "
+        "AI key configured, answers can be generated live. Otherwise, the app "
+        "uses current evidence directly. It "
+        "never provides investment recommendations "
+        "or Copom/Selic forecasts."
     )
 
-    st.markdown("**Perguntas para começar:**")
+    st.markdown("**Questions to get started:**")
     cols = st.columns(2)
     for index, question in enumerate(CURATED_QUESTIONS):
         if cols[index % 2].button(question, key=f"ask_sugg_{index}", use_container_width=True):
             st.session_state["qa_last_q"] = question
 
     typed = st.text_input(
-        "Ou escreva a sua pergunta:",
+        "Or type your question:",
         key="qa_input",
-        placeholder="Ex.: O que puxou a inflação do mês?",
+        placeholder="E.g. What drove inflation this month?",
     )
-    if st.button("Perguntar", key="qa_submit", type="primary") and typed.strip():
+    if st.button("Ask", key="qa_submit", type="primary") and typed.strip():
         st.session_state["qa_last_q"] = typed.strip()
 
     question = st.session_state.get("qa_last_q")
     if not question:
-        st.info("Escolha uma pergunta acima ou escreva a sua para começar.")
+        st.info("Choose a question above or type your own to get started.")
         return
 
     # Cache the answer for the current question and data month: Streamlit reruns on every widget
@@ -1489,12 +1467,12 @@ def page_ask(data: dict[str, pd.DataFrame]) -> None:
         data_month = ""
     cache = st.session_state.get("qa_cache")
     if cache is None or cache.get("q") != question or cache.get("month") != data_month:
-        with st.spinner("Consultando os dados do IPCA..."):
-            result = answer_with_replay(question, bcb, items, cores, alerts)
+        with st.spinner("Consulting the IPCA data..."):
+            result = answer_question(question, bcb, items, cores, alerts, language="en")
         st.session_state["qa_cache"] = {"q": question, "month": data_month, "result": result}
     result = st.session_state["qa_cache"]["result"]
 
-    st.markdown(f"**Você perguntou:** {question}")
+    st.markdown(f"**You asked:** {question}")
     seal_cls, seal_label, seal_note = _ASK_SEAL.get(result.mode, ("", "", ""))
     if seal_label:
         safe_cls = escape(seal_cls, quote=True)
@@ -1510,7 +1488,7 @@ def page_ask(data: dict[str, pd.DataFrame]) -> None:
     st.markdown(result.answer)
 
     if result.claims:
-        with st.expander("🔎 Evidências — cada número rastreado a um dado oficial", expanded=False):
+        with st.expander("Evidence — every number linked to official data", expanded=False):
             # Resolved table (metric/value/source), not raw evidence_ids: the id
             # alone is unreadable; the promise is auditable BY HUMANS.
             rows = resolve_claim_evidence(result.claims, result.evidence)
@@ -1518,13 +1496,13 @@ def page_ask(data: dict[str, pd.DataFrame]) -> None:
                 st.dataframe(
                     pd.DataFrame(rows).rename(
                         columns={
-                            "claim": "Afirmação",
-                            "evidence_id": "Evidência",
-                            "metric": "Métrica",
-                            "value": "Valor",
-                            "unit": "Unidade",
-                            "date": "Data",
-                            "source": "Fonte",
+                            "claim": "Claim",
+                            "evidence_id": "Evidence",
+                            "metric": "Metric",
+                            "value": "Value",
+                            "unit": "Unit",
+                            "date": "Date",
+                            "source": "Source",
                         }
                     ),
                     use_container_width=True,
@@ -1534,13 +1512,13 @@ def page_ask(data: dict[str, pd.DataFrame]) -> None:
 
 
 _PT_MONTHS = {
-    1: "JAN", 2: "FEV", 3: "MAR", 4: "ABR", 5: "MAI", 6: "JUN",
-    7: "JUL", 8: "AGO", 9: "SET", 10: "OUT", 11: "NOV", 12: "DEZ",
+    1: "JAN", 2: "FEB", 3: "MAR", 4: "APR", 5: "MAY", 6: "JUN",
+    7: "JUL", 8: "AUG", 9: "SEP", 10: "OCT", 11: "NOV", 12: "DEC",
 }
 
 
 def _status_strip_right(data: dict[str, pd.DataFrame]) -> str:
-    """Freshness + quality seal for the strip: 'DADOS ABR/2026 · 8/8 VERIFICAÇÕES OK'.
+    """Freshness + quality seal for the strip: 'DATA ABR/2026 · 8/8 CHECKS OK'.
 
     Answers the first question any data-dashboard visitor has ("isso é de
     quando?") and surfaces the validation rigor that already runs every month.
@@ -1550,7 +1528,7 @@ def _status_strip_right(data: dict[str, pd.DataFrame]) -> str:
     try:
         latest = pd.to_datetime(data["bcb"]["date"]).max()
         if pd.notna(latest):
-            parts.append(f"DADOS {_PT_MONTHS[latest.month]}/{latest.year}")
+            parts.append(f"DATA {_PT_MONTHS[latest.month]}/{latest.year}")
     except (KeyError, TypeError, ValueError):
         pass  # the strip must never break the app
     summary = summarize_report(OUTPUTS_DIR / "validation_report.csv")
@@ -1558,16 +1536,16 @@ def _status_strip_right(data: dict[str, pd.DataFrame]) -> str:
         seal_cls = {"pass": "seal-ok", "warn": "seal-warn", "block": "seal-block"}[
             str(summary["worst"])
         ]
-        label = f"{summary['passed']}/{summary['total']} VERIFICAÇÕES"
+        label = f"{summary['passed']}/{summary['total']} CHECKS"
         if summary["worst"] == "pass":
             label += " OK"
         parts.append(f"<span class='{seal_cls}'>{label}</span>")
     state = read_release_state(RELEASE_STATE_PATH)
     runtime_status = release_freshness_status(state)
     if runtime_status == "due_today":
-        parts.append("<span class='seal-warn'>DIVULGAÇÃO PREVISTA HOJE</span>")
+        parts.append("<span class='seal-warn'>RELEASE EXPECTED TODAY</span>")
     elif runtime_status == "overdue":
-        parts.append("<span class='seal-warn'>DADO POSSIVELMENTE DEFASADO</span>")
+        parts.append("<span class='seal-warn'>DATA MAY BE OUT OF DATE</span>")
     return " · ".join(parts) or "openipca.streamlit.app"
 
 
@@ -1583,11 +1561,13 @@ def main() -> None:
         data = load_data(processed_signature())
     except FileNotFoundError as exc:
         st.title("OpenIPCA")
-        st.error("Dados processados não encontrados.")
+        st.error("Processed data not found.")
         st.code("python -m ipca_dashboard.pipeline run\nstreamlit run dashboard/app.py")
         st.caption(str(exc))
         return
 
+    raw_data = data
+    data = display_data(data)
     _apply_query_params_once()
 
     pending = st.session_state.pop("pending_navigation", None)
@@ -1601,24 +1581,24 @@ def main() -> None:
     # "Abrir Pergunte ao IPCA" (a button on the panel) routes here: promote its flag to
     # the nav radio's value BEFORE the radio is instantiated, so it renders pre-selected.
     if st.session_state.pop("goto_ask", False):
-        st.session_state["nav_page"] = "Pergunte ao IPCA"
+        st.session_state["nav_page"] = "Ask the IPCA"
         _set_query_params(view="pergunte", month="", evidence="", item="")
 
     st.sidebar.markdown(
         "<div class='brand'><span class='brand-mark'>I</span>"
         "<span class='brand-name'>Open<span class='brand-accent'>IPCA</span></span></div>"
-        "<div class='nav-label'>Navegação</div>",
+        "<div class='nav-label'>Navigation</div>",
         unsafe_allow_html=True,
     )
     page = st.sidebar.radio(
-        "Navegação",
+        "Navigation",
         list(PAGE_SLUGS.values()),
         key="nav_page",
         label_visibility="collapsed",
     )
     _set_query_params(view=SLUG_BY_PAGE[page])
     st.sidebar.link_button(
-        "Relatórios mensais",
+        "Monthly reports",
         "https://github.com/Brunosavastano/OpenIPCA/releases",
         use_container_width=True,
     )
@@ -1633,17 +1613,17 @@ def main() -> None:
         f"<span class='strip-right'>{_status_strip_right(data)}</span></div>",
         unsafe_allow_html=True,
     )
-    if page == "Painel executivo":
+    if page == "Executive dashboard":
         page_executive(data)
-    elif page == "Pergunte ao IPCA":
-        page_ask(data)
-    elif page == "Decomposição":
+    elif page == "Ask the IPCA":
+        page_ask(raw_data)
+    elif page == "Decomposition":
         page_decomposition(data)
-    elif page == "Núcleos":
+    elif page == "Core inflation":
         page_cores(data)
-    elif page == "Difusão":
+    elif page == "Diffusion":
         page_diffusion(data)
-    elif page == "Alertas":
+    elif page == "Alerts":
         page_alerts(data)
     else:
         page_methodology(data)

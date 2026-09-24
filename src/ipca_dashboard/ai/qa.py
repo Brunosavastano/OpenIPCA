@@ -22,6 +22,17 @@ import pandas as pd
 from ipca_dashboard.ai import SCHEMA_VERSION
 from ipca_dashboard.ai.brief import _hash, _provider_name, _redact_secrets
 from ipca_dashboard.ai.config import load_ai_config
+from ipca_dashboard.ai.english import (
+    FALLBACK as ENGLISH_FALLBACK,
+)
+from ipca_dashboard.ai.english import (
+    REFUSAL as ENGLISH_REFUSAL,
+)
+from ipca_dashboard.ai.english import (
+    english_evidence,
+    english_payload,
+    retrieval_question,
+)
 from ipca_dashboard.ai.evidence import evidence_table_to_dicts
 from ipca_dashboard.ai.guardrails import (
     GuardrailError,
@@ -113,9 +124,13 @@ class QAResult:
     error: str | None = field(default=None)
 
 
-def _messages(question: str, evidence: list[dict]) -> list[dict]:
+def _messages(question: str, evidence: list[dict], language: str = "pt") -> list[dict]:
+    prompt = QA_SYSTEM
+    if language == "en":
+        prompt = prompt.replace("ESTILO: português claro", "ESTILO: inglês claro")
+        prompt += "\nWrite all user-facing answer and claim text in English. Preserve evidence IDs and rule IDs exactly."
     return [
-        {"role": "system", "content": QA_SYSTEM},
+        {"role": "system", "content": prompt},
         {"role": "user", "content": question},
         {"role": "evidence", "content": evidence},
     ]
@@ -171,18 +186,24 @@ def answer_question(
     *,
     provider: LLMProvider | None = None,
     core_set: str = "bcb_compact",
+    language: str = "pt",
 ) -> QAResult:
     """Answer a user question, grounded in the evidence. Never raises."""
     try:
         question_text = "" if question is None else str(question)
     except Exception:  # noqa: BLE001 - hostile input must not crash the Q&A box
         question_text = ""
+    retrieval_text = retrieval_question(question_text) if language == "en" else question_text
 
     # 1) Input guardrails — refuse injection / off-scope BEFORE calling the model.
     try:
-        check_question(question_text)
+        # Original words remain in the checks alongside bilingual retrieval terms.
+        check_question(question_text + " " + retrieval_text)
     except GuardrailError as exc:
-        return _refused_result(question_text, _redact_secrets(f"{type(exc).__name__}: {exc}"))
+        result = _refused_result(question_text, _redact_secrets(f"{type(exc).__name__}: {exc}"))
+        if language == "en":
+            result.answer = ENGLISH_REFUSAL
+        return result
 
     # 2) Resolve provider (config) + build evidence (reused from the brief path).
     used_fallback = False
@@ -200,17 +221,19 @@ def answer_question(
                 build_evidence_table(bcb, ipca_items, core_metrics, alerts, core_set)
             )
             + evidence_table_to_dicts(get_seasonal_adjustment(bcb, core_metrics, core_set))
-            + evidence_table_to_dicts(get_item_weights(question_text, ipca_items))
-            + evidence_table_to_dicts(get_item_changes(question_text, ipca_items))
+            + evidence_table_to_dicts(get_item_weights(retrieval_text, ipca_items))
+            + evidence_table_to_dicts(get_item_changes(retrieval_text, ipca_items))
             + evidence_table_to_dicts(load_reference_evidence())
         )
+        if language == "en":
+            evidence = english_evidence(evidence)
     except Exception as exc:  # noqa: BLE001 - AI must never block
         from ipca_dashboard.ai.providers.no_ai import NoAIProvider
 
         provider, evidence, used_fallback = NoAIProvider(), [], True
         error = _redact_secrets(f"{type(exc).__name__}: {exc}")
 
-    messages = _messages(question_text, evidence)
+    messages = _messages(question_text, evidence, language)
 
     final_provider = _provider_name(provider)
     # 3) Generate + validate. NoAI and any live failure fall through to a useful,
@@ -232,7 +255,9 @@ def answer_question(
 
     if out is None:
         try:
-            out = deterministic_answer(question_text, evidence)
+            out = deterministic_answer(retrieval_text, evidence)
+            if language == "en":
+                out = english_payload(out)
             if out is not None:
                 out = _require_answer_payload(out)
                 check_grounding(out, evidence)
@@ -246,6 +271,8 @@ def answer_question(
     if out is None:
         mode = "fallback"
         out = _fallback_answer()
+        if language == "en":
+            out["answer"] = ENGLISH_FALLBACK
     claims = out.get("claims", []) or []
     trace = {
         "prompt_version": QA_PROMPT_VERSION,

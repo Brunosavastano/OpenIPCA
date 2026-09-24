@@ -170,8 +170,8 @@ def test_streamlit_app_renders_all_pages():
 
         pages = list(app.sidebar.radio[0].options)
         assert pages == [
-            "Painel executivo", "Pergunte ao IPCA", "Decomposição",
-            "Núcleos", "Difusão", "Alertas", "Metodologia",
+            "Executive dashboard", "Ask the IPCA", "Decomposition",
+            "Core inflation", "Diffusion", "Alerts", "Methodology",
         ]
 
         for page in pages:
@@ -197,14 +197,14 @@ def test_ask_page_renders_an_answer_without_network(monkeypatch):
     try:
         app = AppTest.from_file("dashboard/app.py")
         app.run(timeout=60)
-        app.sidebar.radio[0].set_value("Pergunte ao IPCA")
+        app.sidebar.radio[0].set_value("Ask the IPCA")
         # Simulate the user having asked a curated, in-scope question.
-        app.session_state["qa_last_q"] = "Como está a difusão do IPCA?"
+        app.session_state["qa_last_q"] = "How is IPCA diffusion?"
         app.run(timeout=60)
         assert not app.exception
         # the key-free path is a real current-data answer, not an unavailable notice
-        assert any("difusão" in md.value.lower() and "%" in md.value for md in app.markdown)
-        assert any("DADOS" in md.value for md in app.markdown)
+        assert any("diffusion" in md.value.lower() and "%" in md.value for md in app.markdown)
+        assert any("DATA" in md.value for md in app.markdown)
     finally:
         for path in created:
             path.unlink(missing_ok=True)
@@ -225,35 +225,35 @@ def test_ask_page_cache_is_keyed_by_question(monkeypatch):
             provider_name="fake",
         )
 
-    monkeypatch.setattr("ipca_dashboard.ai.qa_replay.answer_with_replay", fake_answer)
+    monkeypatch.setattr("ipca_dashboard.ai.qa.answer_question", fake_answer)
     created = _ensure_processed_fixtures()
     try:
         app = AppTest.from_file("dashboard/app.py")
         app.run(timeout=60)
-        app.sidebar.radio[0].set_value("Pergunte ao IPCA")
+        app.sidebar.radio[0].set_value("Ask the IPCA")
 
-        app.session_state["qa_last_q"] = "Como está a difusão do IPCA?"
+        app.session_state["qa_last_q"] = "How is IPCA diffusion?"
         app.run(timeout=60)
         assert not app.exception
-        assert calls == ["Como está a difusão do IPCA?"]
-        assert any("ANSWER::Como está a difusão do IPCA?" in md.value for md in app.markdown)
+        assert calls == ["How is IPCA diffusion?"]
+        assert any("ANSWER::How is IPCA diffusion?" in md.value for md in app.markdown)
         assert app.session_state["qa_cache"]["month"]
 
-        app.session_state["qa_last_q"] = "Como está o IPCA acumulado em 12 meses?"
+        app.session_state["qa_last_q"] = "What is cumulative inflation over 12 months?"
         app.run(timeout=60)
         assert not app.exception
         assert calls == [
-            "Como está a difusão do IPCA?",
-            "Como está o IPCA acumulado em 12 meses?",
+            "How is IPCA diffusion?",
+            "What is cumulative inflation over 12 months?",
         ]
         values = "\n".join(md.value for md in app.markdown)
-        assert "ANSWER::Como está o IPCA acumulado em 12 meses?" in values
-        assert "ANSWER::Como está a difusão do IPCA?" not in values
+        assert "ANSWER::What is cumulative inflation over 12 months?" in values
+        assert "ANSWER::How is IPCA diffusion?" not in values
 
         app.run(timeout=60)
         assert calls == [
-            "Como está a difusão do IPCA?",
-            "Como está o IPCA acumulado em 12 meses?",
+            "How is IPCA diffusion?",
+            "What is cumulative inflation over 12 months?",
         ]
     finally:
         for path in created:
@@ -266,7 +266,7 @@ def test_decomposition_item_search_renders_mini_card():
     try:
         app = AppTest.from_file("dashboard/app.py")
         app.run(timeout=60)
-        app.sidebar.radio[0].set_value("Decomposição")
+        app.sidebar.radio[0].set_value("Decomposition")
         app.run(timeout=60)
         assert not app.exception
         search = [sb for sb in app.selectbox if sb.key == "item_search"]
@@ -275,8 +275,8 @@ def test_decomposition_item_search_renders_mini_card():
         app.run(timeout=60)
         assert not app.exception
         labels = [m.label for m in app.metric]
-        assert any("12 meses" in label for label in labels)
-        assert any("Peso na cesta" in label for label in labels)
+        assert any("12 months" in label for label in labels)
+        assert any("Basket weight" in label for label in labels)
     finally:
         for path in created:
             path.unlink(missing_ok=True)
@@ -293,8 +293,8 @@ def test_executive_panel_shows_top_movers_card():
             md.value for md in app.markdown if "<div id='ranking-movers'" in md.value
         ]
         assert movers, "top movers card should render on the executive panel"
-        assert "bolso" in movers[0]  # the two column titles
-        assert "Mês" in movers[0] and "12 meses" in movers[0]
+        assert "Largest price" in movers[0]  # the two column titles
+        assert "Month" in movers[0] and "12 months" in movers[0]
         assert "mover-sort-label active" in movers[0]
         assert "mover-val-month" in movers[0] and "mover-val-yoy" in movers[0]
         assert "%" in movers[0]
@@ -320,8 +320,8 @@ def test_status_strip_shows_data_month_and_validation_seal():
             md.value for md in app.markdown if "<div class='status-strip'" in md.value
         ]
         assert strips, "status strip should render"
-        assert "DADOS " in strips[0]  # data reference month (e.g. DADOS ABR/2026)
-        assert "VERIFICAÇÕES" in strips[0]  # validation seal from the committed report
+        assert "DATA " in strips[0]  # data reference month (e.g. DATA ABR/2026)
+        assert "CHECKS" in strips[0]  # validation seal from the committed report
     finally:
         for path in created:
             path.unlink(missing_ok=True)
@@ -335,7 +335,7 @@ def test_executive_panel_has_three_primary_kpis_release_status_and_ruler():
         assert not app.exception
         markup = "\n".join(md.value for md in app.markdown)
         assert "<div class='release-status'>" in markup
-        assert "Dados atualizados" in markup and "Próxima divulgação" in markup
+        assert "Latest data" in markup and "Next release" in markup
         assert "<div class='release-ruler'>" in markup
         kpi_grid = next(md.value for md in app.markdown if "<div class='kpi-grid'>" in md.value)
         assert kpi_grid.count("<div class='kpi'>") == 3
@@ -356,10 +356,10 @@ def test_top_movers_can_be_ranked_by_12_month_change():
         movers = next(
             md.value for md in app.markdown if "<div id='ranking-movers'" in md.value
         )
-        assert "mover-sort-label active'>12 meses" in movers
-        assert "altas em 12 meses" in movers and "quedas em 12 meses" in movers
+        assert "mover-sort-label active'>12 months" in movers
+        assert "increases · over 12 months" in movers and "decreases · over 12 months" in movers
         assert any(
-            "Ranking pela variação acumulada em 12 meses" in caption.value
+            "Ranked by 12-month cumulative change" in caption.value
             for caption in app.caption
         )
     finally:
@@ -374,14 +374,14 @@ def test_valid_query_param_opens_requested_view_and_invalid_is_ignored():
         app.query_params["view"] = "difusao"
         app.run(timeout=60)
         assert not app.exception
-        assert app.sidebar.radio[0].value == "Difusão"
+        assert app.sidebar.radio[0].value == "Diffusion"
 
         invalid = AppTest.from_file("dashboard/app.py")
         invalid.query_params["view"] = "admin"
         invalid.query_params["month"] = "2026-99"
         invalid.run(timeout=60)
         assert not invalid.exception
-        assert invalid.sidebar.radio[0].value == "Painel executivo"
+        assert invalid.sidebar.radio[0].value == "Executive dashboard"
     finally:
         for path in created:
             path.unlink(missing_ok=True)
@@ -408,24 +408,24 @@ def test_ask_page_evidence_expander_shows_resolved_table(monkeypatch):
             provider_name="fake",
         )
 
-    monkeypatch.setattr("ipca_dashboard.ai.qa_replay.answer_with_replay", fake_answer)
+    monkeypatch.setattr("ipca_dashboard.ai.qa.answer_question", fake_answer)
     created = _ensure_processed_fixtures()
     try:
         app = AppTest.from_file("dashboard/app.py")
         app.run(timeout=60)
-        app.sidebar.radio[0].set_value("Pergunte ao IPCA")
-        app.session_state["qa_last_q"] = "Como está a difusão do IPCA?"
+        app.sidebar.radio[0].set_value("Ask the IPCA")
+        app.session_state["qa_last_q"] = "How is IPCA diffusion?"
         app.run(timeout=60)
         assert not app.exception
         tables = [el.value for el in app.dataframe]
         assert tables, "evidence expander should render a dataframe"
         joined = "\n".join(t.to_string() for t in tables)
         assert "IPCA m/m" in joined and "BCB/SGS" in joined  # resolved, not bare ids
-        evidence_button = next(button for button in app.button if button.label == "Ver: IPCA m/m")
+        evidence_button = next(button for button in app.button if button.label == "View: IPCA m/m")
         evidence_button.click()
         app.run(timeout=60)
         assert not app.exception
-        assert app.sidebar.radio[0].value == "Painel executivo"
+        assert app.sidebar.radio[0].value == "Executive dashboard"
         assert app.query_params["evidence"] == ["ev_headline_mom"]
     finally:
         for path in created:
@@ -452,13 +452,13 @@ def test_ask_page_renders_model_html_as_safe_markdown(monkeypatch):
             provider_name="fake",
         )
 
-    monkeypatch.setattr("ipca_dashboard.ai.qa_replay.answer_with_replay", fake_answer)
+    monkeypatch.setattr("ipca_dashboard.ai.qa.answer_question", fake_answer)
     created = _ensure_processed_fixtures()
     try:
         app = AppTest.from_file("dashboard/app.py")
         app.run(timeout=60)
-        app.sidebar.radio[0].set_value("Pergunte ao IPCA")
-        app.session_state["qa_last_q"] = "Como está a difusão do IPCA?"
+        app.sidebar.radio[0].set_value("Ask the IPCA")
+        app.session_state["qa_last_q"] = "How is IPCA diffusion?"
         app.run(timeout=60)
         assert not app.exception
         assert any("<script>alert" in md.value for md in app.markdown)

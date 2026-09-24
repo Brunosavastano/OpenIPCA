@@ -32,6 +32,9 @@ from ipca_dashboard.ai.schemas import CLAIM_TYPES, MONETARY_POLICY_TONES
 # Out-of-scope: monetary-policy forecasting and investment advice. Patterns are
 # matched against accent-stripped lowercase text.
 _FORBIDDEN_PATTERNS = [
+    re.compile(r"\b(copom|selic|central bank|bcb)\b.{0,45}\b(will|would|should|going to|expected to)\b.{0,30}\b(cut|reduce|raise|increase|hold|remain|fall|rise|stay)\b"),
+    re.compile(r"\b(will|should|forecast|predict)\b.{0,30}\b(copom|selic)\b"),
+    re.compile(r"\b(buy|sell|invest|recommend|allocate)\b.{0,45}\b(stocks?|bonds?|assets?|funds?|treasur\w*|ipca\+|bova11|ivvb11)\b"),
     re.compile(
         r"\bcopom\b.{0,40}\b"
         r"(vai|deve|ira|corta|cortara|cortar|reduz|reduzira|reduzir|"
@@ -156,7 +159,7 @@ _NUMBER_RE = re.compile(r"(?<![A-Za-z\d-])-?\d+(?:[.,]\d+)?(?![A-Za-z]|[\d-])")
 # themselves (4,39%, 0,67 p.p.) carry units and are grounded as usual — only the
 # bare window integer bound to a month-word is dropped.
 _KNOWN_WINDOW_PHRASE = re.compile(
-    r"\b(?:3|6|12|24)\s+(?:meses|m[eê]s)\b",
+    r"\b(?:3|6|12|24)(?:\s+|-)(?:meses|m[eê]s|months?)\b",
     re.IGNORECASE,
 )
 

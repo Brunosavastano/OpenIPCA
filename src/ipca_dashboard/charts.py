@@ -7,7 +7,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from ipca_dashboard.config import load_yaml
-from ipca_dashboard.glossary import metric_label
+from ipca_dashboard.english_items import item_label
+from ipca_dashboard.glossary_en import metric_label
 
 GROUP_COLORS = {
     "Alimentação e bebidas": "#E8943A",
@@ -20,6 +21,8 @@ GROUP_COLORS = {
     "Educação": "#E6C84A",
     "Comunicação": "#7E8896",
 }
+
+GROUP_COLORS.update({item_label(k): v for k, v in list(GROUP_COLORS.items())})
 
 # Institutional terminal palette (Bloomberg/Aladdin direction). Inflation
 # semantics: up = bad = red, down = good = green.
@@ -143,20 +146,20 @@ def stacked_contribution(ipca_items: pd.DataFrame, months: int = 24) -> go.Figur
         color_discrete_map=GROUP_COLORS,
         color_discrete_sequence=_SEQ,  # fallback for any group missing from the map
         custom_data=["mom"],  # variation (%) for the hover, beside the p.p. on the axis
-        labels={"date": "Mês", "contribution_mom": "Contribuição (p.p.)", "item_name": "Grupo"},
+        labels={"date": "Month", "contribution_mom": "Contribution (p.p.)", "item_name": "Group"},
     )
     fig.update_traces(
         hovertemplate=(
-            "%{fullData.name}: %{y:.2f} p.p. (variação %{customdata[0]:.2f}%)<extra></extra>"
+            "%{fullData.name}: %{y:.2f} p.p. (price change %{customdata[0]:.2f}%)<extra></extra>"
         )
     )
     # Quarterly ticks + angled short dates so labels fit on narrow screens.
     fig.update_xaxes(dtick="M3", tickformat="%b/%y", tickangle=-45)
     fig = apply_layout(
         fig,
-        f"Contribuição mensal por grupo (últimos {months} meses)",
-        yaxis_title="Contribuição (p.p.)",
-        xaxis_title="Mês",
+        f"Monthly contribution by group (last {months} months)",
+        yaxis_title="Contribution (p.p.)",
+        xaxis_title="Month",
     )
     return fig
 
@@ -185,12 +188,12 @@ def waterfall_latest(ipca_items: pd.DataFrame, date: pd.Timestamp) -> go.Figure:
             decreasing={"marker": {"color": _DOWN}},
             totals={"marker": {"color": _TEXT_COLOR}},
             hovertemplate=(
-                "%{x}<br>Variação: %{customdata:.2f}%"
-                "<br>Contribuição: %{y:.2f} p.p.<extra></extra>"
+                "%{x}<br>Price change: %{customdata:.2f}%"
+                "<br>Contribution: %{y:.2f} p.p.<extra></extra>"
             ),
         )
     )
-    return apply_layout(fig, f"Waterfall do IPCA - {date:%Y-%m}", "Contribuição (p.p.)")
+    return apply_layout(fig, f"IPCA waterfall - {date:%Y-%m}", "Contribution (p.p.)")
 
 
 def contribution_ranking(
@@ -223,17 +226,17 @@ def contribution_ranking(
             # contributed, so the two units are never confused (contrib = var × peso ÷ 100).
             customdata=ranking["mom"],
             hovertemplate=(
-                "%{y}<br>Variação: %{customdata:.2f}%"
-                "<br>Contribuição: %{x:.2f} p.p.<extra></extra>"
+                "%{y}<br>Price change: %{customdata:.2f}%"
+                "<br>Contribution: %{x:.2f} p.p.<extra></extra>"
             ),
         )
     )
-    level_pt = {"group": "grupo", "subgroup": "subgrupo", "item": "item", "subitem": "subitem"}
+    level_pt = {"group": "group", "subgroup": "subgroup", "item": "item", "subitem": "subitem"}
     return apply_layout(
         fig,
-        f"Maiores pressões de alta e de baixa — por {level_pt.get(level, level)}",
+        f"Largest upward and downward pressures — by {level_pt.get(level, level)}",
         yaxis_title="",
-        xaxis_title="Contribuição (p.p.)",
+        xaxis_title="Contribution (p.p.)",
     )
 
 
@@ -260,21 +263,21 @@ def heatmap_groups(ipca_items: pd.DataFrame, months: int = 24) -> go.Figure:
             colorscale="RdBu_r",
             zmid=0,
             colorbar={
-                "title": "Contribuição<br>(p.p.)",
+                "title": "Contribution<br>(p.p.)",
                 "ticksuffix": " p.p.",
             },
             hovertemplate=(
-                "<b>%{y}</b><br>%{x}<br>Variação: %{customdata:.2f}%"
-                "<br>Contribuição: %{z:.2f} p.p.<extra></extra>"
+                "<b>%{y}</b><br>%{x}<br>Price change: %{customdata:.2f}%"
+                "<br>Contribution: %{z:.2f} p.p.<extra></extra>"
             ),
         )
     )
     return apply_layout(
         fig,
-        f"Mapa de calor: contribuição por grupo (últimos {months} meses)",
-        yaxis_title="Grupo",
-        xaxis_title="Mês",
-        subtitle="🔴 vermelho = puxou a inflação para cima · 🔵 azul = segurou para baixo",
+        f"Heatmap: contribution by group (last {months} months)",
+        yaxis_title="Group",
+        xaxis_title="Month",
+        subtitle="Red = upward pressure on inflation · Blue = downward pressure",
     )
 
 
@@ -295,7 +298,7 @@ def subitem_sparkline(ipca_items: pd.DataFrame, code: str, months: int = 24) -> 
             x=data["date"],
             y=data["mom"],
             line=dict(color=_INFO, width=1.6),
-            hovertemplate="%{x|%b/%y}<br>Variação: %{y:.2f}%<extra></extra>",
+            hovertemplate="%{x|%b/%y}<br>Price change: %{y:.2f}%<extra></extra>",
         )
     )
     fig.add_hline(y=0, line_dash="dot", line_color=_MUTED)
@@ -305,9 +308,9 @@ def subitem_sparkline(ipca_items: pd.DataFrame, code: str, months: int = 24) -> 
         name = code
     fig = apply_layout(
         fig,
-        f"{name} — variação mensal (últimos {months} meses)",
+        f"{name} — monthly change (last {months} months)",
         yaxis_title="% m/m",
-        xaxis_title="Mês",
+        xaxis_title="Month",
     )
     fig.update_layout(height=280, showlegend=False)
     return fig
@@ -317,25 +320,25 @@ def core_lines(
     core_metrics: pd.DataFrame, core_set_name: str, metric: str = "rolling_12m"
 ) -> go.Figure:
     data = core_metrics[core_metrics["core_set_name"] == core_set_name].copy()
-    data["core_name_display"] = data["core_name"].replace({"Media": "Média"})
+    data["core_name_display"] = data["core_name"].replace({"Media": "Average", "Média": "Average"})
     fig = px.line(
         data,
         x="date",
         y=metric,
         color="core_name_display",
         color_discrete_sequence=_CORE_SEQ,
-        labels={"date": "Mês", metric: "%", "core_name_display": "Núcleo"},
+        labels={"date": "Month", metric: "%", "core_name_display": "Core"},
     )
     # Make the mean the hero line (thick, near-white) and thin the individual
     # cores, matching the institutional terminal mockup.
     for trace in fig.data:
-        if trace.name in ("Média", "Media"):
+        if trace.name in ("Average", "Média", "Media"):
             trace.line.color = _TEXT_COLOR
             trace.line.width = 2.6
         else:
             trace.line.width = 1.3
     return apply_layout(
-        fig, f"Núcleos — {metric_label(metric)}", yaxis_title="%", xaxis_title="Mês"
+        fig, f"Core inflation — {metric_label(metric)}", yaxis_title="%", xaxis_title="Month"
     )
 
 
@@ -371,23 +374,23 @@ def core_fan(
             fill="tonexty",
             fillcolor="rgba(74,143,224,0.14)",
             line=dict(width=0),
-            name="faixa min-max",
+            name="min–max range",
         )
     )
     fig.add_trace(
         go.Scatter(
             x=summary.index,
             y=summary["mean"],
-            name="média",
+            name="Average",
             line=dict(color=_TEXT_COLOR, width=2.4),
         )
     )
     return apply_layout(
         fig,
-        f"Dispersão dos núcleos — {metric_label(metric)}",
+        f"Core dispersion — {metric_label(metric)}",
         yaxis_title="%",
-        xaxis_title="Mês",
-        subtitle="faixa azul = do menor ao maior núcleo · linha = média dos núcleos",
+        xaxis_title="Month",
+        subtitle="Blue band = lowest to highest core measure · line = core mean",
     )
 
 
@@ -395,7 +398,7 @@ def diffusion_line(bcb: pd.DataFrame) -> go.Figure:
     data = bcb[bcb["series_short_name"] == "Difusao"].sort_values("date")
     fig = go.Figure()
     fig.add_trace(
-        go.Scatter(x=data["date"], y=data["mom"], name="mensal", line=dict(color=_INFO, width=1.3))
+        go.Scatter(x=data["date"], y=data["mom"], name="monthly", line=dict(color=_INFO, width=1.3))
     )
     fig.add_trace(
         go.Scatter(
@@ -409,7 +412,7 @@ def diffusion_line(bcb: pd.DataFrame) -> go.Figure:
         for p, color in [(20, _DOWN), (50, _MUTED), (80, "#E0A046"), (90, _UP)]:
             value = data["mom"].quantile(p / 100)
             fig.add_hline(y=value, line_dash="dot", line_color=color, annotation_text=f"p{p}")
-    return apply_layout(fig, "Difusão do IPCA: mensal, MM3M e percentis", "% de subitens")
+    return apply_layout(fig, "IPCA diffusion: monthly, 3M average and percentiles", "% of subitems")
 
 
 def momentum_line(bcb: pd.DataFrame) -> go.Figure:
@@ -439,14 +442,14 @@ def momentum_line(bcb: pd.DataFrame) -> go.Figure:
             go.Scatter(
                 x=data["date"],
                 y=data["mom_sa"],
-                name="m/m com ajuste sazonal (SA)",
+                name="m/m seasonally adjusted (SA)",
                 line=dict(color=_TEXT_COLOR, width=2.4),
             )
         )
     title = (
-        "Momento do IPCA: variação mensal bruta (NSA) vs ajuste sazonal (SA)"
+        "IPCA momentum: monthly change, NSA vs SA"
         if has_sa
-        else "Momento do IPCA: variação mensal (NSA)"
+        else "IPCA momentum: monthly change (NSA)"
     )
     return apply_layout(fig, title, "% m/m")
 
@@ -465,9 +468,9 @@ def ipca_diffusion_scatter(bcb: pd.DataFrame) -> go.Figure:
         y="diffusion_mm3",
         color=data["date"].dt.year.astype(str),
         color_discrete_sequence=_SEQ,
-        labels={"ipca_mom": "IPCA m/m (%)", "diffusion_mm3": "Difusão MM3M (%)", "color": "Ano"},
+        labels={"ipca_mom": "IPCA m/m (%)", "diffusion_mm3": "Diffusion 3M average (%)", "color": "Year"},
     )
     if not data.empty:
         fig.add_vline(x=data["ipca_mom"].median(), line_dash="dot", line_color=_MUTED)
         fig.add_hline(y=data["diffusion_mm3"].median(), line_dash="dot", line_color=_MUTED)
-    return apply_layout(fig, "Quadrantes IPCA x difusão", "Difusão MM3M (%)")
+    return apply_layout(fig, "IPCA vs diffusion quadrants", "Diffusion 3M average (%)")

@@ -1,3 +1,5 @@
+> Public dashboard: English interface, chart labels, basket names, methodology and Ask the IPCA. The English Q&A uses the same evidence and numeric guardrails; current-data answers remain available without an AI key. Raw source files and existing Portuguese report archives are preserved.
+
 # OpenIPCA
 
 **Brazilian inflation beyond the headline.**

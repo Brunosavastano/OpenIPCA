@@ -37,7 +37,7 @@ def test_core_lines_title_has_no_raw_metric_key():
     )
     title = core_lines(df, "bcb_compact", "moving_average_3m").layout.title.text
     assert "moving_average_3m" not in title  # no raw key / underscores
-    assert "média de 3 meses" in title  # friendly label instead
+    assert "3-month average" in title  # friendly label instead
 
 
 def test_core_fan_title_has_no_raw_metric_key():
@@ -51,7 +51,7 @@ def test_core_fan_title_has_no_raw_metric_key():
     )
     fig = core_fan(df, "bcb_compact", "moving_average_3m")
     assert "moving_average_3m" not in fig.layout.title.text
-    assert "média de 3 meses" in fig.layout.title.text
+    assert "3-month average" in fig.layout.title.text
     assert fig.data[-1].line.color == charts._TEXT_COLOR
 
 
@@ -69,7 +69,7 @@ def test_momentum_line_shows_nsa_and_sa_traces():
     names = " ".join(tr.name for tr in fig.data)
     assert "NSA" in names and "SA" in names
     # The seasonally adjusted line is the hero (theme text color), like diffusion's MM3M.
-    sa_trace = next(tr for tr in fig.data if "ajuste sazonal" in tr.name)
+    sa_trace = next(tr for tr in fig.data if "seasonally adjusted" in tr.name)
     assert sa_trace.line.color == charts._TEXT_COLOR
 
 
@@ -84,7 +84,7 @@ def test_momentum_line_degrades_when_sa_column_is_absent():
     fig = momentum_line(df)
     assert len(fig.data) == 1
     assert fig.data[0].name == "m/m (NSA)"
-    assert "ajuste sazonal" not in fig.layout.title.text
+    assert "seasonally adjusted" not in fig.layout.title.text
 
 
 def test_apply_layout_subtitle_is_embedded():
@@ -103,8 +103,8 @@ def test_stacked_contribution_axis_labels_not_swapped():
         }
     )
     fig = stacked_contribution(df)
-    assert fig.layout.xaxis.title.text == "Mês"
-    assert "p.p." in fig.layout.yaxis.title.text  # not "Mês" on the Y axis
+    assert fig.layout.xaxis.title.text == "Month"
+    assert "p.p." in fig.layout.yaxis.title.text  # not "Month" on the Y axis
 
 
 def test_stacked_contribution_hover_shows_variation_and_contribution():
@@ -119,7 +119,7 @@ def test_stacked_contribution_hover_shows_variation_and_contribution():
     )
     fig = stacked_contribution(df)
     template = fig.data[0].hovertemplate
-    assert "variação" in template and "%" in template
+    assert "price change" in template and "%" in template
     assert "p.p." in template
     assert fig.data[0].customdata is not None
 
@@ -225,21 +225,21 @@ def test_ranking_hover_shows_variation_and_contribution():
     # the two units are never confused (the whole point of this view).
     fig = contribution_ranking(_items(5), pd.Timestamp("2024-01-01"), "group", top_n=10)
     template = fig.data[0].hovertemplate
-    assert "Variação" in template and "%" in template
-    assert "Contribuição" in template and "p.p." in template
+    assert "Price change" in template and "%" in template
+    assert "Contribution" in template and "p.p." in template
     assert fig.data[0].customdata is not None  # variation (mom) rides on customdata
     # X axis stays the contribution in p.p. (the additive, correct unit).
-    assert fig.layout.xaxis.title.text == "Contribuição (p.p.)"
+    assert fig.layout.xaxis.title.text == "Contribution (p.p.)"
 
 
 def test_waterfall_hover_and_axis_show_variation_and_contribution():
     fig = waterfall_latest(_items_with_headline(3), pd.Timestamp("2024-01-01"))
     template = fig.data[0].hovertemplate
-    assert "Variação" in template and "%" in template
-    assert "Contribuição" in template and "p.p." in template
+    assert "Price change" in template and "%" in template
+    assert "Contribution" in template and "p.p." in template
     assert fig.data[0].customdata is not None
-    # Y axis is now unambiguous ("Contribuição (p.p.)", not a bare "p.p.").
-    assert fig.layout.yaxis.title.text == "Contribuição (p.p.)"
+    # Y axis is now unambiguous ("Contribution (p.p.)", not a bare "p.p.").
+    assert fig.layout.yaxis.title.text == "Contribution (p.p.)"
 
 
 def test_heatmap_customdata_matches_z_grid():
@@ -277,7 +277,7 @@ def test_heatmap_customdata_matches_z_grid():
     )
     fig = heatmap_groups(df, months=24)
     trace = fig.data[0]
-    assert trace.hovertemplate and "Variação" in trace.hovertemplate
+    assert trace.hovertemplate and "Price change" in trace.hovertemplate
     # Rows are sorted by mean contribution ascending. The variation customdata
     # must follow that same row/column order, cell-for-cell with z.
     assert list(trace.y) == ["Grupo B", "Grupo A"]
