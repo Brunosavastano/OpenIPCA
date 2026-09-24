@@ -404,7 +404,7 @@ def diffusion_line(bcb: pd.DataFrame) -> go.Figure:
         go.Scatter(
             x=data["date"],
             y=data["moving_average_3m"],
-            name="MM3M",
+            name="3M average",
             line=dict(color=_TEXT_COLOR, width=2.4),
         )
     )

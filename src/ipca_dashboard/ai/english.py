@@ -91,6 +91,20 @@ REFERENCE_TEXT = {
     "nucleo_dp": "DP uses double weighting to reduce the influence of volatile items rather than excluding them.",
     "nucleo_p55": "P55 uses the price change at the 55th percentile of the monthly distribution as a robust measure of central tendency.",
 }
+REFERENCE_LABELS = {
+    "nome": "What IPCA measures", "base": "IPCA base period",
+    "renda_min": "Minimum household income", "renda_max": "Maximum household income",
+    "cobertura": "Geographic coverage", "pesos_pof": "Source of basket weights",
+    "grupos": "IPCA basket groups", "calendario": "Release calendar",
+    "inpc": "INPC", "ipca15": "IPCA-15", "ipcae": "IPCA-E",
+    "variacao_contrib": "Price change and contribution", "periodos": "Measurement periods",
+    "nucleos": "Core inflation", "difusao": "Inflation diffusion",
+    "mm3m": "Three-month moving average", "nsa": "Seasonal adjustment",
+    "percentil": "Historical percentile", "regime": "Inflation regime",
+    "fontes": "Official data sources", "nucleo_ex0": "EX0 core measure",
+    "nucleo_ex3": "EX3 core measure", "nucleo_ms": "MS core measure",
+    "nucleo_dp": "DP core measure", "nucleo_p55": "P55 core measure",
+}
 PHRASES = {
     **ITEM_LABELS, **REGIME_LABELS,
     "Os dados mostram a variação do item, mas não provam sozinhos por que ela ocorreu.": "The data show the item's price change, but do not by themselves establish its cause.",
@@ -142,7 +156,7 @@ def english_evidence(evidence: list[dict]) -> list[dict]:
         key = str(row.get("evidence_id", ""))
         if key.startswith("ev_ref_") and key[7:] in REFERENCE_TEXT:
             row["interpretation"] = REFERENCE_TEXT[key[7:]]
-            row["metric"] = key[7:].replace("_", " ").replace("nucleo", "core")
+            row["metric"] = REFERENCE_LABELS[key[7:]]
         else:
             row["metric"] = answer_text(str(row.get("metric", "")))
         row["unit"] = {"texto": "text", "áreas": "areas", "grupos": "groups", "salário mínimo": "minimum wage", "salários mínimos": "minimum wages", "índice (base)": "index (base)", "tabela SIDRA": "SIDRA table", "percentil": "percentile", "% de subitens": "% of subitems", "% a.a.": "% annualized"}.get(row.get("unit"), row.get("unit"))

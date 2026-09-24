@@ -694,6 +694,15 @@ def render_ai_replay(data_month: str = "") -> None:
         return
     if is_stale(reference_month_from_brief(REPORTS_LATEST), data_month):
         return  # stale -> hide; the deterministic reading above carries the page
+    meta = load_brief_metadata(REPORTS_LATEST / "metadata.json") or {}
+    if meta.get("language") != "en":
+        # Keep source archives accessible without replacing the current English analysis.
+        with st.expander("Source report archive (Portuguese)", expanded=False):
+            st.markdown(
+                "[Read the original report and its evidence on GitHub]"
+                "(https://github.com/Brunosavastano/OpenIPCA/tree/main/reports/latest)"
+            )
+        return
     # Open by default: the audited analysis is the product's differentiator —
     # it must not be born hidden behind a click (spec §3.8: visible by default).
     with st.expander("OpenIPCA analysis", expanded=True):
