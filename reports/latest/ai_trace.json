@@ -36,11 +36,12 @@
     "ev_contrib_top_neg_0",
     "ev_contrib_top_neg_1",
     "ev_contrib_top_neg_2",
+    "ev_alert_0",
     "ev_regime"
   ],
   "claims": [
     {
-      "text": "O IPCA de junho mostrou uma leitura mensal contida, com alta de 0,16%, enquanto a variação acumulada em 12 meses ficou em 4,64%.",
+      "text": "Em setembro de 2026, o IPCA subiu 0,82% no mês e acumulou 4,58% em 12 meses, combinando uma leitura mensal forte com um avanço anual ainda relevante.",
       "type": "number",
       "evidence_ids": [
         "ev_headline_mom",
@@ -48,15 +49,21 @@
       ]
     },
     {
-      "text": "A leitura mensal também foi baixa em perspectiva histórica, no percentil 16,09 da série desde 2012, ao mesmo tempo em que a MM3M, isto é, a média móvel de três meses da variação mensal sem ajuste sazonal, ficou em 0,47%.",
+      "text": "A alta mensal ficou no percentil 82,49 da série desde 2012, ou seja, em uma posição alta quando comparada ao seu próprio histórico.",
       "type": "interpretation",
       "evidence_ids": [
-        "ev_headline_percentile",
+        "ev_headline_percentile"
+      ]
+    },
+    {
+      "text": "Ao suavizar o dado por MM3M, isto é, a média móvel de três meses da variação mensal sem ajuste sazonal, o IPCA ficou em 0,19%, sugerindo que a fotografia mensal foi mais pressionada do que a tendência recente suavizada.",
+      "type": "interpretation",
+      "evidence_ids": [
         "ev_headline_mm3"
       ]
     },
     {
-      "text": "A difusão, que mede a parcela de subitens com alta de preços e ajuda a avaliar quão espalhada está a inflação, ficou em 53,58% no mês e em 61,27% na MM3M, com esta última no percentil 49,13 da história desde 2012.",
+      "text": "A difusão, que mede a parcela de subitens com alta de preços, foi de 54,91% no mês, enquanto a sua MM3M ficou em 52,96% e no percentil 13,43, indicando que a alta não apareceu de forma especialmente espalhada pela cesta em termos históricos.",
       "type": "interpretation",
       "evidence_ids": [
         "ev_diffusion_mom",
@@ -65,30 +72,46 @@
       ]
     },
     {
-      "text": "Os núcleos, que buscam captar a tendência da inflação ao reduzir o peso de itens mais voláteis, também vieram moderados: a média dos núcleos subiu 0,21% no mês e 0,38% na MM3M.",
+      "text": "Os núcleos, medidas que buscam enxergar a inflação menos afetada por movimentos pontuais, avançaram 0,36% no mês e 0,28% na MM3M, mostrando uma pressão subjacente mais moderada do que o índice cheio do mês.",
       "type": "interpretation",
       "evidence_ids": [
         "ev_core_mean_mom",
-        "ev_core_mean_mm3"
+        "ev_core_mean_mm3",
+        "ev_headline_mom"
       ]
     },
     {
-      "text": "Na composição, Habitação foi a principal pressão altista, com contribuição de 0,10 p.p., seguida por Transportes e Saúde e cuidados pessoais, ambos com 0,03 p.p., enquanto Alimentação e bebidas atuou na direção oposta, com -0,05 p.p.",
+      "text": "Na composição do resultado, a maior pressão altista veio de Habitação, com 0,35 p.p., seguida por Transportes, com 0,18 p.p., e Alimentação e bebidas, também com 0,18 p.p.",
       "type": "number",
       "evidence_ids": [
         "ev_contrib_top_pos_0",
         "ev_contrib_top_pos_1",
-        "ev_contrib_top_pos_2",
-        "ev_contrib_top_neg_0"
+        "ev_contrib_top_pos_2"
       ]
     },
     {
-      "text": "O enquadramento do mês é de desinflação disseminada, isto é, um regime em que a leitura cheia e a disseminação dos reajustes apontam para menor pressão inflacionária.",
+      "text": "Do lado de menor pressão, Educação contribuiu com 0,00 p.p., enquanto Artigos de residência e Saúde e cuidados pessoais contribuíram com 0,01 p.p. cada.",
+      "type": "number",
+      "evidence_ids": [
+        "ev_contrib_top_neg_0",
+        "ev_contrib_top_neg_1",
+        "ev_contrib_top_neg_2"
+      ]
+    },
+    {
+      "text": "O alerta de choque localizado aparece com interpretação medium, reforçando a leitura de que a surpresa do índice cheio esteve mais concentrada do que generalizada.",
+      "type": "interpretation",
+      "evidence_ids": [
+        "ev_alert_0"
+      ]
+    },
+    {
+      "text": "O regime inflacionário, isto é, o rótulo que resume o padrão conjunto dos dados, foi classificado como Choque localizado.",
       "type": "regime",
       "evidence_ids": [
         "ev_regime"
       ],
-      "rule_id": "regime_v1_headline_low_diffusion_low"
+      "rule_id": "regime_v1_headline_high_diffusion_low"
     }
   ],
   "used_fallback": false

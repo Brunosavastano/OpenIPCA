@@ -1,12 +1,13 @@
-# Brief de IA — IPCA 2026-06
+# Análise OpenIPCA — IPCA 2026-09
 
-_AI Replay Mode · provider: openai_
+O IPCA de setembro trouxe uma leitura cheia pressionada, mas a composição sugere uma dinâmica menos disseminada. A alta mensal ficou em posição elevada no histórico, enquanto a média móvel curta, a difusão e os núcleos apontaram um quadro mais moderado por baixo do número principal. A pressão veio sobretudo de grupos específicos, especialmente Habitação, Transportes e Alimentação e bebidas, ao passo que Educação, Artigos de residência e Saúde e cuidados pessoais tiveram contribuição baixa. Assim, o diagnóstico é de choque localizado, com tom de política monetária cauteloso, sem implicar previsão para decisões futuras.
 
-O IPCA de junho trouxe uma combinação mais favorável: a inflação mensal veio contida, a leitura ficou baixa em termos históricos e os núcleos sugeriram menor pressão subjacente. A difusão ainda mostra que mais da metade dos subitens subiu, mas sua posição histórica não indica uma inflação especialmente espalhada. Na abertura, Habitação concentrou a principal pressão, enquanto Alimentação e bebidas ajudou a aliviar o índice. No conjunto, o quadro é compatível com desinflação disseminada.
-
-- O IPCA de junho mostrou uma leitura mensal contida, com alta de 0,16%, enquanto a variação acumulada em 12 meses ficou em 4,64%.
-- A leitura mensal também foi baixa em perspectiva histórica, no percentil 16,09 da série desde 2012, ao mesmo tempo em que a MM3M, isto é, a média móvel de três meses da variação mensal sem ajuste sazonal, ficou em 0,47%.
-- A difusão, que mede a parcela de subitens com alta de preços e ajuda a avaliar quão espalhada está a inflação, ficou em 53,58% no mês e em 61,27% na MM3M, com esta última no percentil 49,13 da história desde 2012.
-- Os núcleos, que buscam captar a tendência da inflação ao reduzir o peso de itens mais voláteis, também vieram moderados: a média dos núcleos subiu 0,21% no mês e 0,38% na MM3M.
-- Na composição, Habitação foi a principal pressão altista, com contribuição de 0,10 p.p., seguida por Transportes e Saúde e cuidados pessoais, ambos com 0,03 p.p., enquanto Alimentação e bebidas atuou na direção oposta, com -0,05 p.p.
-- O enquadramento do mês é de desinflação disseminada, isto é, um regime em que a leitura cheia e a disseminação dos reajustes apontam para menor pressão inflacionária.
+- Em setembro de 2026, o IPCA subiu 0,82% no mês e acumulou 4,58% em 12 meses, combinando uma leitura mensal forte com um avanço anual ainda relevante.
+- A alta mensal ficou no percentil 82,49 da série desde 2012, ou seja, em uma posição alta quando comparada ao seu próprio histórico.
+- Ao suavizar o dado por MM3M, isto é, a média móvel de três meses da variação mensal sem ajuste sazonal, o IPCA ficou em 0,19%, sugerindo que a fotografia mensal foi mais pressionada do que a tendência recente suavizada.
+- A difusão, que mede a parcela de subitens com alta de preços, foi de 54,91% no mês, enquanto a sua MM3M ficou em 52,96% e no percentil 13,43, indicando que a alta não apareceu de forma especialmente espalhada pela cesta em termos históricos.
+- Os núcleos, medidas que buscam enxergar a inflação menos afetada por movimentos pontuais, avançaram 0,36% no mês e 0,28% na MM3M, mostrando uma pressão subjacente mais moderada do que o índice cheio do mês.
+- Na composição do resultado, a maior pressão altista veio de Habitação, com 0,35 p.p., seguida por Transportes, com 0,18 p.p., e Alimentação e bebidas, também com 0,18 p.p.
+- Do lado de menor pressão, Educação contribuiu com 0,00 p.p., enquanto Artigos de residência e Saúde e cuidados pessoais contribuíram com 0,01 p.p. cada.
+- O alerta de choque localizado aparece com interpretação medium, reforçando a leitura de que a surpresa do índice cheio esteve mais concentrada do que generalizada.
+- O regime inflacionário, isto é, o rótulo que resume o padrão conjunto dos dados, foi classificado como Choque localizado.
