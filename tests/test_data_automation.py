@@ -36,6 +36,12 @@ def test_refresh_probes_frequently_before_installing_dependencies():
     assert "cancel-in-progress: false" in text
 
 
+def test_forced_rebuild_needs_an_official_month_from_the_probe():
+    text = _text(REFRESH_WORKFLOW)
+    assert "needs.probe.outputs.status == 'new' ||" in text
+    assert "(inputs.force_full == true && needs.probe.outputs.official_month != '')" in text
+
+
 def test_refresh_publishes_only_strict_deterministic_data():
     text = _text(REFRESH_WORKFLOW)
     assert "pipeline refresh-latest" in text

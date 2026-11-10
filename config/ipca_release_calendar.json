@@ -1,0 +1,126 @@
+{
+  "source_url": "https://servicodados.ibge.gov.br/api/v3/calendario/indice-nacional-de-precos-ao-consumidor-amplo",
+  "retrieved_at": "2026-11-10T01:44:05+00:00",
+  "items": [
+    {
+      "ano_referencia_inicio": 2025,
+      "mes_referencia_inicio": 1,
+      "data_divulgacao": "11/02/2025 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2025,
+      "mes_referencia_inicio": 2,
+      "data_divulgacao": "12/03/2025 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2025,
+      "mes_referencia_inicio": 3,
+      "data_divulgacao": "11/04/2025 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2025,
+      "mes_referencia_inicio": 4,
+      "data_divulgacao": "09/05/2025 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2025,
+      "mes_referencia_inicio": 5,
+      "data_divulgacao": "10/06/2025 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2025,
+      "mes_referencia_inicio": 6,
+      "data_divulgacao": "10/07/2025 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2025,
+      "mes_referencia_inicio": 7,
+      "data_divulgacao": "12/08/2025 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2025,
+      "mes_referencia_inicio": 8,
+      "data_divulgacao": "10/09/2025 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2025,
+      "mes_referencia_inicio": 9,
+      "data_divulgacao": "09/10/2025 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2025,
+      "mes_referencia_inicio": 10,
+      "data_divulgacao": "11/11/2025 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2025,
+      "mes_referencia_inicio": 11,
+      "data_divulgacao": "10/12/2025 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2025,
+      "mes_referencia_inicio": 12,
+      "data_divulgacao": "09/01/2026 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2026,
+      "mes_referencia_inicio": 1,
+      "data_divulgacao": "10/02/2026 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2026,
+      "mes_referencia_inicio": 2,
+      "data_divulgacao": "12/03/2026 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2026,
+      "mes_referencia_inicio": 3,
+      "data_divulgacao": "10/04/2026 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2026,
+      "mes_referencia_inicio": 4,
+      "data_divulgacao": "12/05/2026 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2026,
+      "mes_referencia_inicio": 5,
+      "data_divulgacao": "12/06/2026 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2026,
+      "mes_referencia_inicio": 6,
+      "data_divulgacao": "10/07/2026 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2026,
+      "mes_referencia_inicio": 7,
+      "data_divulgacao": "11/08/2026 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2026,
+      "mes_referencia_inicio": 8,
+      "data_divulgacao": "11/09/2026 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2026,
+      "mes_referencia_inicio": 9,
+      "data_divulgacao": "09/10/2026 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2026,
+      "mes_referencia_inicio": 10,
+      "data_divulgacao": "12/11/2026 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2026,
+      "mes_referencia_inicio": 11,
+      "data_divulgacao": "11/12/2026 12:00:00"
+    },
+    {
+      "ano_referencia_inicio": 2026,
+      "mes_referencia_inicio": 12,
+      "data_divulgacao": "12/01/2027 12:00:00"
+    }
+  ]
+}

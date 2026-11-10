@@ -105,6 +105,15 @@ against the expected month, staged and promoted only when SIDRA and every critic
 complete. A weekly full rebuild reconciles revisions. GitHub's scheduler and upstream propagation
 make this best-effort near-real-time rather than a hard real-time SLA.
 
+The probe reads the latest month from the SIDRA API first and from IBGE's aggregates API
+(`servicodados.ibge.gov.br`) second: since October 2026 that host drops connections from
+GitHub-hosted runners. When neither answers, the run only warns while the published month is
+still the latest one due, and fails once the next release is more than two days late. The next
+release date comes from IBGE's calendar API, on the same host, with a committed copy in
+`config/ipca_release_calendar.json` as fallback; refresh it with
+`python scripts/update_ipca_calendar.py` from a network that reaches IBGE after IBGE publishes
+the next year's calendar.
+
 Deterministic data is committed first. Report generation runs separately and publishes monthly
 assets under the `ipca-YYYY-MM` GitHub Release. AI artifacts are generated on a review branch and
 opened as a pull request; a stale brief or replay is hidden until that PR is approved.
