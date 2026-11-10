@@ -42,13 +42,19 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Fails only when no IBGE source answers and a release is more than two days
+      # late; a shorter outage just warns, with status "unavailable".
       - name: Probe official IBGE period without installing dependencies
         id: probe
         run: python scripts/probe_ipca_release.py --json
 
   refresh:
     needs: probe
-    if: needs.probe.outputs.status == 'new' || inputs.force_full == true
+    # A forced rebuild still needs the official month, which an "unavailable"
+    # probe cannot provide.
+    if: >-
+      needs.probe.outputs.status == 'new' ||
+      (inputs.force_full == true && needs.probe.outputs.official_month != '')
     runs-on: ubuntu-latest
     permissions:
       actions: write
